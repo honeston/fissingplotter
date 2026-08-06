@@ -75,3 +75,10 @@ interface FishingRecord {
 - Geolocation は HTTPS 必須（localhost 除く）
 - データは端末内のみ → JSON エクスポートでバックアップ
 - 潮位は天文潮位（予測値）、最寄港ベース
+
+## 7. ホスティング
+
+Cloudflare Pages。手順は [`docs/deploy.md`](deploy.md)。
+
+- GitHub: https://github.com/honeston/fissingplotter
+- 公開コマンド: `npx wrangler login` → `npm run deploy`
