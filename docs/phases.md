@@ -6,28 +6,32 @@
 | 2 | IndexedDB ストレージ層 + 仮保存 / 履歴 / エクスポート | **完了** |
 | 3 | データ取得（Geolocation / Open-Meteo / tide736 + 港マスタ） | **完了** |
 | 4 | 記録フロー本実装（並列取得 → 保存、取得状況 UI） | **完了** |
-| 5 | デプロイ（Cloudflare Pages）+ 実機 PWA 確認 | 未着手 |
+| 5 | デプロイ準備（設定 + GitHub）/ Cloudflare 本番公開 | **準備完了・公開は要ログイン** |
 
-## Phase 4 成果物
+## Phase 5 成果物
 
-| ファイル | 内容 |
-|----------|------|
-| `src/hooks/useRecord.ts` | GPS → 気温/潮位並列 → IndexedDB |
-| `src/components/RecordProgress.tsx` | 項目別の取得状況表示 |
-| `HomePage` | 本番記録 UI（テストパネル撤去） |
-| `HistoryPage` | Maps リンク・港名表示 |
+| 項目 | 内容 |
+|------|------|
+| `public/_redirects` | SPA フォールバック（`/history` 対応） |
+| `wrangler.toml` | Pages プロジェクト設定 |
+| `npm run deploy` | build + `wrangler pages deploy` |
+| [`docs/deploy.md`](deploy.md) | 手順・実機チェックリスト |
+| GitHub | https://github.com/honeston/fissingplotter |
 
-### 確認手順
+### あなたが行う最終ステップ（どちらか）
+
+**A. CLI（手元のターミナル）**
 
 ```bash
-npm run dev
+npx wrangler login
+npm run deploy
 ```
 
-1. 位置情報を許可できる環境で「記録する」
-2. 取得状況が座標 → 気温/潮位 → 保存と進むこと
-3. 履歴に気温・潮位・座標が入っていること
+**B. Cloudflare Dashboard**
 
-## Phase 5 予定
+1. https://dash.cloudflare.com/ → Workers & Pages → Create
+2. Connect to Git → `honeston/fissingplotter`
+3. Build command: `npm run build` / Output: `dist`
+4. Deploy
 
-- Cloudflare Pages へデプロイ
-- スマホで HTTPS + 位置情報 + PWA インストール確認
+公開後の URL（例: `https://fissingplotter.pages.dev`）でスマホから位置情報・PWA を確認する。
