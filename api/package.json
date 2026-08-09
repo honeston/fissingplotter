@@ -1,0 +1,19 @@
+{
+  "name": "fissingplotter-api",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/handler.ts --bundle --platform=node --target=node20 --outfile=dist/handler.mjs --format=esm --external:@aws-sdk/*",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.750.0",
+    "@aws-sdk/lib-dynamodb": "^3.750.0",
+    "esbuild": "^0.25.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.147",
+    "typescript": "~6.0.2"
+  }
+}

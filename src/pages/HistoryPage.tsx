@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import {
   deleteRecord,
   exportRecordsJson,
   getAllRecords,
-} from '../lib/storage'
+  syncFromServer,
+} from '../lib/sync'
 import type { FishingRecord } from '../types/record'
 
 function mapsUrl(lat: number, lng: number) {
@@ -12,25 +14,29 @@ function mapsUrl(lat: number, lng: number) {
 }
 
 export function HistoryPage() {
+  const { cloudEnabled } = useAuth()
   const [records, setRecords] = useState<FishingRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  async function reload() {
+  const reload = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
+      if (cloudEnabled) {
+        await syncFromServer()
+      }
       setRecords(await getAllRecords())
     } catch (err) {
       setError(err instanceof Error ? err.message : '読み込みに失敗しました')
     } finally {
       setLoading(false)
     }
-  }
+  }, [cloudEnabled])
 
   useEffect(() => {
     void reload()
-  }, [])
+  }, [reload])
 
   async function handleDelete(id: string) {
     await deleteRecord(id)

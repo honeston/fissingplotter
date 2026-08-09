@@ -1,0 +1,79 @@
+name: Deploy AWS
+
+on:
+  #push:
+  #  branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-1
+  STACK_NAME: fissingplotter
+
+jobs:
+  deploy-infra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/setup-sam@v2
+
+      - name: SAM build and deploy
+        working-directory: infra
+        run: |
+          sam build
+          sam deploy --no-confirm-changeset --no-fail-on-empty-changeset \
+            --stack-name "${{ env.STACK_NAME }}" \
+            --resolve-s3 \
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides AppName=fissingplotter
+
+  deploy-frontend:
+    needs: deploy-infra
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Read stack outputs
+        id: stack
+        run: |
+          API_URL=$(aws cloudformation describe-stacks --stack-name "${{ env.STACK_NAME }}" \
+            --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" --output text)
+          USER_POOL_ID=$(aws cloudformation describe-stacks --stack-name "${{ env.STACK_NAME }}" \
+            --query "Stacks[0].Outputs[?OutputKey=='UserPoolId'].OutputValue" --output text)
+          CLIENT_ID=$(aws cloudformation describe-stacks --stack-name "${{ env.STACK_NAME }}" \
+            --query "Stacks[0].Outputs[?OutputKey=='UserPoolClientId'].OutputValue" --output text)
+          echo "api_url=$API_URL" >> "$GITHUB_OUTPUT"
+          echo "user_pool_id=$USER_POOL_ID" >> "$GITHUB_OUTPUT"
+          echo "client_id=$CLIENT_ID" >> "$GITHUB_OUTPUT"
+
+      - run: npm ci
+
+      - name: Build PWA
+        env:
+          VITE_AWS_REGION: ${{ env.AWS_REGION }}
+          VITE_API_URL: ${{ steps.stack.outputs.api_url }}
+          VITE_COGNITO_USER_POOL_ID: ${{ steps.stack.outputs.user_pool_id }}
+          VITE_COGNITO_CLIENT_ID: ${{ steps.stack.outputs.client_id }}
+        run: npm run build
+
+      - name: Upload to S3 and invalidate CloudFront
+        run: node scripts/deploy-aws.mjs

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { getCurrentPosition } from '../lib/geolocation'
-import { addRecord } from '../lib/storage'
+import { addRecord } from '../lib/sync'
 import { fetchTideLevel } from '../lib/tide'
 import { fetchTemperature } from '../lib/weather'
 import type { FishingRecord } from '../types/record'

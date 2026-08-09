@@ -27,8 +27,8 @@ function getDb() {
   return dbPromise
 }
 
-export async function addRecord(input: NewFishingRecord): Promise<FishingRecord> {
-  const record: FishingRecord = {
+function buildRecord(input: NewFishingRecord): FishingRecord {
+  return {
     id: input.id ?? crypto.randomUUID(),
     recordedAt: input.recordedAt ?? new Date().toISOString(),
     latitude: input.latitude,
@@ -38,8 +38,17 @@ export async function addRecord(input: NewFishingRecord): Promise<FishingRecord>
     tideHarbor: input.tideHarbor,
     fishSpecies: input.fishSpecies,
   }
+}
+
+/** 同期用: サーバーから取得した記録をそのまま保存 */
+export async function putRecord(record: FishingRecord): Promise<void> {
   const db = await getDb()
   await db.put(STORE, record)
+}
+
+export async function addRecord(input: NewFishingRecord): Promise<FishingRecord> {
+  const record = buildRecord(input)
+  await putRecord(record)
   return record
 }
 

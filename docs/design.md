@@ -6,10 +6,10 @@
 
 | 項目 | 方針 |
 |------|------|
-| 認証 | 不要 |
-| サーバー | 不要（静的ホスティングのみ） |
-| 保存先 | IndexedDB（ブラウザ内） |
-| ホスティング | Cloudflare Pages（推奨） |
+| 認証 | Cognito User Pool（AWS 本番） / 未設定時はローカルのみ |
+| サーバー | API Gateway + Lambda + DynamoDB（AWS 本番） |
+| 保存先 | IndexedDB（オフラインキャッシュ）+ DynamoDB（クラウド） |
+| ホスティング | AWS S3 + CloudFront（本番） / Cloudflare Pages（レガシー） |
 
 ## 2. アーキテクチャ
 
@@ -78,7 +78,23 @@ interface FishingRecord {
 
 ## 7. ホスティング
 
-Cloudflare Pages。手順は [`docs/deploy.md`](deploy.md)。
+### AWS（本番推奨）
+
+S3 + CloudFront + Cognito + API Gateway + Lambda + DynamoDB。手順は [`docs/deploy-aws.md`](deploy-aws.md)。
+
+- インフラ: [`infra/template.yaml`](../infra/template.yaml)（SAM）
+- 同期: [`src/lib/sync.ts`](../src/lib/sync.ts)
+
+### Cloudflare Pages（レガシー）
+
+手順は [`docs/deploy.md`](deploy.md)。
 
 - GitHub: https://github.com/honeston/fissingplotter
 - 公開コマンド: `npx wrangler login` → `npm run deploy`
+
+## 8. クラウド同期
+
+1. 記録時: IndexedDB に即保存 → オンラインなら API POST
+2. 起動・履歴表示: サーバーから差分 GET → IndexedDB マージ
+3. 削除: ローカル + API DELETE
+4. 初回ログイン: 既存 IndexedDB 記録を一括 POST

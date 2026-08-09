@@ -1,0 +1,57 @@
+import type { FishingRecord } from '../types/record'
+import { getIdToken } from './auth'
+import { awsConfig } from './config'
+
+async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const token = await getIdToken()
+  if (!token) {
+    throw new Error('ログインが必要です')
+  }
+
+  const headers = new Headers(init.headers)
+  headers.set('Authorization', `Bearer ${token}`)
+  if (init.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
+
+  const res = await fetch(`${awsConfig.apiUrl}${path}`, { ...init, headers })
+  return res
+}
+
+export async function fetchRecords(since?: string): Promise<FishingRecord[]> {
+  const qs = since ? `?since=${encodeURIComponent(since)}` : ''
+  const res = await apiFetch(`/records${qs}`)
+  if (!res.ok) {
+    throw new Error(`サーバーからの取得に失敗しました (${res.status})`)
+  }
+  const data = (await res.json()) as { records: FishingRecord[] }
+  return data.records
+}
+
+export async function postRecord(record: FishingRecord): Promise<FishingRecord> {
+  const res = await apiFetch('/records', {
+    method: 'POST',
+    body: JSON.stringify(record),
+  })
+  if (!res.ok) {
+    throw new Error(`サーバーへの保存に失敗しました (${res.status})`)
+  }
+  const data = (await res.json()) as { record: FishingRecord }
+  return data.record
+}
+
+export async function deleteRemoteRecord(id: string): Promise<void> {
+  const res = await apiFetch(`/records/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  if (!res.ok && res.status !== 204) {
+    throw new Error(`サーバーからの削除に失敗しました (${res.status})`)
+  }
+}
+
+export async function checkApiHealth(): Promise<boolean> {
+  try {
+    const res = await fetch(`${awsConfig.apiUrl}/health`)
+    return res.ok
+  } catch {
+    return false
+  }
+}

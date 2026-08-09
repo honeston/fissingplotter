@@ -11,6 +11,10 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.aws-sam
+infra/.aws-sam
+infra/samconfig.toml
 
 # Editor directories and files
 .vscode/*

@@ -20,7 +20,10 @@ npx wrangler login
 npm run deploy
 ```
 
-成功すると `https://fissingplotter.pages.dev` のような URL が表示される。
+成功例（本番）:
+
+- プレビュー: https://a1c5cbe6.fissingplotter.pages.dev
+- 本番（安定）: https://fissingplotter.pages.dev （DNS 反映後）
 
 ## 方法 B: GitHub 連携
 

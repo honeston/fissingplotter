@@ -52,7 +52,7 @@ export function HomePage() {
       />
 
       <p className="mb-4 text-sm text-slate-500">
-        ボタンを押すと、現在地・気温・潮位を取得して端末に保存します。
+        ボタンを押すと、現在地・気温・潮位を取得して保存します（オフライン時は端末のみ）。
       </p>
 
       <RecordProgress steps={steps} errors={errors} />

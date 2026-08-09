@@ -1,0 +1,14 @@
+# Copy to samconfig.toml and adjust before `sam deploy`
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "fissingplotter"
+resolve_s3 = true
+s3_prefix = "fissingplotter"
+region = "ap-northeast-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "AppName=fissingplotter"
+
+# Optional custom domain (requires ACM cert in us-east-1):
+# parameter_overrides = "AppName=fissingplotter DomainName=fissingplotter.example.com HostedZoneId=Z1234567890ABC AcmCertificateArn=arn:aws:acm:us-east-1:123456789012:certificate/abc-123"
