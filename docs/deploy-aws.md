@@ -230,9 +230,12 @@ IAM → アイデンティティプロバイダ → `token.actions.githubusercon
 
 サムプリントが 1 つだけの場合、もう 1 つを追加して再試行。
 
-#### 本番信頼ポリシー（登録済み 2026-08-11）
+#### 本番信頼ポリシー（2026-08-11 更新 — immutable sub 対応）
 
-`aud` 条件付きだと AssumeRole 失敗したため、**`sub` のみ**で運用:
+2026年7月15日以降に作成されたリポジトリは `sub` が **immutable 形式**（`@OWNER_ID` / `@REPO_ID` 付き）。  
+旧形式 `repo:honeston/fissingplotter:*` では **マッチしない**。
+
+**すぐ試す（ワイルドカード）:**
 
 [`infra/iam/github-actions-trust-policy.json`](../infra/iam/github-actions-trust-policy.json)
 
@@ -248,7 +251,7 @@ IAM → アイデンティティプロバイダ → `token.actions.githubusercon
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:honeston/fissingplotter:*"
+          "token.actions.githubusercontent.com:sub": "repo:honeston@*/fissingplotter@*:*"
         }
       }
     }
@@ -256,7 +259,13 @@ IAM → アイデンティティプロバイダ → `token.actions.githubusercon
 }
 ```
 
-> **メモ:** `aud: sts.amazonaws.com` 条件を付けると AssumeRole 失敗。GitHub トークンの `aud` が一致していなかった可能性。リポジトリ限定（`sub`）で十分。
+**より厳密（推奨）:** GitHub → リポジトリ **Settings → Actions → General**（OIDC セクション）に表示される `sub` をコピーし、`StringEquals` で指定。  
+テンプレート: [`infra/iam/github-actions-trust-policy-immutable.example.json`](../infra/iam/github-actions-trust-policy-immutable.example.json)
+
+| 形式 | sub の例 |
+|------|---------|
+| 旧（2026/7/15 より前のリポジトリ） | `repo:honeston/fissingplotter:ref:refs/heads/main` |
+| **新（immutable）** | `repo:honeston@1234567/fissingplotter@8901234:ref:refs/heads/main` |
 
 #### よくあるミス
 

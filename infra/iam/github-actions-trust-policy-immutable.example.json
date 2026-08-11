@@ -8,8 +8,8 @@
       },
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
-        "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:honeston@*/fissingplotter@*:*"
+        "StringEquals": {
+          "token.actions.githubusercontent.com:sub": "repo:honeston@OWNER_ID/fissingplotter@REPO_ID:ref:refs/heads/main"
         }
       }
     }

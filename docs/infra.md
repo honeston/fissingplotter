@@ -129,7 +129,7 @@ Phase 5 時点のホスティング。IndexedDB のみ（クラウド同期な�
 | IAM ロール | `github-actions-deploy-roll` | ✅ 作成済み |
 | ロール ARN | `arn:aws:iam::319640345981:role/github-actions-deploy-roll` | |
 | インラインポリシー | `github-actions-deploy-rollPolicy` | ✅ 設定済み |
-| 信頼ポリシー | [`infra/iam/github-actions-trust-policy.json`](../infra/iam/github-actions-trust-policy.json) | ✅ 登録済み（`sub` のみ、`aud` 条件なし） |
+| 信頼ポリシー | [`infra/iam/github-actions-trust-policy.json`](../infra/iam/github-actions-trust-policy.json) | ⚠️ immutable sub 形式に要更新 |
 | 権限ポリシー | [`infra/iam/github-actions-permissions-policy.json`](../infra/iam/github-actions-permissions-policy.json) | ✅ リポジトリに記録 |
 | ロール最終使用 | 未使用（2026-08-11 時点） | workflow 未実行 |
 
@@ -205,7 +205,7 @@ OIDC 設定手順: [`docs/deploy-aws.md`](deploy-aws.md#github-actions-oidc)
 |------|:----:|:----:|------|
 | GitHub OIDC プロバイダ | | ✓ | ✅ 作成済み |
 | IAM ロール `github-actions-deploy-roll` | | ✓ | ✅ 作成済み |
-| 信頼ポリシーがリポジトリ限定 | | ✓ | ✅ `sub` 条件で登録済み |
+| 信頼ポリシーがリポジトリ限定 | | ✓ | ⚠️ immutable sub（`@OWNER_ID`/`@REPO_ID`）対応要 |
 | インラインポリシーに SAM 権限 | | ✓ | ✅ 確認済み |
 | S3 バケット ARN がアカウント ID 一致 | | ✓ | ✅ `319640345981` |
 | `AWS_ROLE_ARN` Secret 設定 | | ✓ | ✅ 設定済み（2026-08-11） |
