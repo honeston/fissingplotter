@@ -4,6 +4,10 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  define: {
+    // amazon-cognito-identity-js が Node の global を参照するため
+    global: 'globalThis',
+  },
   plugins: [
     react(),
     tailwindcss(),
