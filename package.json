@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "deploy": "npm run build && wrangler pages deploy dist --project-name=fissingplotter",
     "deploy:aws": "npm run build && node scripts/deploy-aws.mjs",
-    "deploy:infra": "cd infra && sam build && sam deploy"
+    "deploy:infra": "cd infra && sam build && sam deploy",
+    "check:infra": "node scripts/check-infra.mjs"
   },
   "dependencies": {
     "amazon-cognito-identity-js": "^6.3.14",

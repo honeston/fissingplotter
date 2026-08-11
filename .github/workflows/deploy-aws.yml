@@ -1,8 +1,8 @@
 name: Deploy AWS
 
 on:
-  #push:
-  #  branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -12,17 +12,79 @@ permissions:
 env:
   AWS_REGION: ap-northeast-1
   STACK_NAME: fissingplotter
+  EXPECTED_ROLE_ARN: arn:aws:iam::319640345981:role/github-actions-deploy-roll
 
 jobs:
   deploy-infra:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify role ARN secret
+        env:
+          ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+        run: |
+          set -euo pipefail
+          trimmed=$(printf '%s' "$ROLE_ARN" | tr -d '\n\r\t ')
+          echo "Secret length (raw): ${#ROLE_ARN}"
+          echo "Secret length (trimmed): ${#trimmed}"
+          echo "Expected: $EXPECTED_ROLE_ARN"
+          if [ "$trimmed" != "$EXPECTED_ROLE_ARN" ]; then
+            echo "::error::AWS_ROLE_ARN secret mismatch or contains extra whitespace"
+            exit 1
+          fi
+          echo "role_arn=$trimmed" >> "$GITHUB_OUTPUT"
+        id: role
+
+      - name: Debug OIDC token and test AssumeRole
+        env:
+          ROLE_ARN: ${{ steps.role.outputs.role_arn }}
+        run: |
+          set -euo pipefail
+          echo "Repository: ${{ github.repository }}"
+          echo "Ref: ${{ github.ref }}"
+          echo ""
+
+          resp=$(curl -sS -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com")
+          token=$(echo "$resp" | jq -r .value)
+          if [ "$token" = "null" ] || [ -z "$token" ]; then
+            echo "::error::Failed to obtain OIDC token"
+            echo "$resp" | jq .
+            exit 1
+          fi
+
+          payload=$(echo "$token" | cut -d. -f2 | tr '_-' '/+' | awk '{ while (length($0) % 4) $0=$0"="; print }' | base64 -d)
+          echo "=== OIDC claims ==="
+          echo "$payload" | jq '{sub, aud, iss, repository, ref, job_workflow_ref}'
+
+          sub=$(echo "$payload" | jq -r .sub)
+          echo ""
+          echo "Trust policy expects sub like: repo:honeston/fissingplotter:*"
+          echo "Actual sub: $sub"
+
+          echo ""
+          echo "=== Manual AssumeRoleWithWebIdentity (requires aws CLI) ==="
+          if ! command -v aws >/dev/null 2>&1; then
+            curl -sS "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+            unzip -q /tmp/awscliv2.zip -d /tmp
+            /tmp/aws/install -i /tmp/aws-cli -b /tmp/aws-bin
+            export PATH="/tmp/aws-bin:$PATH"
+          fi
+          aws sts assume-role-with-web-identity \
+            --role-arn "$ROLE_ARN" \
+            --role-session-name "github-actions-${{ github.run_id }}" \
+            --web-identity-token "$token" \
+            --output json | jq '{Account, Arn: .AssumedRoleUser.Arn}'
+
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ steps.role.outputs.role_arn }}
           aws-region: ${{ env.AWS_REGION }}
+          audience: sts.amazonaws.com
 
       - uses: aws-actions/setup-sam@v2
 
@@ -39,6 +101,9 @@ jobs:
   deploy-frontend:
     needs: deploy-infra
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -47,10 +112,19 @@ jobs:
           node-version: '22'
           cache: npm
 
+      - name: Trim role ARN
+        env:
+          ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+        run: |
+          trimmed=$(printf '%s' "$ROLE_ARN" | tr -d '\n\r\t ')
+          echo "role_arn=$trimmed" >> "$GITHUB_OUTPUT"
+        id: role
+
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ steps.role.outputs.role_arn }}
           aws-region: ${{ env.AWS_REGION }}
+          audience: sts.amazonaws.com
 
       - name: Read stack outputs
         id: stack

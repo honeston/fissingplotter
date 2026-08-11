@@ -78,4 +78,4 @@ AcmCertificateArn=arn:aws:acm:us-east-1:123456789012:certificate/abc-123
 |--------|------|
 | `AWS_ROLE_ARN` | OIDC 連携した IAM ロール ARN |
 
-詳細は [`docs/deploy-aws.md`](../docs/deploy-aws.md)。
+詳細は [`docs/deploy-aws.md`](../docs/deploy-aws.md)。リソース一覧・不足チェックは [`docs/infra.md`](../docs/infra.md)。

@@ -1,0 +1,13 @@
+{
+  "version": "2.0",
+  "routeKey": "GET /health",
+  "rawPath": "/prod/health",
+  "requestContext": {
+    "stage": "prod",
+    "http": {
+      "method": "GET",
+      "path": "/prod/health"
+    }
+  },
+  "headers": {}
+}
