@@ -196,7 +196,7 @@ OIDC 設定手順: [`docs/deploy-aws.md`](deploy-aws.md#github-actions-oidc)
 |------|:----:|:----:|------|
 | CloudFormation スタック `fissingplotter` が存在 | ✓ | | |
 | スタック Outputs と `.env` が一致 | ✓ | | |
-| `/health` が 200 | ✓ | | ⚠️ Lambda パス正規化要（再デプロイ） |
+| `/health` が 200 | ✓ | | ✅ |
 | Website URL が HTTPS で開ける | | ✓ | |
 | Cognito ユーザー登録・ログイン | | ✓ | |
 | 記録のクラウド同期 | | ✓ | |
