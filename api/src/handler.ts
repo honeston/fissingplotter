@@ -3,11 +3,23 @@ import { deleteRecord, listRecords, upsertRecord } from './records.js'
 import { jsonResponse, optionsResponse } from './response.js'
 import { getUserId } from './auth.js'
 
+/** HTTP API の stage 付き URL（/prod/health）でもルートパス（/health）に正規化 */
+function apiPath(event: APIGatewayProxyEventV2WithJWTAuthorizer): string {
+  const stage = event.requestContext.stage
+  let path = event.rawPath
+  if (stage && path.startsWith(`/${stage}/`)) {
+    path = path.slice(stage.length + 1)
+  } else if (stage && path === `/${stage}`) {
+    path = '/'
+  }
+  return path
+}
+
 export async function handler(
   event: APIGatewayProxyEventV2WithJWTAuthorizer,
 ): Promise<APIGatewayProxyResultV2> {
   const method = event.requestContext.http.method
-  const path = event.rawPath
+  const path = apiPath(event)
 
   if (method === 'OPTIONS') {
     return optionsResponse()

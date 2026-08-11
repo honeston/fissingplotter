@@ -133,13 +133,29 @@ npm run deploy:aws
 
 | 症状 | 確認 |
 |------|------|
-| `Not authorized to perform sts:AssumeRoleWithWebIdentity` | 下記 [OIDC AssumeRole 失敗](#oidc-assumerole-失敗) を参照 |
+| `CreateChangeSet` on `aws-sam-cli-managed-default` AccessDenied | 許可ポリシーに SAM 管理スタック ARN を追加 |
+| `apigateway:TagResource` AccessDenied | 許可ポリシー `ApiGatewayHttpApi` に `TagResource` / `UntagResource` を追加 |
+| `s3:DeleteBucket` on rollback AccessDenied | 許可ポリシー `StaticSiteBucket` に `s3:DeleteBucket` を追加 |
+| スタックが `ROLLBACK_FAILED` | 権限修正後、CloudFormation で `fissingplotter` スタックを削除してから再デプロイ |
+| `Not authorized to perform sts:AssumeRoleWithWebIdentity` | [OIDC AssumeRole 失敗](#oidc-assumerole-失敗) を参照 |
 | workflow で S3 PutObject 拒否 | 許可ポリシー `StaticSiteBucket` の ARN に `319640345981` が入っているか |
 | ログインできない | `.env` の Cognito ID が Outputs と一致しているか |
 | API 401 | トークン期限切れ → 再ログイン |
 | 同期しない | `isCloudSyncEnabled()` — 3 つの `VITE_*` がビルド時に注入されているか |
 | 古い UI が表示 | CloudFront 無効化完了を待つ（数分） |
 | CORS エラー | API の `AllowOrigins` は現状 `*` |
+
+#### SAM 管理スタック権限（`--resolve-s3` 使用時）
+
+`sam deploy --resolve-s3` は初回に **`aws-sam-cli-managed-default`** スタック（アーティファクト用 S3）を作成する。  
+許可ポリシーの CloudFormation `Resource` に以下を追加:
+
+```
+arn:aws:cloudformation:ap-northeast-1:319640345981:stack/aws-sam-cli-managed-default/*
+arn:aws:cloudformation:ap-northeast-1:319640345981:stack/aws-sam-cli-managed-default/
+```
+
+参照: [`infra/iam/github-actions-permissions-policy.json`](../infra/iam/github-actions-permissions-policy.json)
 
 不足検知: `npm run check:infra`
 

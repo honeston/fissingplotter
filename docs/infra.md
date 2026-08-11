@@ -58,8 +58,10 @@ Phase 5 時点のホスティング。IndexedDB のみ（クラウド同期な�
 | AWS アカウント ID | `319640345981` |
 | AWS リージョン | `ap-northeast-1` |
 | CloudFormation スタック名 | `fissingplotter` |
-| 本番 Website URL | _（SAM Outputs `WebsiteUrl` — 未デプロイ）_ |
-| 本番 API URL | _（SAM Outputs `ApiUrl` — 未デプロイ）_ |
+| 本番 Website URL | https://d2g67u48zw8qxj.cloudfront.net |
+| 本番 API URL | https://nedsyr5jic.execute-api.ap-northeast-1.amazonaws.com/prod |
+| Cognito User Pool ID | `ap-northeast-1_dZiwGsXrm` |
+| Cognito Client ID | `jcajn9r0kbm2mct7g4kmsd6l9` |
 | カスタムドメイン | 未設定 |
 | Cloudflare 本番 URL | https://fissingplotter.pages.dev |
 
@@ -129,9 +131,9 @@ Phase 5 時点のホスティング。IndexedDB のみ（クラウド同期な�
 | IAM ロール | `github-actions-deploy-roll` | ✅ 作成済み |
 | ロール ARN | `arn:aws:iam::319640345981:role/github-actions-deploy-roll` | |
 | インラインポリシー | `github-actions-deploy-rollPolicy` | ✅ 設定済み |
-| 信頼ポリシー | [`infra/iam/github-actions-trust-policy.json`](../infra/iam/github-actions-trust-policy.json) | ⚠️ immutable sub 形式に要更新 |
-| 権限ポリシー | [`infra/iam/github-actions-permissions-policy.json`](../infra/iam/github-actions-permissions-policy.json) | ✅ リポジトリに記録 |
-| ロール最終使用 | 未使用（2026-08-11 時点） | workflow 未実行 |
+| 信頼ポリシー | [`infra/iam/github-actions-trust-policy.json`](../infra/iam/github-actions-trust-policy.json) | ✅ immutable sub 対応済み |
+| 権限ポリシー | [`infra/iam/github-actions-permissions-policy.json`](../infra/iam/github-actions-permissions-policy.json) | ✅ |
+| ロール最終使用 | デプロイ成功（2026-08-11） | |
 
 手動デプロイ用 IAM ユーザー `ken`（`AdministratorAccess`）は開発・初回デプロイ用。CI とは別経路。
 
@@ -194,7 +196,7 @@ OIDC 設定手順: [`docs/deploy-aws.md`](deploy-aws.md#github-actions-oidc)
 |------|:----:|:----:|------|
 | CloudFormation スタック `fissingplotter` が存在 | ✓ | | |
 | スタック Outputs と `.env` が一致 | ✓ | | |
-| `/health` が 200 | ✓ | | |
+| `/health` が 200 | ✓ | | ⚠️ Lambda パス正規化要（再デプロイ） |
 | Website URL が HTTPS で開ける | | ✓ | |
 | Cognito ユーザー登録・ログイン | | ✓ | |
 | 記録のクラウド同期 | | ✓ | |
@@ -209,7 +211,7 @@ OIDC 設定手順: [`docs/deploy-aws.md`](deploy-aws.md#github-actions-oidc)
 | インラインポリシーに SAM 権限 | | ✓ | ✅ 確認済み |
 | S3 バケット ARN がアカウント ID 一致 | | ✓ | ✅ `319640345981` |
 | `AWS_ROLE_ARN` Secret 設定 | | ✓ | ✅ 設定済み（2026-08-11） |
-| workflow 手動実行成功 | | ✓ | ☐ 再実行待ち（信頼ポリシー修正後） |
+| workflow 手動実行成功 | | ✓ | ✅ 2026-08-11 |
 | `main` push 自動デプロイ | ✓ | | _（現状 workflow_dispatch のみ）_ |
 
 ### 未実装・検討事項
