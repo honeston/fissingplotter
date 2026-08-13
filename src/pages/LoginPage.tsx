@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 type Mode = 'login' | 'signup' | 'confirm'
 
 export function LoginPage() {
-  const { signIn, signUp, confirmSignUp, authenticated, loading } = useAuth()
+  const { signIn, signUp, confirmSignUp, authenticated } = useAuth()
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -14,7 +14,7 @@ export function LoginPage() {
   const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
 
-  if (!loading && authenticated) {
+  if (authenticated) {
     return <Navigate to="/" replace />
   }
 
