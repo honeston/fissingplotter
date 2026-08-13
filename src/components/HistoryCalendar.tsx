@@ -31,6 +31,8 @@ export function HistoryCalendar({
         locale={ja}
         selected={selectedDate}
         onSelect={onSelectDate}
+        fixedWeeks
+        showOutsideDays
         modifiers={modifiers}
         modifiersClassNames={{
           hasRecord:
@@ -39,21 +41,21 @@ export function HistoryCalendar({
           today: 'font-bold text-cyan-800',
         }}
         classNames={{
-          root: 'w-full text-sm',
-          months: 'flex flex-col',
-          month: 'space-y-2',
-          month_caption: 'flex items-center justify-center gap-2 font-medium text-sky-950',
+          root: 'w-full text-sm [--rdp-day-width:auto] [--rdp-day-height:2.25rem] [--rdp-day_button-width:2.25rem] [--rdp-day_button-height:2.25rem]',
+          months: 'flex w-full max-w-none flex-col',
+          month: 'w-full space-y-2',
+          month_caption:
+            'flex items-center justify-center gap-2 font-medium text-sky-950',
+          month_grid: 'w-full table-fixed',
           nav: 'flex items-center gap-1',
           button_previous:
             'rounded-md px-2 py-1 text-cyan-800 hover:bg-sky-50 disabled:opacity-30',
           button_next:
             'rounded-md px-2 py-1 text-cyan-800 hover:bg-sky-50 disabled:opacity-30',
-          weekdays: 'flex',
-          weekday: 'w-9 text-center text-xs text-slate-400',
-          week: 'flex',
-          day: 'flex h-9 w-9 items-center justify-center p-0',
+          weekday: 'text-center text-xs text-slate-400',
+          day: 'h-9 p-0 text-center',
           day_button:
-            'h-9 w-9 rounded-md text-sm hover:bg-sky-50 disabled:opacity-30',
+            'mx-auto flex h-9 w-9 items-center justify-center rounded-md text-sm hover:bg-sky-50 disabled:opacity-30',
           outside: 'text-slate-300',
         }}
       />

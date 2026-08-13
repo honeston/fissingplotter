@@ -21,6 +21,7 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
             <img
               src={photoUrl}
               alt={record.fishSpecies ?? '釣果写真'}
+              draggable={false}
               className="h-full w-full object-cover"
             />
           ) : (

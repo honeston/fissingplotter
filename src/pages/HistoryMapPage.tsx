@@ -1,8 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { RecordDetailSheet } from '../components/RecordDetailSheet'
 import { recordsWithCoordinates } from '../lib/coordinates'
-import { sortRecordsNewestFirst } from '../lib/dates'
 import { RecordsMap } from '../components/RecordsMap'
 import { useRecords } from '../hooks/useRecords'
 import { deleteRecord } from '../lib/sync'
@@ -13,20 +12,27 @@ export function HistoryMapPage() {
   const [selectedRecord, setSelectedRecord] = useState<FishingRecord | null>(
     null,
   )
+  const [clusterRecords, setClusterRecords] = useState<FishingRecord[]>([])
   const mappableRecords = recordsWithCoordinates(records)
-  const navigableRecords = useMemo(
-    () => sortRecordsNewestFirst(mappableRecords),
-    [mappableRecords],
-  )
+
+  function handleSelectRecords(group: FishingRecord[]) {
+    setClusterRecords(group)
+    setSelectedRecord(group[0] ?? null)
+  }
+
+  function handleClose() {
+    setSelectedRecord(null)
+    setClusterRecords([])
+  }
 
   async function handleDelete(id: string) {
-    const index = navigableRecords.findIndex((r) => r.id === id)
+    const index = clusterRecords.findIndex((r) => r.id === id)
+    const remaining = clusterRecords.filter((r) => r.id !== id)
     const nextRecord =
-      index >= 0
-        ? (navigableRecords[index + 1] ?? navigableRecords[index - 1] ?? null)
-        : null
+      remaining[Math.min(index, remaining.length - 1)] ?? null
 
     await deleteRecord(id)
+    setClusterRecords(remaining)
     setSelectedRecord((current) =>
       current?.id === id ? nextRecord : current,
     )
@@ -67,16 +73,16 @@ export function HistoryMapPage() {
 
       {!loading && !error && mappableRecords.length > 0 && (
         <div className="h-[60dvh] w-full overflow-hidden rounded-xl border border-sky-100 shadow-sm">
-          <RecordsMap records={records} onSelectRecord={setSelectedRecord} />
+          <RecordsMap records={records} onSelectRecords={handleSelectRecords} />
         </div>
       )}
 
       {selectedRecord && (
         <RecordDetailSheet
           record={selectedRecord}
-          records={navigableRecords}
+          records={clusterRecords}
           onNavigate={setSelectedRecord}
-          onClose={() => setSelectedRecord(null)}
+          onClose={handleClose}
           onDelete={(id) => void handleDelete(id)}
         />
       )}
