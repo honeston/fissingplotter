@@ -14,6 +14,10 @@ export interface TideResult {
   time: string
   harbor: Harbor
   distanceKm: number
+  tideCycle: string | null
+  moonPhase: string | null
+  moonAge: number | null
+  tideSlopeCmPerHour: number | null
 }
 
 const harbors = harborsData as Harbor[]
@@ -67,6 +71,12 @@ interface TidePoint {
   cm: number
 }
 
+interface TideMoon {
+  title?: string
+  name?: string
+  age?: string | number
+}
+
 interface TideApiResponse {
   status: number
   message?: string
@@ -75,6 +85,7 @@ interface TideApiResponse {
       string,
       {
         tide?: TidePoint[]
+        moon?: TideMoon
       }
     >
   }
@@ -101,25 +112,63 @@ function jstParts(date: Date) {
   }
 }
 
-function pickNearestTide(points: TidePoint[], nowMs: number): TidePoint {
+function pickNearestTideIndex(points: TidePoint[], nowMs: number): number {
   if (points.length === 0) {
     throw new Error('潮位時系列が空です')
   }
 
-  let best = points[0]
+  let bestIndex = 0
   let bestDiff = Math.abs(points[0].unix - nowMs)
-  for (const p of points) {
-    const diff = Math.abs(p.unix - nowMs)
+  for (let i = 1; i < points.length; i++) {
+    const diff = Math.abs(points[i].unix - nowMs)
     if (diff < bestDiff) {
-      best = p
+      bestIndex = i
       bestDiff = diff
     }
   }
-  return best
+  return bestIndex
+}
+
+/** 前後20分点があれば中央差分、端点なら片側差分（cm/h）。 */
+function computeTideSlopeCmPerHour(series: TidePoint[], index: number): number {
+  const curr = series[index]
+  const prev = series[index - 1]
+  const next = series[index + 1]
+
+  let deltaCm: number
+  let deltaMs: number
+  if (prev && next) {
+    deltaCm = next.cm - prev.cm
+    deltaMs = next.unix - prev.unix
+  } else if (next) {
+    deltaCm = next.cm - curr.cm
+    deltaMs = next.unix - curr.unix
+  } else if (prev) {
+    deltaCm = curr.cm - prev.cm
+    deltaMs = curr.unix - prev.unix
+  } else {
+    return 0
+  }
+
+  if (deltaMs === 0) return 0
+  return Math.round((deltaCm / deltaMs) * 3_600_000 * 10) / 10
+}
+
+function optionalString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null
+}
+
+function optionalNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim()) {
+    const n = Number(value)
+    return Number.isFinite(n) ? n : null
+  }
+  return null
 }
 
 /**
- * GPS 座標から最寄港の現在潮位（天文潮位 cm）を取得する。
+ * GPS 座標から最寄港の現在潮位（天文潮位 cm）と月齢・潮種・傾きを取得する。
  */
 export async function fetchTideLevel(
   latitude: number,
@@ -154,13 +203,19 @@ export async function fetchTideLevel(
     throw new Error(`${harbor.name} の潮位時系列がありません`)
   }
 
-  const nearest = pickNearestTide(series, at.getTime())
+  const nearestIndex = pickNearestTideIndex(series, at.getTime())
+  const nearest = series[nearestIndex]
+  const moon = day?.moon
 
   return {
     levelCm: nearest.cm,
     time: nearest.time,
     harbor,
     distanceKm: dist,
+    tideCycle: optionalString(moon?.title),
+    moonPhase: optionalString(moon?.name),
+    moonAge: optionalNumber(moon?.age),
+    tideSlopeCmPerHour: computeTideSlopeCmPerHour(series, nearestIndex),
   }
 }
 

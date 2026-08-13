@@ -2,7 +2,7 @@ import type { RecordStepErrors, RecordSteps, StepState } from '../hooks/useRecor
 
 const labels: { key: keyof RecordSteps; label: string }[] = [
   { key: 'geo', label: '座標' },
-  { key: 'weather', label: '気温' },
+  { key: 'weather', label: '天気・気温' },
   { key: 'tide', label: '潮位' },
   { key: 'save', label: '保存' },
   { key: 'photo', label: '写真' },

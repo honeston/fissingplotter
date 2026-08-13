@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import { getCurrentPosition } from '../lib/geolocation'
 import { addRecord } from '../lib/sync'
 import { fetchTideLevel } from '../lib/tide'
-import { fetchTemperature } from '../lib/weather'
+import { fetchWeather } from '../lib/weather'
 import type { FishingRecord, RecordFormInput } from '../types/record'
 
 export type StepState = 'idle' | 'pending' | 'ok' | 'error' | 'skipped'
@@ -41,8 +41,8 @@ function errMessage(err: unknown, fallback: string) {
 }
 
 /**
- * 記録ボタン押下時: GPS → 気温/潮位並列 → IndexedDB 保存 → 写真アップロード。
- * GPS 失敗時も座標なしで保存可。気温・潮位は座標がない場合スキップ。
+ * 記録ボタン押下時: GPS → 天気・気温/潮位並列 → IndexedDB 保存 → 写真アップロード。
+ * GPS 失敗時も座標なしで保存可。天気・潮位は座標がない場合スキップ。
  */
 export function useRecord() {
   const [busy, setBusy] = useState(false)
@@ -87,19 +87,25 @@ export function useRecord() {
       }
 
       let temperature: number | null = null
+      let weatherCode: number | null = null
       let tideLevel: number | null = null
       let tideHarbor: string | null = null
+      let tideCycle: string | null = null
+      let moonPhase: string | null = null
+      let moonAge: number | null = null
+      let tideSlopeCmPerHour: number | null = null
 
       if (latitude != null && longitude != null) {
         const [weatherSettled, tideSettled] = await Promise.allSettled([
-          fetchTemperature(latitude, longitude),
+          fetchWeather(latitude, longitude),
           fetchTideLevel(latitude, longitude),
         ])
 
         if (weatherSettled.status === 'fulfilled') {
           temperature = weatherSettled.value.temperature
+          weatherCode = weatherSettled.value.weatherCode
         } else {
-          const message = errMessage(weatherSettled.reason, '気温の取得に失敗しました')
+          const message = errMessage(weatherSettled.reason, '天気の取得に失敗しました')
           warnings.push(message)
           nextErrors.weather = message
         }
@@ -107,6 +113,10 @@ export function useRecord() {
         if (tideSettled.status === 'fulfilled') {
           tideLevel = tideSettled.value.levelCm
           tideHarbor = tideSettled.value.harbor.name
+          tideCycle = tideSettled.value.tideCycle
+          moonPhase = tideSettled.value.moonPhase
+          moonAge = tideSettled.value.moonAge
+          tideSlopeCmPerHour = tideSettled.value.tideSlopeCmPerHour
         } else {
           const message = errMessage(tideSettled.reason, '潮位の取得に失敗しました')
           warnings.push(message)
@@ -136,8 +146,13 @@ export function useRecord() {
             latitude,
             longitude,
             temperature,
+            weatherCode,
             tideLevel,
             tideHarbor,
+            tideCycle,
+            moonPhase,
+            moonAge,
+            tideSlopeCmPerHour,
             fishSpecies: input.fishSpecies,
             fishSizeCm: input.fishSizeCm,
             photoKey: null,

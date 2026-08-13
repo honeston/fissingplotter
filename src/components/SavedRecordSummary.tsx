@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { usePhotoUrl } from '../hooks/usePhotoUrl'
 import type { RecordResult } from '../hooks/useRecord'
+import { formatTideCycleMoon, formatTideSlope } from '../lib/formatRecord'
+import { weatherCodeLabel } from '../lib/weatherCode'
 
 function SavedRecordSummary({ result }: { result: RecordResult }) {
   const { record: saved, warnings } = result
@@ -34,6 +36,10 @@ function SavedRecordSummary({ result }: { result: RecordResult }) {
           </dd>
         </div>
         <div className="flex justify-between gap-2">
+          <dt>天気</dt>
+          <dd>{weatherCodeLabel(saved.weatherCode)}</dd>
+        </div>
+        <div className="flex justify-between gap-2">
           <dt>気温</dt>
           <dd>{saved.temperature != null ? `${saved.temperature}℃` : '—'}</dd>
         </div>
@@ -43,6 +49,14 @@ function SavedRecordSummary({ result }: { result: RecordResult }) {
             {saved.tideLevel != null ? `${saved.tideLevel} cm` : '—'}
             {saved.tideHarbor ? `（${saved.tideHarbor}）` : ''}
           </dd>
+        </div>
+        <div className="flex justify-between gap-2">
+          <dt>潮種・月相</dt>
+          <dd>{formatTideCycleMoon(saved)}</dd>
+        </div>
+        <div className="flex justify-between gap-2">
+          <dt>潮位変化</dt>
+          <dd>{formatTideSlope(saved.tideSlopeCmPerHour)}</dd>
         </div>
       </dl>
       {warnings.length > 0 && (

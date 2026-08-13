@@ -1,4 +1,5 @@
 import { hasCoordinates } from '../lib/coordinates'
+import { formatTideLine, formatWeatherLine } from '../lib/formatRecord'
 import { mapsUrl } from '../lib/maps'
 import { usePhotoUrl } from '../hooks/usePhotoUrl'
 import type { FishingRecord } from '../types/record'
@@ -85,12 +86,8 @@ function RecordDetails({ record }: { record: FishingRecord }) {
       <p className="mt-1 text-xs text-slate-500">
         {new Date(record.recordedAt).toLocaleString('ja-JP')}
       </p>
-      <p className="mt-1 text-xs text-slate-500">
-        気温 {record.temperature != null ? `${record.temperature}℃` : '—'}
-        {' / '}
-        潮位 {record.tideLevel != null ? `${record.tideLevel}cm` : '—'}
-        {record.tideHarbor ? `（${record.tideHarbor}）` : ''}
-      </p>
+      <p className="mt-1 text-xs text-slate-500">{formatWeatherLine(record)}</p>
+      <p className="mt-0.5 text-xs text-slate-500">{formatTideLine(record)}</p>
       <a
         href={
           hasCoordinates(record)

@@ -5,8 +5,13 @@ export interface FishingRecord {
   latitude: number | null
   longitude: number | null
   temperature: number | null
+  weatherCode: number | null
   tideLevel: number | null
   tideHarbor: string | null
+  tideCycle: string | null
+  moonPhase: string | null
+  moonAge: number | null
+  tideSlopeCmPerHour: number | null
   fishSpecies: string | null
   fishSizeCm: number | null
   photoKey: string | null
