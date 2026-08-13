@@ -15,19 +15,26 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
   if (showLargePhoto) {
     return (
       <div>
-        {photoUrl && (
-          <img
-            src={photoUrl}
-            alt={record.fishSpecies ?? '釣果写真'}
-            className="mb-3 max-h-64 w-full rounded-xl border border-sky-200 object-cover"
-          />
-        )}
+        <div className="mb-3 flex h-64 items-center justify-center overflow-hidden rounded-xl border border-sky-200 bg-sky-50">
+          {photoUrl ? (
+            <img
+              src={photoUrl}
+              alt={record.fishSpecies ?? '釣果写真'}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="text-sm text-slate-400">写真なし</span>
+          )}
+        </div>
         <div className="flex items-start justify-between gap-2">
           <RecordDetails record={record} />
           {onDelete && (
             <button
               type="button"
-              onClick={() => onDelete(record.id)}
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete(record.id)
+              }}
               className="shrink-0 rounded-md px-2 py-1 text-xs text-red-600 hover:bg-red-50"
             >
               削除
@@ -53,7 +60,10 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
       {onDelete && (
         <button
           type="button"
-          onClick={() => onDelete(record.id)}
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete(record.id)
+          }}
           className="shrink-0 rounded-md px-2 py-1 text-xs text-red-600 hover:bg-red-50"
         >
           削除
@@ -90,7 +100,13 @@ function RecordDetails({ record }: { record: FishingRecord }) {
         target="_blank"
         rel="noopener noreferrer"
         className={`mt-1 inline-block text-xs text-cyan-700 ${hasCoordinates(record) ? 'underline' : 'text-slate-400 no-underline'}`}
-        onClick={hasCoordinates(record) ? undefined : (e) => e.preventDefault()}
+        onClick={(e) => {
+          if (!hasCoordinates(record)) {
+            e.preventDefault()
+            return
+          }
+          e.stopPropagation()
+        }}
       >
         {hasCoordinates(record)
           ? `${record.latitude.toFixed(5)}, ${record.longitude.toFixed(5)}`

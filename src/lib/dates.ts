@@ -43,6 +43,8 @@ function sortRecordsNewestFirst(records: FishingRecord[]): FishingRecord[] {
   )
 }
 
+export { sortRecordsNewestFirst }
+
 /** 日付ごとにグループ化し、日付は新しい順・各日の記録も新しい順 */
 export function groupRecordsByDate(records: FishingRecord[]): RecordsByDate[] {
   const grouped = new Map<string, FishingRecord[]>()

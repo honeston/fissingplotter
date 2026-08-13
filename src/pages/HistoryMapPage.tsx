@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { RecordDetailSheet } from '../components/RecordDetailSheet'
 import { recordsWithCoordinates } from '../lib/coordinates'
+import { sortRecordsNewestFirst } from '../lib/dates'
 import { RecordsMap } from '../components/RecordsMap'
 import { useRecords } from '../hooks/useRecords'
 import { deleteRecord } from '../lib/sync'
@@ -13,10 +14,22 @@ export function HistoryMapPage() {
     null,
   )
   const mappableRecords = recordsWithCoordinates(records)
+  const navigableRecords = useMemo(
+    () => sortRecordsNewestFirst(mappableRecords),
+    [mappableRecords],
+  )
 
   async function handleDelete(id: string) {
+    const index = navigableRecords.findIndex((r) => r.id === id)
+    const nextRecord =
+      index >= 0
+        ? (navigableRecords[index + 1] ?? navigableRecords[index - 1] ?? null)
+        : null
+
     await deleteRecord(id)
-    setSelectedRecord(null)
+    setSelectedRecord((current) =>
+      current?.id === id ? nextRecord : current,
+    )
     await reload()
   }
 
@@ -61,6 +74,8 @@ export function HistoryMapPage() {
       {selectedRecord && (
         <RecordDetailSheet
           record={selectedRecord}
+          records={navigableRecords}
+          onNavigate={setSelectedRecord}
           onClose={() => setSelectedRecord(null)}
           onDelete={(id) => void handleDelete(id)}
         />
