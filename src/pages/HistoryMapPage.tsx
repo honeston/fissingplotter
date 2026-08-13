@@ -45,7 +45,7 @@ export function HistoryMapPage() {
       )}
 
       {!loading && !error && records.length > 0 && (
-        <div className="min-h-[60dvh] flex-1 overflow-hidden rounded-xl border border-sky-100 shadow-sm">
+        <div className="h-[60dvh] w-full overflow-hidden rounded-xl border border-sky-100 shadow-sm">
           <RecordsMap records={records} onSelectRecord={setSelectedRecord} />
         </div>
       )}
