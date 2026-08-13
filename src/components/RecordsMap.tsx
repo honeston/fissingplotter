@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import L from 'leaflet'
 import { MapContainer, Marker, TileLayer, useMap } from 'react-leaflet'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+import { recordsWithCoordinates } from '../lib/coordinates'
 import type { FishingRecord } from '../types/record'
 
 const defaultIcon = L.icon({
@@ -38,7 +39,7 @@ function MapResize() {
   return null
 }
 
-function FitBounds({ records }: { records: FishingRecord[] }) {
+function FitBounds({ records }: { records: Array<FishingRecord & { latitude: number; longitude: number }> }) {
   const map = useMap()
 
   useEffect(() => {
@@ -67,6 +68,13 @@ interface RecordsMapProps {
 
 export function RecordsMap({ records, onSelectRecord }: RecordsMapProps) {
   const [ready, setReady] = useState(false)
+  const mappableRecords = useMemo(
+    () =>
+      recordsWithCoordinates(records) as Array<
+        FishingRecord & { latitude: number; longitude: number }
+      >,
+    [records],
+  )
 
   useEffect(() => {
     setReady(true)
@@ -88,7 +96,7 @@ export function RecordsMap({ records, onSelectRecord }: RecordsMapProps) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      {records.map((record) => (
+      {mappableRecords.map((record) => (
         <Marker
           key={record.id}
           position={[record.latitude, record.longitude]}
@@ -98,7 +106,7 @@ export function RecordsMap({ records, onSelectRecord }: RecordsMapProps) {
         />
       ))}
       <MapResize />
-      <FitBounds records={records} />
+      <FitBounds records={mappableRecords} />
     </MapContainer>
   )
 }

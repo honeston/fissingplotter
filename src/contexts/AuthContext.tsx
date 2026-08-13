@@ -9,7 +9,7 @@ import {
 } from 'react'
 import * as cognito from '../lib/auth'
 import { isCloudSyncEnabled } from '../lib/config'
-import { initialSync } from '../lib/sync'
+import { initialSync, uploadPendingPhotos } from '../lib/sync'
 
 interface AuthState {
   loading: boolean
@@ -67,6 +67,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void refreshSession()
   }, [refreshSession])
+
+  useEffect(() => {
+    if (!cloudEnabled || !authenticated) return
+
+    function onOnline() {
+      void uploadPendingPhotos()
+    }
+
+    window.addEventListener('online', onOnline)
+    return () => window.removeEventListener('online', onOnline)
+  }, [cloudEnabled, authenticated])
 
   const signIn = useCallback(
     async (email: string, password: string) => {

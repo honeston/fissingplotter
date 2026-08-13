@@ -1,6 +1,8 @@
 import type { FishingRecord } from '../types/record'
 import { getAllRecords, putRecord } from './storage'
 
+const nullExtras = { fishSizeCm: null as number | null, photoKey: null as string | null }
+
 /** 開発用サンプル記録（固定 ID で再投入しても重複しない） */
 const DEV_SEED_RECORDS: FishingRecord[] = [
   {
@@ -12,6 +14,8 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     tideLevel: 142,
     tideHarbor: '江の島',
     fishSpecies: 'アジ',
+    fishSizeCm: 28,
+    photoKey: null,
   },
   {
     id: 'seed-002',
@@ -22,6 +26,8 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     tideLevel: 98,
     tideHarbor: '横浜',
     fishSpecies: 'メバル',
+    fishSizeCm: 22,
+    photoKey: null,
   },
   {
     id: 'seed-003',
@@ -32,6 +38,8 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     tideLevel: 185,
     tideHarbor: '銚子',
     fishSpecies: 'カサゴ',
+    fishSizeCm: 18,
+    photoKey: null,
   },
   {
     id: 'seed-004',
@@ -42,6 +50,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     tideLevel: 76,
     tideHarbor: '小田原',
     fishSpecies: null,
+    ...nullExtras,
   },
   {
     id: 'seed-005',
@@ -52,6 +61,8 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     tideLevel: 210,
     tideHarbor: '東京',
     fishSpecies: 'シーバス',
+    fishSizeCm: 65,
+    photoKey: null,
   },
   {
     id: 'seed-006',
@@ -62,6 +73,8 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     tideLevel: null,
     tideHarbor: null,
     fishSpecies: 'ヒラメ',
+    fishSizeCm: 42,
+    photoKey: null,
   },
   {
     id: 'seed-007',
@@ -72,6 +85,8 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     tideLevel: 55,
     tideHarbor: '江の島',
     fishSpecies: 'サバ',
+    fishSizeCm: 35,
+    photoKey: null,
   },
   {
     id: 'seed-008',
@@ -82,6 +97,8 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     tideLevel: 168,
     tideHarbor: '横浜',
     fishSpecies: 'カレイ',
+    fishSizeCm: 30,
+    photoKey: null,
   },
   {
     id: 'seed-009',
@@ -92,6 +109,8 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     tideLevel: 92,
     tideHarbor: '銚子',
     fishSpecies: 'マゴチ',
+    fishSizeCm: 55,
+    photoKey: null,
   },
   {
     id: 'seed-010',
@@ -102,6 +121,8 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     tideLevel: 134,
     tideHarbor: '小田原',
     fishSpecies: 'アジ',
+    fishSizeCm: 26,
+    photoKey: null,
   },
 ]
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { RecordDetailSheet } from '../components/RecordDetailSheet'
+import { recordsWithCoordinates } from '../lib/coordinates'
 import { RecordsMap } from '../components/RecordsMap'
 import { useRecords } from '../hooks/useRecords'
 import { deleteRecord } from '../lib/sync'
@@ -11,6 +12,7 @@ export function HistoryMapPage() {
   const [selectedRecord, setSelectedRecord] = useState<FishingRecord | null>(
     null,
   )
+  const mappableRecords = recordsWithCoordinates(records)
 
   async function handleDelete(id: string) {
     await deleteRecord(id)
@@ -44,7 +46,13 @@ export function HistoryMapPage() {
         </p>
       )}
 
-      {!loading && !error && records.length > 0 && (
+      {!loading && !error && records.length > 0 && mappableRecords.length === 0 && (
+        <p className="rounded-xl border border-dashed border-sky-200 bg-white/70 px-4 py-8 text-center text-sm text-slate-500">
+          座標付きの記録がありません
+        </p>
+      )}
+
+      {!loading && !error && mappableRecords.length > 0 && (
         <div className="h-[60dvh] w-full overflow-hidden rounded-xl border border-sky-100 shadow-sm">
           <RecordsMap records={records} onSelectRecord={setSelectedRecord} />
         </div>

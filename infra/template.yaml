@@ -66,6 +66,34 @@ Resources:
               StringEquals:
                 AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
 
+  MediaBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${AppName}-media-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: TransitionPhotosToIA
+            Status: Enabled
+            Prefix: ''
+            Transitions:
+              - StorageClass: STANDARD_IA
+                TransitionInDays: 90
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT, HEAD]
+            AllowedOrigins: ['*']
+            MaxAge: 3600
+
   CloudFrontOAC:
     Type: AWS::CloudFront::OriginAccessControl
     Properties:
@@ -215,9 +243,15 @@ Resources:
       FunctionName: !Sub '${AppName}-api'
       Handler: handler.handler
       CodeUri: ../api/
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref RecordsTable
+          MEDIA_BUCKET_NAME: !Ref MediaBucket
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RecordsTable
+        - S3CrudPolicy:
+            BucketName: !Ref MediaBucket
       Events:
         Health:
           Type: HttpApi
@@ -245,6 +279,18 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /records/{id}
             Method: DELETE
+        PresignPhoto:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /photos/presign
+            Method: POST
+        GetPhotoUrl:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /photos/{recordId}/url
+            Method: GET
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -257,6 +303,8 @@ Resources:
 Outputs:
   StaticBucketName:
     Value: !Ref StaticBucket
+  MediaBucketName:
+    Value: !Ref MediaBucket
   CloudFrontDistributionId:
     Value: !Ref CloudFrontDistribution
   CloudFrontDomainName:

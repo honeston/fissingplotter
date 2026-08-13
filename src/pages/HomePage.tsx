@@ -1,25 +1,48 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { FishSpeciesInput } from '../components/FishSpeciesInput'
+import { PhotoInput } from '../components/PhotoInput'
 import { RecordProgress } from '../components/RecordProgress'
+import { SavedRecordSummary } from '../components/SavedRecordSummary'
 import { useRecord } from '../hooks/useRecord'
 
 export function HomePage() {
   const [fishSpecies, setFishSpecies] = useState('')
+  const [fishSizeCm, setFishSizeCm] = useState('')
+  const [photoBlob, setPhotoBlob] = useState<Blob | null>(null)
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
   const { busy, steps, errors, lastResult, record, reset } = useRecord()
   const [fatalError, setFatalError] = useState('')
 
   async function handleRecord() {
     setFatalError('')
     reset()
+
+    const sizeRaw = fishSizeCm.trim()
+    let parsedSize: number | null = null
+    if (sizeRaw) {
+      parsedSize = Number(sizeRaw)
+      if (!Number.isFinite(parsedSize) || parsedSize < 0) {
+        setFatalError('体長は 0 以上の数値で入力してください')
+        return
+      }
+    }
+
     try {
-      await record(fishSpecies.trim() || null)
+      await record({
+        fishSpecies: fishSpecies.trim() || null,
+        fishSizeCm: parsedSize,
+        photoBlob,
+      })
       setFishSpecies('')
+      setFishSizeCm('')
+      if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
+      setPhotoPreviewUrl(null)
+      setPhotoBlob(null)
     } catch (err) {
       setFatalError(err instanceof Error ? err.message : '記録に失敗しました')
     }
   }
-
-  const saved = lastResult?.record
 
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
@@ -36,23 +59,34 @@ export function HomePage() {
         </Link>
       </header>
 
-      <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor="fish">
-        魚種（任意）
+      <FishSpeciesInput value={fishSpecies} onChange={setFishSpecies} disabled={busy} />
+
+      <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor="fish-size">
+        体長 cm（任意）
       </label>
       <input
-        id="fish"
-        type="text"
-        inputMode="text"
-        autoComplete="off"
-        placeholder="例: アジ"
-        value={fishSpecies}
-        onChange={(e) => setFishSpecies(e.target.value)}
+        id="fish-size"
+        type="number"
+        inputMode="decimal"
+        min={0}
+        step={0.1}
+        placeholder="例: 25"
+        value={fishSizeCm}
+        onChange={(e) => setFishSizeCm(e.target.value)}
         disabled={busy}
         className="mb-4 w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-base text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
       />
 
+      <PhotoInput
+        previewUrl={photoPreviewUrl}
+        onPreviewChange={setPhotoPreviewUrl}
+        photoBlob={photoBlob}
+        onPhotoChange={setPhotoBlob}
+        disabled={busy}
+      />
+
       <p className="mb-4 text-sm text-slate-500">
-        ボタンを押すと、現在地・気温・潮位を取得して保存します（オフライン時は端末のみ）。
+        ボタンを押すと、現在地・気温・潮位を取得して保存します。位置情報が取れない場合も記録できます（オフライン時は端末のみ）。
       </p>
 
       <RecordProgress steps={steps} errors={errors} />
@@ -63,47 +97,7 @@ export function HomePage() {
         </p>
       )}
 
-      {saved && (
-        <section
-          className="mb-4 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-950"
-          role="status"
-        >
-          <p className="font-semibold">保存しました</p>
-          <p className="mt-1 text-xs text-cyan-800">
-            {new Date(saved.recordedAt).toLocaleString('ja-JP')}
-            {saved.fishSpecies ? ` / ${saved.fishSpecies}` : ''}
-          </p>
-          <dl className="mt-2 space-y-1 text-xs">
-            <div className="flex justify-between gap-2">
-              <dt>座標</dt>
-              <dd>
-                {saved.latitude.toFixed(5)}, {saved.longitude.toFixed(5)}
-              </dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt>気温</dt>
-              <dd>{saved.temperature != null ? `${saved.temperature}℃` : '—'}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt>潮位</dt>
-              <dd>
-                {saved.tideLevel != null ? `${saved.tideLevel} cm` : '—'}
-                {saved.tideHarbor ? `（${saved.tideHarbor}）` : ''}
-              </dd>
-            </div>
-          </dl>
-          {lastResult.warnings.length > 0 && (
-            <ul className="mt-2 list-disc pl-4 text-xs text-amber-800">
-              {lastResult.warnings.map((w) => (
-                <li key={w}>{w}</li>
-              ))}
-            </ul>
-          )}
-          <Link to="/history" className="mt-3 inline-block font-medium text-cyan-800 underline">
-            履歴を見る
-          </Link>
-        </section>
-      )}
+      {lastResult && <SavedRecordSummary result={lastResult} />}
 
       <div className="mt-auto">
         <button

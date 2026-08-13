@@ -3,7 +3,7 @@ import { getCurrentPosition } from '../lib/geolocation'
 import { addRecord } from '../lib/sync'
 import { fetchTideLevel } from '../lib/tide'
 import { fetchTemperature } from '../lib/weather'
-import type { FishingRecord } from '../types/record'
+import type { FishingRecord, RecordFormInput } from '../types/record'
 
 export type StepState = 'idle' | 'pending' | 'ok' | 'error' | 'skipped'
 
@@ -12,6 +12,7 @@ export interface RecordSteps {
   weather: StepState
   tide: StepState
   save: StepState
+  photo: StepState
 }
 
 export interface RecordStepErrors {
@@ -19,6 +20,7 @@ export interface RecordStepErrors {
   weather?: string
   tide?: string
   save?: string
+  photo?: string
 }
 
 export interface RecordResult {
@@ -31,6 +33,7 @@ const idleSteps: RecordSteps = {
   weather: 'idle',
   tide: 'idle',
   save: 'idle',
+  photo: 'idle',
 }
 
 function errMessage(err: unknown, fallback: string) {
@@ -38,8 +41,8 @@ function errMessage(err: unknown, fallback: string) {
 }
 
 /**
- * 記録ボタン押下時: GPS → 気温/潮位並列 → IndexedDB 保存。
- * GPS 失敗時は保存しない。気温・潮位は失敗しても null で保存可。
+ * 記録ボタン押下時: GPS → 気温/潮位並列 → IndexedDB 保存 → 写真アップロード。
+ * GPS 失敗時も座標なしで保存可。気温・潮位は座標がない場合スキップ。
  */
 export function useRecord() {
   const [busy, setBusy] = useState(false)
@@ -53,7 +56,7 @@ export function useRecord() {
     setLastResult(null)
   }, [])
 
-  const record = useCallback(async (fishSpecies: string | null): Promise<RecordResult> => {
+  const record = useCallback(async (input: RecordFormInput): Promise<RecordResult> => {
     setBusy(true)
     setLastResult(null)
     setErrors({})
@@ -62,11 +65,14 @@ export function useRecord() {
       weather: 'idle',
       tide: 'idle',
       save: 'idle',
+      photo: input.photoBlob ? 'idle' : 'skipped',
     })
 
     try {
-      let latitude: number
-      let longitude: number
+      const warnings: string[] = []
+      const nextErrors: RecordStepErrors = {}
+      let latitude: number | null = null
+      let longitude: number | null = null
 
       try {
         const pos = await getCurrentPosition()
@@ -75,69 +81,91 @@ export function useRecord() {
         setSteps((s) => ({ ...s, geo: 'ok', weather: 'pending', tide: 'pending' }))
       } catch (err) {
         const message = errMessage(err, '位置情報の取得に失敗しました')
-        setSteps((s) => ({ ...s, geo: 'error' }))
-        setErrors({ geo: message })
-        throw new Error(message)
+        warnings.push(message)
+        nextErrors.geo = message
+        setSteps((s) => ({ ...s, geo: 'error', weather: 'skipped', tide: 'skipped' }))
       }
 
-      const warnings: string[] = []
       let temperature: number | null = null
       let tideLevel: number | null = null
       let tideHarbor: string | null = null
 
-      const [weatherSettled, tideSettled] = await Promise.allSettled([
-        fetchTemperature(latitude, longitude),
-        fetchTideLevel(latitude, longitude),
-      ])
+      if (latitude != null && longitude != null) {
+        const [weatherSettled, tideSettled] = await Promise.allSettled([
+          fetchTemperature(latitude, longitude),
+          fetchTideLevel(latitude, longitude),
+        ])
 
-      const nextErrors: RecordStepErrors = {}
+        if (weatherSettled.status === 'fulfilled') {
+          temperature = weatherSettled.value.temperature
+        } else {
+          const message = errMessage(weatherSettled.reason, '気温の取得に失敗しました')
+          warnings.push(message)
+          nextErrors.weather = message
+        }
 
-      if (weatherSettled.status === 'fulfilled') {
-        temperature = weatherSettled.value.temperature
-      } else {
-        const message = errMessage(weatherSettled.reason, '気温の取得に失敗しました')
-        warnings.push(message)
-        nextErrors.weather = message
+        if (tideSettled.status === 'fulfilled') {
+          tideLevel = tideSettled.value.levelCm
+          tideHarbor = tideSettled.value.harbor.name
+        } else {
+          const message = errMessage(tideSettled.reason, '潮位の取得に失敗しました')
+          warnings.push(message)
+          nextErrors.tide = message
+        }
+
+        setSteps((s) => ({
+          ...s,
+          weather: weatherSettled.status === 'fulfilled' ? 'ok' : 'error',
+          tide: tideSettled.status === 'fulfilled' ? 'ok' : 'error',
+        }))
       }
 
-      if (tideSettled.status === 'fulfilled') {
-        tideLevel = tideSettled.value.levelCm
-        tideHarbor = tideSettled.value.harbor.name
-      } else {
-        const message = errMessage(tideSettled.reason, '潮位の取得に失敗しました')
-        warnings.push(message)
-        nextErrors.tide = message
-      }
-
-      setSteps((s) => ({
-        ...s,
-        weather: weatherSettled.status === 'fulfilled' ? 'ok' : 'error',
-        tide: tideSettled.status === 'fulfilled' ? 'ok' : 'error',
-      }))
       if (Object.keys(nextErrors).length > 0) {
-        setErrors((e) => ({ ...e, ...nextErrors }))
+        setErrors(nextErrors)
       }
 
       setSteps((s) => ({ ...s, save: 'pending' }))
+      let saved: FishingRecord
       try {
-        const saved = await addRecord({
-          latitude,
-          longitude,
-          temperature,
-          tideLevel,
-          tideHarbor,
-          fishSpecies,
-        })
+        if (input.photoBlob) {
+          setSteps((s) => ({ ...s, photo: 'pending' }))
+        }
+
+        saved = await addRecord(
+          {
+            latitude,
+            longitude,
+            temperature,
+            tideLevel,
+            tideHarbor,
+            fishSpecies: input.fishSpecies,
+            fishSizeCm: input.fishSizeCm,
+            photoKey: null,
+          },
+          input.photoBlob,
+        )
+
         setSteps((s) => ({ ...s, save: 'ok' }))
-        const result = { record: saved, warnings }
-        setLastResult(result)
-        return result
+        if (input.photoBlob) {
+          if (saved.photoKey) {
+            setSteps((s) => ({ ...s, photo: 'ok' }))
+          } else {
+            const message = '写真は端末に保存しました。クラウドへのアップロードは後で再試行されます'
+            warnings.push(message)
+            setSteps((s) => ({ ...s, photo: 'error' }))
+            setErrors((e) => ({ ...e, photo: message }))
+          }
+        }
       } catch (err) {
         const message = errMessage(err, '保存に失敗しました')
-        setSteps((s) => ({ ...s, save: 'error' }))
+        setSteps((s) => ({ ...s, save: 'error', photo: input.photoBlob ? 'error' : s.photo }))
         setErrors((e) => ({ ...e, save: message }))
         throw new Error(message)
       }
+
+      const result = { record: saved, warnings }
+      setLastResult(result)
+      return result
     } finally {
       setBusy(false)
     }
