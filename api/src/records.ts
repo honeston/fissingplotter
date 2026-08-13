@@ -5,6 +5,7 @@ import {
   PutCommand,
   QueryCommand,
 } from '@aws-sdk/lib-dynamodb'
+import { deletePhotoByKey } from './photos.js'
 
 const TABLE_NAME = process.env.TABLE_NAME ?? ''
 
@@ -13,16 +14,26 @@ const doc = DynamoDBDocumentClient.from(new DynamoDBClient({}))
 export interface FishingRecord {
   id: string
   recordedAt: string
-  latitude: number
-  longitude: number
+  latitude: number | null
+  longitude: number | null
   temperature: number | null
   tideLevel: number | null
   tideHarbor: string | null
   fishSpecies: string | null
+  fishSizeCm: number | null
+  photoKey: string | null
 }
 
 function sortKey(recordedAt: string, id: string): string {
   return `${recordedAt}#${id}`
+}
+
+function parseFishSizeCm(value: unknown): number | null {
+  if (value == null || value === '') return null
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new Error('Invalid fishSizeCm')
+  }
+  return value
 }
 
 function validateRecord(input: unknown): FishingRecord {
@@ -32,18 +43,28 @@ function validateRecord(input: unknown): FishingRecord {
   const r = input as Record<string, unknown>
   if (typeof r.id !== 'string' || !r.id) throw new Error('Invalid id')
   if (typeof r.recordedAt !== 'string' || !r.recordedAt) throw new Error('Invalid recordedAt')
-  if (typeof r.latitude !== 'number') throw new Error('Invalid latitude')
-  if (typeof r.longitude !== 'number') throw new Error('Invalid longitude')
+
+  const latitude =
+    r.latitude == null || r.latitude === '' ? null : Number(r.latitude)
+  const longitude =
+    r.longitude == null || r.longitude === '' ? null : Number(r.longitude)
+  if (latitude != null && !Number.isFinite(latitude)) throw new Error('Invalid latitude')
+  if (longitude != null && !Number.isFinite(longitude)) throw new Error('Invalid longitude')
+  if ((latitude == null) !== (longitude == null)) {
+    throw new Error('Invalid coordinates')
+  }
 
   return {
     id: r.id,
     recordedAt: r.recordedAt,
-    latitude: r.latitude,
-    longitude: r.longitude,
+    latitude,
+    longitude,
     temperature: typeof r.temperature === 'number' ? r.temperature : null,
     tideLevel: typeof r.tideLevel === 'number' ? r.tideLevel : null,
     tideHarbor: typeof r.tideHarbor === 'string' ? r.tideHarbor : null,
     fishSpecies: typeof r.fishSpecies === 'string' ? r.fishSpecies : null,
+    fishSizeCm: parseFishSizeCm(r.fishSizeCm),
+    photoKey: typeof r.photoKey === 'string' ? r.photoKey : null,
   }
 }
 
@@ -82,6 +103,8 @@ export async function upsertRecord(userId: string, input: unknown): Promise<Fish
         tideLevel: record.tideLevel,
         tideHarbor: record.tideHarbor,
         fishSpecies: record.fishSpecies,
+        fishSizeCm: record.fishSizeCm,
+        photoKey: record.photoKey,
         updatedAt: now,
       },
     }),
@@ -106,6 +129,14 @@ export async function deleteRecord(userId: string, id: string): Promise<void> {
     return
   }
 
+  if (typeof item.photoKey === 'string' && item.photoKey) {
+    try {
+      await deletePhotoByKey(item.photoKey)
+    } catch {
+      // 記録削除は続行
+    }
+  }
+
   await doc.send(
     new DeleteCommand({
       TableName: TABLE_NAME,
@@ -115,14 +146,22 @@ export async function deleteRecord(userId: string, id: string): Promise<void> {
 }
 
 function storedToRecord(item: Record<string, unknown>): FishingRecord {
+  const fishSizeCm =
+    item.fishSizeCm == null || item.fishSizeCm === ''
+      ? null
+      : Number(item.fishSizeCm)
+
   return {
     id: String(item.id),
     recordedAt: String(item.recordedAt),
-    latitude: Number(item.latitude),
-    longitude: Number(item.longitude),
+    latitude: item.latitude == null || item.latitude === '' ? null : Number(item.latitude),
+    longitude:
+      item.longitude == null || item.longitude === '' ? null : Number(item.longitude),
     temperature: item.temperature == null ? null : Number(item.temperature),
     tideLevel: item.tideLevel == null ? null : Number(item.tideLevel),
     tideHarbor: item.tideHarbor == null ? null : String(item.tideHarbor),
     fishSpecies: item.fishSpecies == null ? null : String(item.fishSpecies),
+    fishSizeCm: Number.isFinite(fishSizeCm) ? fishSizeCm : null,
+    photoKey: item.photoKey == null ? null : String(item.photoKey),
   }
 }

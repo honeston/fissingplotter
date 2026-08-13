@@ -47,6 +47,28 @@ export async function deleteRemoteRecord(id: string): Promise<void> {
   }
 }
 
+export async function presignPhotoUpload(
+  recordId: string,
+): Promise<{ uploadUrl: string; photoKey: string; expiresIn: number }> {
+  const res = await apiFetch('/photos/presign', {
+    method: 'POST',
+    body: JSON.stringify({ recordId }),
+  })
+  if (!res.ok) {
+    throw new Error(`写真アップロード URL の取得に失敗しました (${res.status})`)
+  }
+  return res.json() as Promise<{ uploadUrl: string; photoKey: string; expiresIn: number }>
+}
+
+export async function getPhotoViewUrl(recordId: string): Promise<string> {
+  const res = await apiFetch(`/photos/${encodeURIComponent(recordId)}/url`)
+  if (!res.ok) {
+    throw new Error(`写真 URL の取得に失敗しました (${res.status})`)
+  }
+  const data = (await res.json()) as { viewUrl: string }
+  return data.viewUrl
+}
+
 export async function checkApiHealth(): Promise<boolean> {
   try {
     const res = await fetch(`${awsConfig.apiUrl}/health`)

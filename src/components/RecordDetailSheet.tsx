@@ -20,7 +20,7 @@ export function RecordDetailSheet({
         className="absolute inset-0 bg-sky-950/30"
         onClick={onClose}
       />
-      <div className="relative rounded-t-2xl border border-sky-100 bg-white px-4 pb-6 pt-3 shadow-lg">
+      <div className="relative max-h-[85dvh] overflow-y-auto rounded-t-2xl border border-sky-100 bg-white px-4 pb-6 pt-3 shadow-lg">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-sky-950">釣果詳細</h2>
           <button
@@ -31,7 +31,7 @@ export function RecordDetailSheet({
             閉じる
           </button>
         </div>
-        <RecordCard record={record} onDelete={onDelete} />
+        <RecordCard record={record} onDelete={onDelete} showLargePhoto />
       </div>
     </div>
   )

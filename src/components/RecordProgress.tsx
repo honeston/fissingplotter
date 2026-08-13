@@ -5,6 +5,7 @@ const labels: { key: keyof RecordSteps; label: string }[] = [
   { key: 'weather', label: '気温' },
   { key: 'tide', label: '潮位' },
   { key: 'save', label: '保存' },
+  { key: 'photo', label: '写真' },
 ]
 
 function statusText(state: StepState) {
@@ -16,7 +17,7 @@ function statusText(state: StepState) {
     case 'error':
       return '失敗'
     case 'skipped':
-      return 'スキップ'
+      return '—'
     default:
       return '待機'
   }
@@ -30,6 +31,8 @@ function statusClass(state: StepState) {
       return 'text-cyan-800'
     case 'error':
       return 'text-red-600'
+    case 'skipped':
+      return 'text-slate-300'
     default:
       return 'text-slate-400'
   }

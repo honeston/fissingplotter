@@ -1,4 +1,5 @@
 import type { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyResultV2 } from 'aws-lambda'
+import { presignPhotoUpload, presignPhotoView } from './photos.js'
 import { deleteRecord, listRecords, upsertRecord } from './records.js'
 import { jsonResponse, optionsResponse } from './response.js'
 import { getUserId } from './auth.js'
@@ -57,6 +58,25 @@ export async function handler(
       const id = decodeURIComponent(deleteMatch[1])
       await deleteRecord(userId, id)
       return jsonResponse(204, null)
+    }
+
+    if (path === '/photos/presign' && method === 'POST') {
+      if (!event.body) {
+        return jsonResponse(400, { error: 'Missing body' })
+      }
+      const body = JSON.parse(event.body) as { recordId?: string }
+      if (!body.recordId || typeof body.recordId !== 'string') {
+        return jsonResponse(400, { error: 'Invalid recordId' })
+      }
+      const result = await presignPhotoUpload(userId, body.recordId)
+      return jsonResponse(200, result)
+    }
+
+    const photoViewMatch = path.match(/^\/photos\/([^/]+)\/url$/)
+    if (photoViewMatch && method === 'GET') {
+      const recordId = decodeURIComponent(photoViewMatch[1])
+      const result = await presignPhotoView(userId, recordId)
+      return jsonResponse(200, result)
     }
 
     return jsonResponse(404, { error: 'Not found' })
