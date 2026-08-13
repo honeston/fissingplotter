@@ -27,8 +27,8 @@ const AuthContext = createContext<AuthState | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const cloudEnabled = isCloudSyncEnabled()
-  const [loading, setLoading] = useState(cloudEnabled)
-  const [authenticated, setAuthenticated] = useState(!cloudEnabled)
+  const [loading, setLoading] = useState(true)
+  const [authenticated, setAuthenticated] = useState(false)
   const [syncMessage, setSyncMessage] = useState('')
 
   const runInitialSync = useCallback(async () => {
@@ -44,11 +44,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refreshSession = useCallback(async () => {
-    if (!cloudEnabled) {
-      setAuthenticated(true)
-      setLoading(false)
-      return
-    }
     setLoading(true)
     const session = await cognito.getSession()
     setAuthenticated(Boolean(session))
@@ -56,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (session) {
       await runInitialSync()
     }
-  }, [cloudEnabled, runInitialSync])
+  }, [runInitialSync])
 
   useEffect(() => {
     void refreshSession()

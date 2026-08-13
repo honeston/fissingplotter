@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 type Mode = 'login' | 'signup' | 'confirm'
 
 export function LoginPage() {
-  const { signIn, signUp, confirmSignUp, cloudEnabled, authenticated, loading } = useAuth()
+  const { signIn, signUp, confirmSignUp, authenticated, loading } = useAuth()
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -13,10 +13,6 @@ export function LoginPage() {
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
-
-  if (!cloudEnabled) {
-    return <Navigate to="/" replace />
-  }
 
   if (!loading && authenticated) {
     return <Navigate to="/" replace />
