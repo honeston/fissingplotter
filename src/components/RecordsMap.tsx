@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import L from 'leaflet'
 import { MapContainer, Marker, TileLayer, useMap } from 'react-leaflet'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
@@ -21,6 +21,23 @@ L.Marker.prototype.options.icon = defaultIcon
 const DEFAULT_CENTER: [number, number] = [36.2, 138.25]
 const DEFAULT_ZOOM = 5
 
+function MapResize() {
+  const map = useMap()
+
+  useEffect(() => {
+    const resize = () => map.invalidateSize()
+    resize()
+    const timer = window.setTimeout(resize, 100)
+    window.addEventListener('resize', resize)
+    return () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('resize', resize)
+    }
+  }, [map])
+
+  return null
+}
+
 function FitBounds({ records }: { records: FishingRecord[] }) {
   const map = useMap()
 
@@ -37,6 +54,7 @@ function FitBounds({ records }: { records: FishingRecord[] }) {
       records.map((r) => [r.latitude, r.longitude] as [number, number]),
     )
     map.fitBounds(bounds, { padding: [40, 40] })
+    map.invalidateSize()
   }, [map, records])
 
   return null
@@ -48,11 +66,22 @@ interface RecordsMapProps {
 }
 
 export function RecordsMap({ records, onSelectRecord }: RecordsMapProps) {
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    setReady(true)
+  }, [])
+
+  if (!ready) {
+    return <div className="h-full w-full rounded-xl bg-sky-50" aria-hidden />
+  }
+
   return (
     <MapContainer
       center={DEFAULT_CENTER}
       zoom={DEFAULT_ZOOM}
-      className="h-full w-full rounded-xl"
+      style={{ height: '100%', width: '100%' }}
+      className="z-0 rounded-xl"
       scrollWheelZoom
     >
       <TileLayer
@@ -68,6 +97,7 @@ export function RecordsMap({ records, onSelectRecord }: RecordsMapProps) {
           }}
         />
       ))}
+      <MapResize />
       <FitBounds records={records} />
     </MapContainer>
   )
