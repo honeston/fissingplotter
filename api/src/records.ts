@@ -17,8 +17,13 @@ export interface FishingRecord {
   latitude: number | null
   longitude: number | null
   temperature: number | null
+  weatherCode: number | null
   tideLevel: number | null
   tideHarbor: string | null
+  tideCycle: string | null
+  moonPhase: string | null
+  moonAge: number | null
+  tideSlopeCmPerHour: number | null
   fishSpecies: string | null
   fishSizeCm: number | null
   photoKey: string | null
@@ -34,6 +39,24 @@ function parseFishSizeCm(value: unknown): number | null {
     throw new Error('Invalid fishSizeCm')
   }
   return value
+}
+
+function optionalNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+function optionalString(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+function storedNumber(value: unknown): number | null {
+  if (value == null || value === '') return null
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
+}
+
+function storedString(value: unknown): string | null {
+  return value == null ? null : String(value)
 }
 
 function validateRecord(input: unknown): FishingRecord {
@@ -59,10 +82,15 @@ function validateRecord(input: unknown): FishingRecord {
     recordedAt: r.recordedAt,
     latitude,
     longitude,
-    temperature: typeof r.temperature === 'number' ? r.temperature : null,
-    tideLevel: typeof r.tideLevel === 'number' ? r.tideLevel : null,
-    tideHarbor: typeof r.tideHarbor === 'string' ? r.tideHarbor : null,
-    fishSpecies: typeof r.fishSpecies === 'string' ? r.fishSpecies : null,
+    temperature: optionalNumber(r.temperature),
+    weatherCode: optionalNumber(r.weatherCode),
+    tideLevel: optionalNumber(r.tideLevel),
+    tideHarbor: optionalString(r.tideHarbor),
+    tideCycle: optionalString(r.tideCycle),
+    moonPhase: optionalString(r.moonPhase),
+    moonAge: optionalNumber(r.moonAge),
+    tideSlopeCmPerHour: optionalNumber(r.tideSlopeCmPerHour),
+    fishSpecies: optionalString(r.fishSpecies),
     fishSizeCm: parseFishSizeCm(r.fishSizeCm),
     photoKey: typeof r.photoKey === 'string' ? r.photoKey : null,
   }
@@ -100,8 +128,13 @@ export async function upsertRecord(userId: string, input: unknown): Promise<Fish
         latitude: record.latitude,
         longitude: record.longitude,
         temperature: record.temperature,
+        weatherCode: record.weatherCode,
         tideLevel: record.tideLevel,
         tideHarbor: record.tideHarbor,
+        tideCycle: record.tideCycle,
+        moonPhase: record.moonPhase,
+        moonAge: record.moonAge,
+        tideSlopeCmPerHour: record.tideSlopeCmPerHour,
         fishSpecies: record.fishSpecies,
         fishSizeCm: record.fishSizeCm,
         photoKey: record.photoKey,
@@ -157,10 +190,15 @@ function storedToRecord(item: Record<string, unknown>): FishingRecord {
     latitude: item.latitude == null || item.latitude === '' ? null : Number(item.latitude),
     longitude:
       item.longitude == null || item.longitude === '' ? null : Number(item.longitude),
-    temperature: item.temperature == null ? null : Number(item.temperature),
-    tideLevel: item.tideLevel == null ? null : Number(item.tideLevel),
-    tideHarbor: item.tideHarbor == null ? null : String(item.tideHarbor),
-    fishSpecies: item.fishSpecies == null ? null : String(item.fishSpecies),
+    temperature: storedNumber(item.temperature),
+    weatherCode: storedNumber(item.weatherCode),
+    tideLevel: storedNumber(item.tideLevel),
+    tideHarbor: storedString(item.tideHarbor),
+    tideCycle: storedString(item.tideCycle),
+    moonPhase: storedString(item.moonPhase),
+    moonAge: storedNumber(item.moonAge),
+    tideSlopeCmPerHour: storedNumber(item.tideSlopeCmPerHour),
+    fishSpecies: storedString(item.fishSpecies),
     fishSizeCm: Number.isFinite(fishSizeCm) ? fishSizeCm : null,
     photoKey: item.photoKey == null ? null : String(item.photoKey),
   }
