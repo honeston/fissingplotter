@@ -13,7 +13,6 @@ interface RecordDetailSheetProps {
 const AXIS_LOCK_PX = 10
 const SWIPE_PX = 56
 const DISMISS_PX = 96
-const EDGE_RESISTANCE = 0.28
 const CLOSE_MS = 280
 
 type GestureAxis = 'x' | 'y' | null
@@ -99,17 +98,17 @@ export function RecordDetailSheet({
     scrollRef.current?.scrollTo({ top: 0 })
     dragXRef.current = 0
     dragYRef.current = 0
-    applyPanelTransform(0, 0, true)
+    applyPanelTransform(0, true)
     applyBackdrop(0)
   }, [record.id])
 
-  function applyPanelTransform(x: number, y: number, animate: boolean) {
+  function applyPanelTransform(y: number, animate: boolean) {
     const panel = panelRef.current
     if (!panel) return
     panel.style.transition = animate
       ? `transform ${CLOSE_MS}ms cubic-bezier(0.32, 0.72, 0, 1)`
       : 'none'
-    panel.style.transform = `translate3d(${x}px, ${y}px, 0)`
+    panel.style.transform = `translate3d(0, ${y}px, 0)`
   }
 
   function applyBackdrop(y: number) {
@@ -124,7 +123,7 @@ export function RecordDetailSheet({
     if (closingRef.current) return
     closingRef.current = true
     const height = panelRef.current?.offsetHeight ?? window.innerHeight
-    applyPanelTransform(0, height, true)
+    applyPanelTransform(height, true)
     applyBackdrop(height)
     window.setTimeout(() => navRef.current.onClose(), CLOSE_MS)
   }
@@ -169,7 +168,7 @@ export function RecordDetailSheet({
 
     dragXRef.current = 0
     dragYRef.current = 0
-    applyPanelTransform(0, 0, true)
+    applyPanelTransform(0, true)
     applyBackdrop(0)
   }
 
@@ -224,20 +223,15 @@ export function RecordDetailSheet({
     event.preventDefault()
 
     if (gesture.axis === 'x') {
-      let x = dx
-      if ((dx > 0 && !nav.hasPrevious) || (dx < 0 && !nav.hasNext)) {
-        x = dx * EDGE_RESISTANCE
-      }
-      dragXRef.current = x
+      dragXRef.current = dx
       dragYRef.current = 0
-      applyPanelTransform(x, 0, false)
       return
     }
 
     const y = Math.max(0, dy)
     dragXRef.current = 0
     dragYRef.current = y
-    applyPanelTransform(0, y, false)
+    applyPanelTransform(y, false)
     applyBackdrop(y)
   }
 
