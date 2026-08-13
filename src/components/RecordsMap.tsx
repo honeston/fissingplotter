@@ -1,10 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import L from 'leaflet'
-import { MapContainer, Marker, TileLayer, useMap } from 'react-leaflet'
+import {
+  MapContainer,
+  Marker,
+  TileLayer,
+  useMap,
+  useMapEvents,
+} from 'react-leaflet'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
-import { recordsWithCoordinates } from '../lib/coordinates'
+import { clusterRecordsByZoom } from '../lib/clusterRecords'
+import {
+  recordsWithCoordinates,
+  type MappableRecord,
+} from '../lib/coordinates'
 import type { FishingRecord } from '../types/record'
 
 const defaultIcon = L.icon({
@@ -21,6 +31,22 @@ L.Marker.prototype.options.icon = defaultIcon
 
 const DEFAULT_CENTER: [number, number] = [36.2, 138.25]
 const DEFAULT_ZOOM = 5
+
+const clusterIconCache = new Map<number, L.DivIcon>()
+
+function clusterIcon(count: number) {
+  let icon = clusterIconCache.get(count)
+  if (!icon) {
+    icon = L.divIcon({
+      html: `<span class="record-cluster-marker">${count}</span>`,
+      className: 'record-cluster-icon',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+    })
+    clusterIconCache.set(count, icon)
+  }
+  return icon
+}
 
 function MapResize() {
   const map = useMap()
@@ -39,7 +65,7 @@ function MapResize() {
   return null
 }
 
-function FitBounds({ records }: { records: Array<FishingRecord & { latitude: number; longitude: number }> }) {
+function FitBounds({ records }: { records: MappableRecord[] }) {
   const map = useMap()
 
   useEffect(() => {
@@ -61,18 +87,62 @@ function FitBounds({ records }: { records: Array<FishingRecord & { latitude: num
   return null
 }
 
-interface RecordsMapProps {
-  records: FishingRecord[]
-  onSelectRecord: (record: FishingRecord) => void
+function ClusteredMarkers({
+  records,
+  onSelectRecords,
+}: {
+  records: MappableRecord[]
+  onSelectRecords: (records: FishingRecord[]) => void
+}) {
+  const map = useMap()
+  const [zoom, setZoom] = useState(() => map.getZoom())
+
+  useMapEvents({
+    zoomend() {
+      setZoom(map.getZoom())
+    },
+  })
+
+  const clusters = useMemo(
+    () => clusterRecordsByZoom(records, zoom),
+    [records, zoom],
+  )
+
+  return (
+    <>
+      {clusters.map((cluster) => {
+        const isCluster = cluster.records.length > 1
+        const position: [number, number] = isCluster
+          ? [cluster.latitude, cluster.longitude]
+          : [cluster.records[0].latitude, cluster.records[0].longitude]
+
+        return (
+          <Marker
+            key={cluster.id}
+            position={position}
+            icon={isCluster ? clusterIcon(cluster.records.length) : defaultIcon}
+            title={
+              isCluster ? `${cluster.records.length}件の釣果` : undefined
+            }
+            eventHandlers={{
+              click: () => onSelectRecords(cluster.records),
+            }}
+          />
+        )
+      })}
+    </>
+  )
 }
 
-export function RecordsMap({ records, onSelectRecord }: RecordsMapProps) {
+interface RecordsMapProps {
+  records: FishingRecord[]
+  onSelectRecords: (records: FishingRecord[]) => void
+}
+
+export function RecordsMap({ records, onSelectRecords }: RecordsMapProps) {
   const [ready, setReady] = useState(false)
   const mappableRecords = useMemo(
-    () =>
-      recordsWithCoordinates(records) as Array<
-        FishingRecord & { latitude: number; longitude: number }
-      >,
+    () => recordsWithCoordinates(records),
     [records],
   )
 
@@ -96,15 +166,10 @@ export function RecordsMap({ records, onSelectRecord }: RecordsMapProps) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      {mappableRecords.map((record) => (
-        <Marker
-          key={record.id}
-          position={[record.latitude, record.longitude]}
-          eventHandlers={{
-            click: () => onSelectRecord(record),
-          }}
-        />
-      ))}
+      <ClusteredMarkers
+        records={mappableRecords}
+        onSelectRecords={onSelectRecords}
+      />
       <MapResize />
       <FitBounds records={mappableRecords} />
     </MapContainer>
