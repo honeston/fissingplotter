@@ -4,9 +4,16 @@ import 'leaflet/dist/leaflet.css'
 import 'react-day-picker/style.css'
 import './index.css'
 import App from './App.tsx'
+import { seedDevRecordsIfEmpty } from './lib/seedRecords.ts'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+async function bootstrap() {
+  await seedDevRecordsIfEmpty()
+
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  )
+}
+
+void bootstrap()
