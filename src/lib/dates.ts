@@ -29,3 +29,54 @@ export function formatDateLabel(date: Date): string {
     day: 'numeric',
   })
 }
+
+export interface RecordsByDate {
+  dateKey: string
+  date: Date
+  records: FishingRecord[]
+}
+
+function sortRecordsNewestFirst(records: FishingRecord[]): FishingRecord[] {
+  return [...records].sort(
+    (a, b) =>
+      new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime(),
+  )
+}
+
+/** 日付ごとにグループ化し、日付は新しい順・各日の記録も新しい順 */
+export function groupRecordsByDate(records: FishingRecord[]): RecordsByDate[] {
+  const grouped = new Map<string, FishingRecord[]>()
+
+  for (const record of records) {
+    const key = recordDateKey(record)
+    const list = grouped.get(key)
+    if (list) {
+      list.push(record)
+    } else {
+      grouped.set(key, [record])
+    }
+  }
+
+  return [...grouped.entries()]
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([dateKey, dayRecords]) => ({
+      dateKey,
+      date: new Date(`${dateKey}T00:00:00`),
+      records: sortRecordsNewestFirst(dayRecords),
+    }))
+}
+
+export function recordsGroupedForDisplay(
+  records: FishingRecord[],
+  selectedDate: Date | undefined,
+): RecordsByDate[] {
+  const sorted = sortRecordsNewestFirst(records)
+  if (selectedDate) {
+    const dateKey = toDateKey(selectedDate)
+    const dayRecords = filterRecordsByDate(sorted, dateKey)
+    return dayRecords.length > 0
+      ? [{ dateKey, date: selectedDate, records: dayRecords }]
+      : []
+  }
+  return groupRecordsByDate(sorted)
+}

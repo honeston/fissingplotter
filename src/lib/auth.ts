@@ -10,6 +10,9 @@ import { awsConfig } from './config'
 let userPool: CognitoUserPool | null = null
 
 function getUserPool(): CognitoUserPool {
+  if (!awsConfig.userPoolId || !awsConfig.clientId) {
+    throw new Error('Cognito is not configured')
+  }
   if (!userPool) {
     userPool = new CognitoUserPool({
       UserPoolId: awsConfig.userPoolId,

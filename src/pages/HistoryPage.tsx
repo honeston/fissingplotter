@@ -4,9 +4,8 @@ import { HistoryCalendar } from '../components/HistoryCalendar'
 import { RecordCard } from '../components/RecordCard'
 import { useRecords } from '../hooks/useRecords'
 import {
-  filterRecordsByDate,
   formatDateLabel,
-  toDateKey,
+  recordsGroupedForDisplay,
 } from '../lib/dates'
 import { deleteRecord, exportRecordsJson } from '../lib/sync'
 
@@ -14,10 +13,10 @@ export function HistoryPage() {
   const { records, loading, error, reload } = useRecords()
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
 
-  const displayedRecords = useMemo(() => {
-    if (!selectedDate) return records
-    return filterRecordsByDate(records, toDateKey(selectedDate))
-  }, [records, selectedDate])
+  const recordSections = useMemo(
+    () => recordsGroupedForDisplay(records, selectedDate),
+    [records, selectedDate],
+  )
 
   async function handleDelete(id: string) {
     await deleteRecord(id)
@@ -84,10 +83,7 @@ export function HistoryPage() {
       </div>
 
       {selectedDate && (
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <p className="text-sm font-medium text-sky-900">
-            {formatDateLabel(selectedDate)}の記録（{displayedRecords.length}件）
-          </p>
+        <div className="mb-3 flex justify-end">
           <button
             type="button"
             onClick={() => setSelectedDate(undefined)}
@@ -110,25 +106,34 @@ export function HistoryPage() {
       {!loading &&
         !error &&
         records.length > 0 &&
-        displayedRecords.length === 0 && (
+        recordSections.length === 0 && (
           <p className="rounded-xl border border-dashed border-sky-200 bg-white/70 px-4 py-8 text-center text-sm text-slate-500">
             この日の記録はありません
           </p>
         )}
 
-      <ul className="flex flex-col gap-3">
-        {displayedRecords.map((record) => (
-          <li
-            key={record.id}
-            className="rounded-xl border border-sky-100 bg-white px-4 py-3 shadow-sm"
-          >
-            <RecordCard
-              record={record}
-              onDelete={(id) => void handleDelete(id)}
-            />
-          </li>
+      <div className="flex flex-col gap-6">
+        {recordSections.map(({ dateKey, date, records: dayRecords }) => (
+          <section key={dateKey}>
+            <p className="mb-3 text-sm font-medium text-sky-900">
+              {formatDateLabel(date)}の記録（{dayRecords.length}件）
+            </p>
+            <ul className="flex flex-col gap-3">
+              {dayRecords.map((record) => (
+                <li
+                  key={record.id}
+                  className="rounded-xl border border-sky-100 bg-white px-4 py-3 shadow-sm"
+                >
+                  <RecordCard
+                    record={record}
+                    onDelete={(id) => void handleDelete(id)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
         ))}
-      </ul>
+      </div>
     </main>
   )
 }

@@ -44,14 +44,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refreshSession = useCallback(async () => {
-    setLoading(true)
-    const session = await cognito.getSession()
-    setAuthenticated(Boolean(session))
-    setLoading(false)
-    if (session) {
-      await runInitialSync()
+    if (!cloudEnabled) {
+      setAuthenticated(true)
+      setLoading(false)
+      return
     }
-  }, [runInitialSync])
+
+    setLoading(true)
+    try {
+      const session = await cognito.getSession()
+      setAuthenticated(Boolean(session))
+      if (session) {
+        await runInitialSync()
+      }
+    } catch {
+      setAuthenticated(false)
+    } finally {
+      setLoading(false)
+    }
+  }, [cloudEnabled, runInitialSync])
 
   useEffect(() => {
     void refreshSession()

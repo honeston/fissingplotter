@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 export function SyncStatusBanner() {
   const { cloudEnabled, authenticated, syncMessage, signOut } = useAuth()
 
-  if (!authenticated) return null
+  if (!cloudEnabled || !authenticated) return null
 
   return (
     <div className="border-b border-sky-100 bg-sky-50/80 px-4 py-2 text-xs text-sky-900">
