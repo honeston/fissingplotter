@@ -2,24 +2,43 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { HistoryCalendar } from '../components/HistoryCalendar'
 import { RecordCard } from '../components/RecordCard'
+import { RecordDetailSheet } from '../components/RecordDetailSheet'
 import { useRecords } from '../hooks/useRecords'
 import {
   formatDateLabel,
   recordsGroupedForDisplay,
 } from '../lib/dates'
 import { deleteRecord, exportRecordsJson } from '../lib/sync'
+import type { FishingRecord } from '../types/record'
 
 export function HistoryPage() {
   const { records, loading, error, reload } = useRecords()
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
+  const [selectedRecord, setSelectedRecord] = useState<FishingRecord | null>(
+    null,
+  )
 
   const recordSections = useMemo(
     () => recordsGroupedForDisplay(records, selectedDate),
     [records, selectedDate],
   )
 
+  const navigableRecords = useMemo(
+    () => recordSections.flatMap((section) => section.records),
+    [recordSections],
+  )
+
   async function handleDelete(id: string) {
+    const index = navigableRecords.findIndex((r) => r.id === id)
+    const nextRecord =
+      index >= 0
+        ? (navigableRecords[index + 1] ?? navigableRecords[index - 1] ?? null)
+        : null
+
     await deleteRecord(id)
+    setSelectedRecord((current) =>
+      current?.id === id ? nextRecord : current,
+    )
     await reload()
   }
 
@@ -122,7 +141,8 @@ export function HistoryPage() {
               {dayRecords.map((record) => (
                 <li
                   key={record.id}
-                  className="rounded-xl border border-sky-100 bg-white px-4 py-3 shadow-sm"
+                  onClick={() => setSelectedRecord(record)}
+                  className="cursor-pointer rounded-xl border border-sky-100 bg-white px-4 py-3 shadow-sm transition hover:border-sky-200 active:bg-sky-50"
                 >
                   <RecordCard
                     record={record}
@@ -134,6 +154,16 @@ export function HistoryPage() {
           </section>
         ))}
       </div>
+
+      {selectedRecord && (
+        <RecordDetailSheet
+          record={selectedRecord}
+          records={navigableRecords}
+          onNavigate={setSelectedRecord}
+          onClose={() => setSelectedRecord(null)}
+          onDelete={(id) => void handleDelete(id)}
+        />
+      )}
     </main>
   )
 }
