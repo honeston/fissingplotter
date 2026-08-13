@@ -1,7 +1,24 @@
 import type { FishingRecord } from '../types/record'
 import { getAllRecords, putRecord } from './storage'
+import { getSunTimes } from './sun'
 
 const nullExtras = { fishSizeCm: null as number | null, photoKey: null as string | null }
+
+type SeedInput = Omit<FishingRecord, 'dawnAt' | 'sunriseAt' | 'sunsetAt' | 'duskAt'>
+
+function withSun(record: SeedInput): FishingRecord {
+  const sun =
+    record.latitude != null && record.longitude != null
+      ? getSunTimes(new Date(record.recordedAt), record.latitude, record.longitude)
+      : null
+  return {
+    ...record,
+    dawnAt: sun?.dawnAt ?? null,
+    sunriseAt: sun?.sunriseAt ?? null,
+    sunsetAt: sun?.sunsetAt ?? null,
+    duskAt: sun?.duskAt ?? null,
+  }
+}
 
 /** 開発用サンプル記録（固定 ID で再投入しても重複しない） */
 const DEV_SEED_RECORDS: FishingRecord[] = [
@@ -12,6 +29,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     longitude: 139.4833,
     temperature: 18.2,
     weatherCode: 1,
+    windSpeedMs: 3.2,
     tideLevel: 142,
     tideHarbor: '江の島',
     tideCycle: '大潮',
@@ -29,6 +47,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     longitude: 139.638,
     temperature: 17.8,
     weatherCode: 3,
+    windSpeedMs: 4.1,
     tideLevel: 98,
     tideHarbor: '横浜',
     tideCycle: '中潮',
@@ -46,6 +65,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     longitude: 140.826,
     temperature: 16.5,
     weatherCode: 61,
+    windSpeedMs: 6.8,
     tideLevel: 185,
     tideHarbor: '銚子',
     tideCycle: '大潮',
@@ -63,6 +83,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     longitude: 139.618,
     temperature: 19.1,
     weatherCode: 2,
+    windSpeedMs: 2.4,
     tideLevel: 76,
     tideHarbor: '小田原',
     tideCycle: '小潮',
@@ -79,6 +100,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     longitude: 139.825,
     temperature: 15.9,
     weatherCode: 0,
+    windSpeedMs: 1.6,
     tideLevel: 210,
     tideHarbor: '東京',
     tideCycle: '中潮',
@@ -96,6 +118,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     longitude: 135.195,
     temperature: 20.4,
     weatherCode: 80,
+    windSpeedMs: 5.5,
     tideLevel: null,
     tideHarbor: null,
     tideCycle: null,
@@ -113,6 +136,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     longitude: 139.4833,
     temperature: 21.0,
     weatherCode: 1,
+    windSpeedMs: 2.9,
     tideLevel: 55,
     tideHarbor: '江の島',
     tideCycle: '長潮',
@@ -130,6 +154,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     longitude: 139.638,
     temperature: 14.2,
     weatherCode: 45,
+    windSpeedMs: 0.8,
     tideLevel: 168,
     tideHarbor: '横浜',
     tideCycle: '大潮',
@@ -147,6 +172,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     longitude: 140.826,
     temperature: 13.8,
     weatherCode: 3,
+    windSpeedMs: 7.2,
     tideLevel: 92,
     tideHarbor: '銚子',
     tideCycle: '中潮',
@@ -164,6 +190,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     longitude: 139.618,
     temperature: 12.6,
     weatherCode: 71,
+    windSpeedMs: 3.7,
     tideLevel: 134,
     tideHarbor: '小田原',
     tideCycle: '小潮',
@@ -174,7 +201,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
     fishSizeCm: 26,
     photoKey: null,
   },
-]
+].map(withSun)
 
 function daysAgo(days: number, hour: number, minute: number): string {
   const d = new Date()

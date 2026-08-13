@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { getCurrentPosition } from '../lib/geolocation'
 import { addRecord } from '../lib/sync'
+import { getSunTimes } from '../lib/sun'
 import { fetchTideLevel } from '../lib/tide'
 import { fetchWeather } from '../lib/weather'
 import type { FishingRecord, RecordFormInput } from '../types/record'
@@ -88,6 +89,11 @@ export function useRecord() {
 
       let temperature: number | null = null
       let weatherCode: number | null = null
+      let windSpeedMs: number | null = null
+      let dawnAt: string | null = null
+      let sunriseAt: string | null = null
+      let sunsetAt: string | null = null
+      let duskAt: string | null = null
       let tideLevel: number | null = null
       let tideHarbor: string | null = null
       let tideCycle: string | null = null
@@ -96,6 +102,14 @@ export function useRecord() {
       let tideSlopeCmPerHour: number | null = null
 
       if (latitude != null && longitude != null) {
+        const sun = getSunTimes(new Date(), latitude, longitude)
+        if (sun) {
+          dawnAt = sun.dawnAt
+          sunriseAt = sun.sunriseAt
+          sunsetAt = sun.sunsetAt
+          duskAt = sun.duskAt
+        }
+
         const [weatherSettled, tideSettled] = await Promise.allSettled([
           fetchWeather(latitude, longitude),
           fetchTideLevel(latitude, longitude),
@@ -104,6 +118,7 @@ export function useRecord() {
         if (weatherSettled.status === 'fulfilled') {
           temperature = weatherSettled.value.temperature
           weatherCode = weatherSettled.value.weatherCode
+          windSpeedMs = weatherSettled.value.windSpeedMs
         } else {
           const message = errMessage(weatherSettled.reason, '天気の取得に失敗しました')
           warnings.push(message)
@@ -147,6 +162,11 @@ export function useRecord() {
             longitude,
             temperature,
             weatherCode,
+            windSpeedMs,
+            dawnAt,
+            sunriseAt,
+            sunsetAt,
+            duskAt,
             tideLevel,
             tideHarbor,
             tideCycle,

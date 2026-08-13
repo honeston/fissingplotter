@@ -6,6 +6,11 @@ export interface FishingRecord {
   longitude: number | null
   temperature: number | null
   weatherCode: number | null
+  windSpeedMs: number | null
+  dawnAt: string | null
+  sunriseAt: string | null
+  sunsetAt: string | null
+  duskAt: string | null
   tideLevel: number | null
   tideHarbor: string | null
   tideCycle: string | null

@@ -18,6 +18,11 @@ export interface FishingRecord {
   longitude: number | null
   temperature: number | null
   weatherCode: number | null
+  windSpeedMs: number | null
+  dawnAt: string | null
+  sunriseAt: string | null
+  sunsetAt: string | null
+  duskAt: string | null
   tideLevel: number | null
   tideHarbor: string | null
   tideCycle: string | null
@@ -84,6 +89,11 @@ function validateRecord(input: unknown): FishingRecord {
     longitude,
     temperature: optionalNumber(r.temperature),
     weatherCode: optionalNumber(r.weatherCode),
+    windSpeedMs: optionalNumber(r.windSpeedMs),
+    dawnAt: optionalString(r.dawnAt),
+    sunriseAt: optionalString(r.sunriseAt),
+    sunsetAt: optionalString(r.sunsetAt),
+    duskAt: optionalString(r.duskAt),
     tideLevel: optionalNumber(r.tideLevel),
     tideHarbor: optionalString(r.tideHarbor),
     tideCycle: optionalString(r.tideCycle),
@@ -129,6 +139,11 @@ export async function upsertRecord(userId: string, input: unknown): Promise<Fish
         longitude: record.longitude,
         temperature: record.temperature,
         weatherCode: record.weatherCode,
+        windSpeedMs: record.windSpeedMs,
+        dawnAt: record.dawnAt,
+        sunriseAt: record.sunriseAt,
+        sunsetAt: record.sunsetAt,
+        duskAt: record.duskAt,
         tideLevel: record.tideLevel,
         tideHarbor: record.tideHarbor,
         tideCycle: record.tideCycle,
@@ -192,6 +207,11 @@ function storedToRecord(item: Record<string, unknown>): FishingRecord {
       item.longitude == null || item.longitude === '' ? null : Number(item.longitude),
     temperature: storedNumber(item.temperature),
     weatherCode: storedNumber(item.weatherCode),
+    windSpeedMs: storedNumber(item.windSpeedMs),
+    dawnAt: storedString(item.dawnAt),
+    sunriseAt: storedString(item.sunriseAt),
+    sunsetAt: storedString(item.sunsetAt),
+    duskAt: storedString(item.duskAt),
     tideLevel: storedNumber(item.tideLevel),
     tideHarbor: storedString(item.tideHarbor),
     tideCycle: storedString(item.tideCycle),

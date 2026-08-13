@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { usePhotoUrl } from '../hooks/usePhotoUrl'
 import type { RecordResult } from '../hooks/useRecord'
-import { formatTideCycleMoon, formatTideSlope } from '../lib/formatRecord'
+import { formatSunLine, formatTideCycleMoon, formatTideSlope } from '../lib/formatRecord'
 import { weatherCodeLabel } from '../lib/weatherCode'
 
 function SavedRecordSummary({ result }: { result: RecordResult }) {
@@ -42,6 +42,14 @@ function SavedRecordSummary({ result }: { result: RecordResult }) {
         <div className="flex justify-between gap-2">
           <dt>気温</dt>
           <dd>{saved.temperature != null ? `${saved.temperature}℃` : '—'}</dd>
+        </div>
+        <div className="flex justify-between gap-2">
+          <dt>風速</dt>
+          <dd>{saved.windSpeedMs != null ? `${saved.windSpeedMs} m/s` : '—'}</dd>
+        </div>
+        <div className="flex justify-between gap-2">
+          <dt>薄明・日出没</dt>
+          <dd>{formatSunLine(saved)}</dd>
         </div>
         <div className="flex justify-between gap-2">
           <dt>潮位</dt>

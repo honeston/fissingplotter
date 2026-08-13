@@ -301,8 +301,18 @@ export function RecordDetailSheet({
         onPointerCancel={onPointerUp}
       >
         <div ref={headerRef} className="detail-sheet-header shrink-0 px-4 pt-2">
-          <div className="mb-2 flex justify-center pt-1">
-            <span className="h-1 w-10 rounded-full bg-slate-300" aria-hidden />
+          <div className="mb-2 cursor-grab select-none touch-none active:cursor-grabbing">
+            <div className="flex justify-center pt-1">
+              <span className="h-1 w-10 rounded-full bg-slate-300" aria-hidden />
+            </div>
+            <p className="pointer-events-none mt-2 text-center text-sm font-medium text-sky-950">
+              {new Date(record.recordedAt).toLocaleDateString('ja-JP', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'short',
+              })}
+            </p>
           </div>
           <div className="mb-3 flex items-center justify-between">
             <h2

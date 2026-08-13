@@ -4,12 +4,37 @@ import { weatherCodeLabel } from './weatherCode'
 const FLAT_SLOPE_CM_PER_HOUR = 1
 
 export function formatWeatherLine(record: FishingRecord): string {
+  const bits: string[] = []
   const label = record.weatherCode != null ? weatherCodeLabel(record.weatherCode) : null
-  const temp = record.temperature != null ? `${record.temperature}℃` : null
-  if (label && temp) return `${label} ${temp}`
-  if (label) return label
-  if (temp) return temp
-  return '—'
+  if (label) bits.push(label)
+  if (record.temperature != null) bits.push(`${record.temperature}℃`)
+  if (record.windSpeedMs != null) bits.push(`${record.windSpeedMs}m/s`)
+  return bits.length ? bits.join(' ') : '—'
+}
+
+function formatClock(iso: string | null): string | null {
+  if (!iso) return null
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toLocaleTimeString('ja-JP', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'Asia/Tokyo',
+  })
+}
+
+export function formatSunLine(record: FishingRecord): string {
+  const dawn = formatClock(record.dawnAt)
+  const sunrise = formatClock(record.sunriseAt)
+  const sunset = formatClock(record.sunsetAt)
+  const dusk = formatClock(record.duskAt)
+  const parts: string[] = []
+  if (dawn) parts.push(`薄明${dawn}`)
+  if (sunrise) parts.push(`日出${sunrise}`)
+  if (sunset) parts.push(`日没${sunset}`)
+  if (dusk) parts.push(`薄明${dusk}`)
+  return parts.length ? parts.join(' ') : '—'
 }
 
 export function formatTideCycleMoon(record: FishingRecord): string {
