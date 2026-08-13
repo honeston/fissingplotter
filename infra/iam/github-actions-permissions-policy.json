@@ -81,6 +81,8 @@
         "arn:aws:s3:::fissingplotter-media-319640345981/*"
       ]
     },
+    {
+      "Sid": "StaticSiteBucket",
       "Effect": "Allow",
       "Action": [
         "s3:CreateBucket",
