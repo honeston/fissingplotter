@@ -15,6 +15,7 @@ interface AuthState {
   loading: boolean
   authenticated: boolean
   cloudEnabled: boolean
+  userEmail: string | null
   syncMessage: string
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const cloudEnabled = isCloudSyncEnabled()
   const [loading, setLoading] = useState(true)
   const [authenticated, setAuthenticated] = useState(false)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
   const [syncMessage, setSyncMessage] = useState('')
 
   const runInitialSync = useCallback(async () => {
@@ -55,10 +57,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const session = await cognito.getSession()
       setAuthenticated(Boolean(session))
       if (session) {
+        setUserEmail(await cognito.getSignedInEmail())
         await runInitialSync()
+      } else {
+        setUserEmail(null)
       }
     } catch {
       setAuthenticated(false)
+      setUserEmail(null)
     } finally {
       setLoading(false)
     }
@@ -83,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (email: string, password: string) => {
       await cognito.signIn(email, password)
       setAuthenticated(true)
+      setUserEmail(email.trim())
       await runInitialSync()
     },
     [runInitialSync],
@@ -99,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => {
     cognito.signOut()
     setAuthenticated(false)
+    setUserEmail(null)
     setSyncMessage('')
   }, [])
 
@@ -107,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       authenticated,
       cloudEnabled,
+      userEmail,
       syncMessage,
       signIn,
       signUp,
@@ -118,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       authenticated,
       cloudEnabled,
+      userEmail,
       syncMessage,
       signIn,
       signUp,

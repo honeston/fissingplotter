@@ -106,13 +106,30 @@ export function signOut(): void {
   getCurrentCognitoUser()?.signOut()
 }
 
-export async function getUserId(): Promise<string | null> {
-  const session = await getSession()
-  if (!session) return null
+function readIdTokenPayload(idToken: string): Record<string, unknown> | null {
   try {
-    const payload = JSON.parse(atob(session.idToken.split('.')[1] ?? '')) as { sub?: string }
-    return payload.sub ?? null
+    const payload = idToken.split('.')[1]
+    if (!payload) return null
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+    return JSON.parse(json) as Record<string, unknown>
   } catch {
     return null
   }
+}
+
+export async function getUserId(): Promise<string | null> {
+  const session = await getSession()
+  if (!session) return null
+  const payload = readIdTokenPayload(session.idToken)
+  return typeof payload?.sub === 'string' ? payload.sub : null
+}
+
+export async function getSignedInEmail(): Promise<string | null> {
+  const session = await getSession()
+  if (!session) return null
+  const payload = readIdTokenPayload(session.idToken)
+  if (typeof payload?.email === 'string' && payload.email) return payload.email
+  const username = payload?.['cognito:username']
+  if (typeof username === 'string' && username) return username
+  return getCurrentCognitoUser()?.getUsername() ?? null
 }
