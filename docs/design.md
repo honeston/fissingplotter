@@ -67,13 +67,13 @@ interface FishingRecord {
 - 「記録する」ボタン
 
 ### 履歴（`/history`）
-- 一覧・削除・JSON エクスポート
+- 一覧・削除
 - 座標は Google Maps リンク
 
 ## 6. 制約
 
 - Geolocation は HTTPS 必須（localhost 除く）
-- データは端末内のみ → JSON エクスポートでバックアップ
+- データは端末内とクラウド同期
 - 潮位は天文潮位（予測値）、最寄港ベース
 
 ## 7. ホスティング

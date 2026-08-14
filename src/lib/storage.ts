@@ -169,9 +169,3 @@ export async function deletePhotoBlob(recordId: string): Promise<void> {
   const db = await getDb()
   await db.delete(PHOTO_STORE, recordId)
 }
-
-/** バックアップ用 JSON 文字列 */
-export async function exportRecordsJson(): Promise<string> {
-  const records = await getAllRecords()
-  return JSON.stringify(records, null, 2)
-}

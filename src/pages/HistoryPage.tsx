@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { HistoryCalendar } from '../components/HistoryCalendar'
 import { RecordCard } from '../components/RecordCard'
 import { RecordDetailSheet } from '../components/RecordDetailSheet'
@@ -7,13 +7,23 @@ import { useRecords } from '../hooks/useRecords'
 import {
   formatDateLabel,
   recordsGroupedForDisplay,
+  toDateKey,
 } from '../lib/dates'
-import { deleteRecord, exportRecordsJson } from '../lib/sync'
+import { deleteRecord } from '../lib/sync'
 import type { FishingRecord } from '../types/record'
+
+function dateFromKey(dateKey: string | null): Date | undefined {
+  if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return undefined
+  const date = new Date(`${dateKey}T00:00:00`)
+  return Number.isNaN(date.getTime()) ? undefined : date
+}
 
 export function HistoryPage() {
   const { records, loading, error, reload } = useRecords()
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>()
+  const [searchParams] = useSearchParams()
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(() =>
+    dateFromKey(searchParams.get('date')),
+  )
   const [selectedRecord, setSelectedRecord] = useState<FishingRecord | null>(
     null,
   )
@@ -42,17 +52,6 @@ export function HistoryPage() {
     await reload()
   }
 
-  async function handleExport() {
-    const json = await exportRecordsJson()
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `fissing-records-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
       <header className="mb-6 flex items-start justify-between gap-3">
@@ -69,29 +68,6 @@ export function HistoryPage() {
           記録
         </Link>
       </header>
-
-      <div className="mb-4 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => void handleExport()}
-          disabled={records.length === 0}
-          className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm disabled:opacity-40"
-        >
-          JSON エクスポート
-        </button>
-        {records.length > 0 ? (
-          <Link
-            to="/history/map"
-            className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
-          >
-            マップ表示
-          </Link>
-        ) : (
-          <span className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 opacity-40 shadow-sm">
-            マップ表示
-          </span>
-        )}
-      </div>
 
       <div className="mb-4">
         <HistoryCalendar
@@ -112,6 +88,25 @@ export function HistoryPage() {
           </button>
         </div>
       )}
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        {navigableRecords.length > 0 ? (
+          <Link
+            to={
+              selectedDate
+                ? `/history/map?date=${toDateKey(selectedDate)}`
+                : '/history/map'
+            }
+            className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
+          >
+            マップ表示
+          </Link>
+        ) : (
+          <span className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 opacity-40 shadow-sm">
+            マップ表示
+          </span>
+        )}
+      </div>
 
       {loading && <p className="text-sm text-slate-500">読み込み中…</p>}
       {error && <p className="text-sm text-red-700">{error}</p>}

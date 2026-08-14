@@ -142,5 +142,3 @@ export async function deleteRecord(id: string): Promise<void> {
     }
   }
 }
-
-export { exportRecordsJson } from './storage'
