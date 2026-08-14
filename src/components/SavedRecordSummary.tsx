@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom'
 import { usePhotoUrl } from '../hooks/usePhotoUrl'
 import type { RecordResult } from '../hooks/useRecord'
-import { formatSunLine, formatTideCycleMoon, formatTideSlope } from '../lib/formatRecord'
-import { weatherCodeLabel } from '../lib/weatherCode'
+import { RecordValueList } from './RecordValueList'
 
 function SavedRecordSummary({ result }: { result: RecordResult }) {
   const { record: saved, warnings } = result
@@ -26,47 +25,7 @@ function SavedRecordSummary({ result }: { result: RecordResult }) {
           className="mt-2 h-24 w-24 rounded-lg border border-cyan-200 object-cover"
         />
       )}
-      <dl className="mt-2 space-y-1 text-xs">
-        <div className="flex justify-between gap-2">
-          <dt>座標</dt>
-          <dd>
-            {saved.latitude != null && saved.longitude != null
-              ? `${saved.latitude.toFixed(5)}, ${saved.longitude.toFixed(5)}`
-              : '—'}
-          </dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt>天気</dt>
-          <dd>{weatherCodeLabel(saved.weatherCode)}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt>気温</dt>
-          <dd>{saved.temperature != null ? `${saved.temperature}℃` : '—'}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt>風速</dt>
-          <dd>{saved.windSpeedMs != null ? `${saved.windSpeedMs} m/s` : '—'}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt>太陽</dt>
-          <dd>{formatSunLine(saved)}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt>潮位</dt>
-          <dd>
-            {saved.tideLevel != null ? `${saved.tideLevel} cm` : '—'}
-            {saved.tideHarbor ? `（${saved.tideHarbor}）` : ''}
-          </dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt>潮種</dt>
-          <dd>{formatTideCycleMoon(saved)}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt>潮位変化</dt>
-          <dd>{formatTideSlope(saved.tideSlopeCmPerHour)}</dd>
-        </div>
-      </dl>
+      <RecordValueList record={saved} />
       {warnings.length > 0 && (
         <ul className="mt-2 list-disc pl-4 text-xs text-amber-800">
           {warnings.map((w) => (

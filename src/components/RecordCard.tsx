@@ -2,6 +2,7 @@ import { hasCoordinates } from '../lib/coordinates'
 import { formatSunLine, formatTideLine, formatWeatherLine } from '../lib/formatRecord'
 import { mapsUrl } from '../lib/maps'
 import { usePhotoUrl } from '../hooks/usePhotoUrl'
+import { RecordValueList } from './RecordValueList'
 import type { FishingRecord } from '../types/record'
 
 interface RecordCardProps {
@@ -29,7 +30,12 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
           )}
         </div>
         <div className="flex items-start justify-between gap-2">
-          <RecordDetails record={record} />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-slate-500">
+              {new Date(record.recordedAt).toLocaleString('ja-JP')}
+            </p>
+            <RecordValueList record={record} />
+          </div>
           {onDelete && (
             <button
               type="button"

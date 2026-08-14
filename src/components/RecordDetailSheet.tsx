@@ -294,7 +294,7 @@ export function RecordDetailSheet({
       />
       <div
         ref={panelRef}
-        className="detail-sheet-panel relative flex h-[85dvh] flex-col rounded-t-2xl border border-sky-100 bg-white shadow-lg"
+        className="detail-sheet-panel relative mx-auto flex h-[85dvh] w-full max-w-md flex-col rounded-t-2xl border border-sky-100 bg-white shadow-lg"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
