@@ -82,6 +82,14 @@ export function HomePage() {
         </Link>
       </header>
 
+      <PhotoInput
+        previewUrl={photoPreviewUrl}
+        onPreviewChange={setPhotoPreviewUrl}
+        photoBlob={photoBlob}
+        onPhotoChange={setPhotoBlob}
+        disabled={busy}
+      />
+
       <FishSpeciesInput value={fishSpecies} onChange={setFishSpecies} disabled={busy} />
 
       <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor="fish-size">
@@ -98,14 +106,6 @@ export function HomePage() {
         onChange={(e) => setFishSizeCm(e.target.value)}
         disabled={busy}
         className="mb-4 w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-base text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
-      />
-
-      <PhotoInput
-        previewUrl={photoPreviewUrl}
-        onPreviewChange={setPhotoPreviewUrl}
-        photoBlob={photoBlob}
-        onPhotoChange={setPhotoBlob}
-        disabled={busy}
       />
 
       <p className="mb-4 text-sm text-slate-500">
