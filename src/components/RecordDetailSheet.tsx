@@ -1,6 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { RecordCard } from './RecordCard'
+import { hasCoordinates } from '../lib/coordinates'
 import type { FishingRecord } from '../types/record'
+
+const RecordsMap = lazy(() =>
+  import('./RecordsMap').then((m) => ({ default: m.RecordsMap })),
+)
 
 interface RecordDetailSheetProps {
   record: FishingRecord
@@ -29,7 +34,7 @@ interface GestureState {
 function isInteractiveTarget(target: EventTarget | null) {
   return (
     target instanceof Element &&
-    Boolean(target.closest('button, a, input, textarea, select'))
+    Boolean(target.closest('button, a, input, textarea, select, .leaflet-container'))
   )
 }
 
@@ -360,6 +365,20 @@ export function RecordDetailSheet({
           className="detail-sheet-scroll min-h-0 flex-1 overflow-y-auto px-4 pb-6"
         >
           <RecordCard record={record} onDelete={onDelete} showLargePhoto />
+          {hasCoordinates(record) && (
+            <div
+              key={record.id}
+              className="mt-4 h-52 overflow-hidden rounded-xl border border-sky-100"
+            >
+              <Suspense
+                fallback={
+                  <div className="h-full w-full bg-sky-50" aria-hidden />
+                }
+              >
+                <RecordsMap records={[record]} onSelectRecords={() => {}} />
+              </Suspense>
+            </div>
+          )}
         </div>
       </div>
     </div>

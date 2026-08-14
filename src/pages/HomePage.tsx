@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FishSpeciesInput } from '../components/FishSpeciesInput'
 import { PhotoInput } from '../components/PhotoInput'
@@ -13,6 +13,29 @@ export function HomePage() {
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
   const { busy, steps, errors, lastResult, record, reset } = useRecord()
   const [fatalError, setFatalError] = useState('')
+  const statusRef = useRef<HTMLDivElement>(null)
+  const summaryRef = useRef<HTMLDivElement>(null)
+  const topRef = useRef<HTMLElement>(null)
+
+  function scrollToTop() {
+    topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  useEffect(() => {
+    if (!busy) return
+    const node = statusRef.current
+    if (!node) return
+    node.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    node.focus({ preventScroll: true })
+  }, [busy])
+
+  useEffect(() => {
+    if (!lastResult) return
+    const node = summaryRef.current
+    if (!node) return
+    node.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    node.focus({ preventScroll: true })
+  }, [lastResult])
 
   async function handleRecord() {
     setFatalError('')
@@ -46,7 +69,7 @@ export function HomePage() {
 
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
-      <header className="mb-8 flex items-start justify-between gap-3">
+      <header ref={topRef} className="mb-8 flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-medium tracking-wide text-cyan-700">Fissing Plotter</p>
           <h1 className="mt-1 text-2xl font-semibold text-sky-950">記録</h1>
@@ -89,17 +112,12 @@ export function HomePage() {
         ボタンを押すと、現在地・天気・気温・潮位を取得して保存します。位置情報が取れない場合も記録できます（オフライン時は端末のみ）。
       </p>
 
-      <RecordProgress steps={steps} errors={errors} />
-
-      {fatalError && (
-        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
-          {fatalError}
-        </p>
-      )}
-
-      {lastResult && <SavedRecordSummary result={lastResult} />}
-
       <div className="mt-auto">
+        {fatalError && (
+          <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+            {fatalError}
+          </p>
+        )}
         <button
           type="button"
           onClick={() => void handleRecord()}
@@ -108,6 +126,33 @@ export function HomePage() {
         >
           {busy ? '記録中…' : '記録する'}
         </button>
+        <div
+          ref={statusRef}
+          tabIndex={-1}
+          className="mt-4 scroll-mt-4 outline-none"
+        >
+          <RecordProgress steps={steps} errors={errors} />
+          {lastResult && (
+            <div ref={summaryRef} tabIndex={-1} className="scroll-mt-4 outline-none">
+              <SavedRecordSummary result={lastResult} />
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={scrollToTop}
+                  className="flex min-h-11 flex-1 items-center justify-center rounded-xl bg-cyan-700 px-3 py-2 text-sm font-semibold text-white shadow-sm enabled:active:scale-[0.98]"
+                >
+                  続けて記録
+                </button>
+                <Link
+                  to="/history"
+                  className="flex min-h-11 flex-1 items-center justify-center rounded-xl border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
+                >
+                  履歴を見る
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </main>
   )
