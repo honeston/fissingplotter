@@ -12,10 +12,24 @@ export function formatWeatherLine(record: FishingRecord): string {
   return bits.length ? bits.join(' ') : '—'
 }
 
-function formatClock(iso: string | null): string | null {
+const SUN_NEAR_MS = 2 * 60 * 60 * 1000
+
+function parseTime(iso: string | null): number | null {
   if (!iso) return null
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return null
+  const ms = new Date(iso).getTime()
+  return Number.isNaN(ms) ? null : ms
+}
+
+function formatSignedDuration(ms: number): string {
+  const sign = ms >= 0 ? '+' : '-'
+  const totalMinutes = Math.round(Math.abs(ms) / 60000)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  return `${sign}${hours}:${String(minutes).padStart(2, '0')}`
+}
+
+function formatClock(iso: string | number): string {
+  const date = typeof iso === 'number' ? new Date(iso) : new Date(iso)
   return date.toLocaleTimeString('ja-JP', {
     hour: '2-digit',
     minute: '2-digit',
@@ -24,29 +38,33 @@ function formatClock(iso: string | null): string | null {
   })
 }
 
+/** 日出・日没の近い方。±2時間以内なら時刻と差、それ以外は日中／夜間と時分。 */
 export function formatSunLine(record: FishingRecord): string {
-  const dawn = formatClock(record.dawnAt)
-  const sunrise = formatClock(record.sunriseAt)
-  const sunset = formatClock(record.sunsetAt)
-  const dusk = formatClock(record.duskAt)
-  const parts: string[] = []
-  if (dawn) parts.push(`薄明${dawn}`)
-  if (sunrise) parts.push(`日出${sunrise}`)
-  if (sunset) parts.push(`日没${sunset}`)
-  if (dusk) parts.push(`薄明${dusk}`)
-  return parts.length ? parts.join(' ') : '—'
+  const recorded = parseTime(record.recordedAt)
+  const sunrise = parseTime(record.sunriseAt)
+  const sunset = parseTime(record.sunsetAt)
+  if (recorded == null || sunrise == null || sunset == null) return '—'
+
+  const sunriseDelta = recorded - sunrise
+  const sunsetDelta = recorded - sunset
+  const nearerSunrise = Math.abs(sunriseDelta) <= Math.abs(sunsetDelta)
+  const nearerDelta = nearerSunrise ? sunriseDelta : sunsetDelta
+
+  if (Math.abs(nearerDelta) <= SUN_NEAR_MS) {
+    const label = nearerSunrise ? '日出' : '日没'
+    const eventAt = nearerSunrise ? sunrise : sunset
+    return `${label} ${formatClock(eventAt)} ${formatSignedDuration(nearerDelta)}`
+  }
+
+  const period = recorded >= sunrise && recorded < sunset ? '日中' : '夜間'
+  return `${period} ${formatClock(recorded)}`
 }
 
 export function formatTideCycleMoon(record: FishingRecord): string {
   const bits: string[] = []
   if (record.tideCycle) bits.push(record.tideCycle)
   if (record.moonPhase) bits.push(record.moonPhase)
-  let text = bits.join('・')
-  if (record.moonAge != null) {
-    const age = `月齢${record.moonAge}`
-    text = text ? `${text}（${age}）` : age
-  }
-  return text || '—'
+  return bits.join('・') || '—'
 }
 
 export function formatTideSlope(cmPerHour: number | null): string {

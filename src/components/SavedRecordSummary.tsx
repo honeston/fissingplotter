@@ -48,7 +48,7 @@ function SavedRecordSummary({ result }: { result: RecordResult }) {
           <dd>{saved.windSpeedMs != null ? `${saved.windSpeedMs} m/s` : '—'}</dd>
         </div>
         <div className="flex justify-between gap-2">
-          <dt>薄明・日出没</dt>
+          <dt>太陽</dt>
           <dd>{formatSunLine(saved)}</dd>
         </div>
         <div className="flex justify-between gap-2">
@@ -59,7 +59,7 @@ function SavedRecordSummary({ result }: { result: RecordResult }) {
           </dd>
         </div>
         <div className="flex justify-between gap-2">
-          <dt>潮種・月相</dt>
+          <dt>潮種</dt>
           <dd>{formatTideCycleMoon(saved)}</dd>
         </div>
         <div className="flex justify-between gap-2">

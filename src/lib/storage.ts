@@ -1,5 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import type { FishingRecord, NewFishingRecord } from '../types/record'
+import { getSunTimes } from './sun'
 
 interface FissingDB extends DBSchema {
   records: {
@@ -37,10 +38,31 @@ function getDb() {
   return dbPromise
 }
 
+function fillSunTimes(record: FishingRecord): FishingRecord {
+  if (
+    record.sunriseAt &&
+    record.sunsetAt &&
+    record.dawnAt &&
+    record.duskAt
+  ) {
+    return record
+  }
+  if (record.latitude == null || record.longitude == null) return record
+  const sun = getSunTimes(new Date(record.recordedAt), record.latitude, record.longitude)
+  if (!sun) return record
+  return {
+    ...record,
+    dawnAt: record.dawnAt ?? sun.dawnAt,
+    sunriseAt: record.sunriseAt ?? sun.sunriseAt,
+    sunsetAt: record.sunsetAt ?? sun.sunsetAt,
+    duskAt: record.duskAt ?? sun.duskAt,
+  }
+}
+
 function normalizeRecord(record: FishingRecord): FishingRecord {
   const latitude = record.latitude ?? null
   const longitude = record.longitude ?? null
-  return {
+  return fillSunTimes({
     ...record,
     latitude: Number.isFinite(latitude) ? latitude : null,
     longitude: Number.isFinite(longitude) ? longitude : null,
@@ -56,7 +78,7 @@ function normalizeRecord(record: FishingRecord): FishingRecord {
     tideSlopeCmPerHour: record.tideSlopeCmPerHour ?? null,
     fishSizeCm: record.fishSizeCm ?? null,
     photoKey: record.photoKey ?? null,
-  }
+  })
 }
 
 function buildRecord(input: NewFishingRecord): FishingRecord {
@@ -96,11 +118,27 @@ export async function addRecord(input: NewFishingRecord): Promise<FishingRecord>
   return record
 }
 
-/** 新しい順で全件取得 */
+/** 新しい順で全件取得。日出没が無い記録は座標から補完して保存する。 */
 export async function getAllRecords(): Promise<FishingRecord[]> {
   const db = await getDb()
   const records = await db.getAllFromIndex(STORE, 'by-recordedAt')
-  return records.reverse().map(normalizeRecord)
+  const normalized = records.reverse().map(normalizeRecord)
+
+  await Promise.all(
+    normalized.map(async (record, index) => {
+      const raw = records[records.length - 1 - index]
+      if (
+        record.sunriseAt !== (raw.sunriseAt ?? null) ||
+        record.sunsetAt !== (raw.sunsetAt ?? null) ||
+        record.dawnAt !== (raw.dawnAt ?? null) ||
+        record.duskAt !== (raw.duskAt ?? null)
+      ) {
+        await db.put(STORE, record)
+      }
+    }),
+  )
+
+  return normalized
 }
 
 export async function getRecord(id: string): Promise<FishingRecord | undefined> {

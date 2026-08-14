@@ -1,221 +1,273 @@
 import type { FishingRecord } from '../types/record'
-import { getAllRecords, putRecord } from './storage'
+import { putRecord } from './storage'
 import { getSunTimes } from './sun'
 
 const nullExtras = { fishSizeCm: null as number | null, photoKey: null as string | null }
 
-type SeedInput = Omit<FishingRecord, 'dawnAt' | 'sunriseAt' | 'sunsetAt' | 'duskAt'>
+type SeedBase = Omit<
+  FishingRecord,
+  'recordedAt' | 'dawnAt' | 'sunriseAt' | 'sunsetAt' | 'duskAt'
+>
 
-function withSun(record: SeedInput): FishingRecord {
-  const sun =
-    record.latitude != null && record.longitude != null
-      ? getSunTimes(new Date(record.recordedAt), record.latitude, record.longitude)
-      : null
+type SunOffset =
+  | { at: 'sunrise'; minutes: number }
+  | { at: 'sunset'; minutes: number }
+  | { at: 'day' }
+  | { at: 'night' }
+
+function addMinutes(iso: string, minutes: number): Date {
+  return new Date(new Date(iso).getTime() + minutes * 60_000)
+}
+
+function stampSun(base: SeedBase, daysAgoCount: number, offset: SunOffset): FishingRecord {
+  const noon = new Date()
+  noon.setDate(noon.getDate() - daysAgoCount)
+  noon.setHours(12, 0, 0, 0)
+
+  const latitude = base.latitude ?? 35.68
+  const longitude = base.longitude ?? 139.76
+  const sun = getSunTimes(noon, latitude, longitude)
+
+  let recordedAt = noon
+  if (sun) {
+    if (offset.at === 'sunrise') recordedAt = addMinutes(sun.sunriseAt, offset.minutes)
+    else if (offset.at === 'sunset') recordedAt = addMinutes(sun.sunsetAt, offset.minutes)
+    else if (offset.at === 'day') {
+      recordedAt = new Date(
+        (new Date(sun.sunriseAt).getTime() + new Date(sun.sunsetAt).getTime()) / 2,
+      )
+    } else {
+      recordedAt = addMinutes(sun.sunsetAt, 4 * 60)
+    }
+  }
+
+  const stamped = getSunTimes(recordedAt, latitude, longitude) ?? sun
   return {
-    ...record,
-    dawnAt: sun?.dawnAt ?? null,
-    sunriseAt: sun?.sunriseAt ?? null,
-    sunsetAt: sun?.sunsetAt ?? null,
-    duskAt: sun?.duskAt ?? null,
+    ...base,
+    recordedAt: recordedAt.toISOString(),
+    dawnAt: stamped?.dawnAt ?? null,
+    sunriseAt: stamped?.sunriseAt ?? null,
+    sunsetAt: stamped?.sunsetAt ?? null,
+    duskAt: stamped?.duskAt ?? null,
   }
 }
 
-/** 開発用サンプル記録（固定 ID で再投入しても重複しない） */
+/** 開発用サンプル。日出±・日没±・日中・夜間が見えるよう時刻を置く。 */
 const DEV_SEED_RECORDS: FishingRecord[] = [
-  {
-    id: 'seed-001',
-    recordedAt: daysAgo(0, 6, 30),
-    latitude: 35.3167,
-    longitude: 139.4833,
-    temperature: 18.2,
-    weatherCode: 1,
-    windSpeedMs: 3.2,
-    tideLevel: 142,
-    tideHarbor: '江の島',
-    tideCycle: '大潮',
-    moonPhase: '新月',
-    moonAge: 0.4,
-    tideSlopeCmPerHour: 15.2,
-    fishSpecies: 'アジ',
-    fishSizeCm: 28,
-    photoKey: null,
-  },
-  {
-    id: 'seed-002',
-    recordedAt: daysAgo(0, 17, 15),
-    latitude: 35.4437,
-    longitude: 139.638,
-    temperature: 17.8,
-    weatherCode: 3,
-    windSpeedMs: 4.1,
-    tideLevel: 98,
-    tideHarbor: '横浜',
-    tideCycle: '中潮',
-    moonPhase: '三日月',
-    moonAge: 3.1,
-    tideSlopeCmPerHour: -12.0,
-    fishSpecies: 'メバル',
-    fishSizeCm: 22,
-    photoKey: null,
-  },
-  {
-    id: 'seed-003',
-    recordedAt: daysAgo(1, 5, 45),
-    latitude: 35.734,
-    longitude: 140.826,
-    temperature: 16.5,
-    weatherCode: 61,
-    windSpeedMs: 6.8,
-    tideLevel: 185,
-    tideHarbor: '銚子',
-    tideCycle: '大潮',
-    moonPhase: '満月',
-    moonAge: 14.8,
-    tideSlopeCmPerHour: 8.5,
-    fishSpecies: 'カサゴ',
-    fishSizeCm: 18,
-    photoKey: null,
-  },
-  {
-    id: 'seed-004',
-    recordedAt: daysAgo(1, 18, 20),
-    latitude: 35.152,
-    longitude: 139.618,
-    temperature: 19.1,
-    weatherCode: 2,
-    windSpeedMs: 2.4,
-    tideLevel: 76,
-    tideHarbor: '小田原',
-    tideCycle: '小潮',
-    moonPhase: '上弦',
-    moonAge: 7.2,
-    tideSlopeCmPerHour: 0.3,
-    fishSpecies: null,
-    ...nullExtras,
-  },
-  {
-    id: 'seed-005',
-    recordedAt: daysAgo(3, 7, 0),
-    latitude: 35.521,
-    longitude: 139.825,
-    temperature: 15.9,
-    weatherCode: 0,
-    windSpeedMs: 1.6,
-    tideLevel: 210,
-    tideHarbor: '東京',
-    tideCycle: '中潮',
-    moonPhase: '十三夜',
-    moonAge: 13.0,
-    tideSlopeCmPerHour: -18.6,
-    fishSpecies: 'シーバス',
-    fishSizeCm: 65,
-    photoKey: null,
-  },
-  {
-    id: 'seed-006',
-    recordedAt: daysAgo(5, 6, 10),
-    latitude: 34.682,
-    longitude: 135.195,
-    temperature: 20.4,
-    weatherCode: 80,
-    windSpeedMs: 5.5,
-    tideLevel: null,
-    tideHarbor: null,
-    tideCycle: null,
-    moonPhase: null,
-    moonAge: null,
-    tideSlopeCmPerHour: null,
-    fishSpecies: 'ヒラメ',
-    fishSizeCm: 42,
-    photoKey: null,
-  },
-  {
-    id: 'seed-007',
-    recordedAt: daysAgo(5, 16, 40),
-    latitude: 35.3167,
-    longitude: 139.4833,
-    temperature: 21.0,
-    weatherCode: 1,
-    windSpeedMs: 2.9,
-    tideLevel: 55,
-    tideHarbor: '江の島',
-    tideCycle: '長潮',
-    moonPhase: '下弦',
-    moonAge: 22.5,
-    tideSlopeCmPerHour: 6.0,
-    fishSpecies: 'サバ',
-    fishSizeCm: 35,
-    photoKey: null,
-  },
-  {
-    id: 'seed-008',
-    recordedAt: daysAgo(7, 8, 25),
-    latitude: 35.4437,
-    longitude: 139.638,
-    temperature: 14.2,
-    weatherCode: 45,
-    windSpeedMs: 0.8,
-    tideLevel: 168,
-    tideHarbor: '横浜',
-    tideCycle: '大潮',
-    moonPhase: '新月',
-    moonAge: 1.2,
-    tideSlopeCmPerHour: 22.0,
-    fishSpecies: 'カレイ',
-    fishSizeCm: 30,
-    photoKey: null,
-  },
-  {
-    id: 'seed-009',
-    recordedAt: daysAgo(10, 17, 50),
-    latitude: 35.734,
-    longitude: 140.826,
-    temperature: 13.8,
-    weatherCode: 3,
-    windSpeedMs: 7.2,
-    tideLevel: 92,
-    tideHarbor: '銚子',
-    tideCycle: '中潮',
-    moonPhase: '二十六夜',
-    moonAge: 26.1,
-    tideSlopeCmPerHour: -4.5,
-    fishSpecies: 'マゴチ',
-    fishSizeCm: 55,
-    photoKey: null,
-  },
-  {
-    id: 'seed-010',
-    recordedAt: daysAgo(14, 6, 5),
-    latitude: 35.152,
-    longitude: 139.618,
-    temperature: 12.6,
-    weatherCode: 71,
-    windSpeedMs: 3.7,
-    tideLevel: 134,
-    tideHarbor: '小田原',
-    tideCycle: '小潮',
-    moonPhase: '上弦',
-    moonAge: 8.0,
-    tideSlopeCmPerHour: 1.8,
-    fishSpecies: 'アジ',
-    fishSizeCm: 26,
-    photoKey: null,
-  },
-].map(withSun)
+  stampSun(
+    {
+      id: 'seed-001',
+      latitude: 35.3167,
+      longitude: 139.4833,
+      temperature: 18.2,
+      weatherCode: 1,
+      windSpeedMs: 3.2,
+      tideLevel: 142,
+      tideHarbor: '江の島',
+      tideCycle: '大潮',
+      moonPhase: '新月',
+      moonAge: 0.4,
+      tideSlopeCmPerHour: 15.2,
+      fishSpecies: 'アジ',
+      fishSizeCm: 28,
+      photoKey: null,
+    },
+    0,
+    { at: 'sunrise', minutes: 40 },
+  ),
+  stampSun(
+    {
+      id: 'seed-002',
+      latitude: 35.4437,
+      longitude: 139.638,
+      temperature: 17.8,
+      weatherCode: 3,
+      windSpeedMs: 4.1,
+      tideLevel: 98,
+      tideHarbor: '横浜',
+      tideCycle: '中潮',
+      moonPhase: '三日月',
+      moonAge: 3.1,
+      tideSlopeCmPerHour: -12.0,
+      fishSpecies: 'メバル',
+      fishSizeCm: 22,
+      photoKey: null,
+    },
+    0,
+    { at: 'sunset', minutes: -70 },
+  ),
+  stampSun(
+    {
+      id: 'seed-003',
+      latitude: 35.734,
+      longitude: 140.826,
+      temperature: 16.5,
+      weatherCode: 61,
+      windSpeedMs: 6.8,
+      tideLevel: 185,
+      tideHarbor: '銚子',
+      tideCycle: '大潮',
+      moonPhase: '満月',
+      moonAge: 14.8,
+      tideSlopeCmPerHour: 8.5,
+      fishSpecies: 'カサゴ',
+      fishSizeCm: 18,
+      photoKey: null,
+    },
+    1,
+    { at: 'sunrise', minutes: -35 },
+  ),
+  stampSun(
+    {
+      id: 'seed-004',
+      latitude: 35.152,
+      longitude: 139.618,
+      temperature: 19.1,
+      weatherCode: 2,
+      windSpeedMs: 2.4,
+      tideLevel: 76,
+      tideHarbor: '小田原',
+      tideCycle: '小潮',
+      moonPhase: '上弦',
+      moonAge: 7.2,
+      tideSlopeCmPerHour: 0.3,
+      fishSpecies: null,
+      ...nullExtras,
+    },
+    1,
+    { at: 'sunset', minutes: 25 },
+  ),
+  stampSun(
+    {
+      id: 'seed-005',
+      latitude: 35.521,
+      longitude: 139.825,
+      temperature: 15.9,
+      weatherCode: 0,
+      windSpeedMs: 1.6,
+      tideLevel: 210,
+      tideHarbor: '東京',
+      tideCycle: '中潮',
+      moonPhase: '十三夜',
+      moonAge: 13.0,
+      tideSlopeCmPerHour: -18.6,
+      fishSpecies: 'シーバス',
+      fishSizeCm: 65,
+      photoKey: null,
+    },
+    3,
+    { at: 'day' },
+  ),
+  stampSun(
+    {
+      id: 'seed-006',
+      latitude: 34.682,
+      longitude: 135.195,
+      temperature: 20.4,
+      weatherCode: 80,
+      windSpeedMs: 5.5,
+      tideLevel: null,
+      tideHarbor: null,
+      tideCycle: null,
+      moonPhase: null,
+      moonAge: null,
+      tideSlopeCmPerHour: null,
+      fishSpecies: 'ヒラメ',
+      fishSizeCm: 42,
+      photoKey: null,
+    },
+    5,
+    { at: 'night' },
+  ),
+  stampSun(
+    {
+      id: 'seed-007',
+      latitude: 35.3167,
+      longitude: 139.4833,
+      temperature: 21.0,
+      weatherCode: 1,
+      windSpeedMs: 2.9,
+      tideLevel: 55,
+      tideHarbor: '江の島',
+      tideCycle: '長潮',
+      moonPhase: '下弦',
+      moonAge: 22.5,
+      tideSlopeCmPerHour: 6.0,
+      fishSpecies: 'サバ',
+      fishSizeCm: 35,
+      photoKey: null,
+    },
+    5,
+    { at: 'sunrise', minutes: 90 },
+  ),
+  stampSun(
+    {
+      id: 'seed-008',
+      latitude: 35.4437,
+      longitude: 139.638,
+      temperature: 14.2,
+      weatherCode: 45,
+      windSpeedMs: 0.8,
+      tideLevel: 168,
+      tideHarbor: '横浜',
+      tideCycle: '大潮',
+      moonPhase: '新月',
+      moonAge: 1.2,
+      tideSlopeCmPerHour: 22.0,
+      fishSpecies: 'カレイ',
+      fishSizeCm: 30,
+      photoKey: null,
+    },
+    7,
+    { at: 'day' },
+  ),
+  stampSun(
+    {
+      id: 'seed-009',
+      latitude: 35.734,
+      longitude: 140.826,
+      temperature: 13.8,
+      weatherCode: 3,
+      windSpeedMs: 7.2,
+      tideLevel: 92,
+      tideHarbor: '銚子',
+      tideCycle: '中潮',
+      moonPhase: '二十六夜',
+      moonAge: 26.1,
+      tideSlopeCmPerHour: -4.5,
+      fishSpecies: 'マゴチ',
+      fishSizeCm: 55,
+      photoKey: null,
+    },
+    10,
+    { at: 'sunset', minutes: -110 },
+  ),
+  stampSun(
+    {
+      id: 'seed-010',
+      latitude: 35.152,
+      longitude: 139.618,
+      temperature: 12.6,
+      weatherCode: 71,
+      windSpeedMs: 3.7,
+      tideLevel: 134,
+      tideHarbor: '小田原',
+      tideCycle: '小潮',
+      moonPhase: '上弦',
+      moonAge: 8.0,
+      tideSlopeCmPerHour: 1.8,
+      fishSpecies: 'アジ',
+      fishSizeCm: 26,
+      photoKey: null,
+    },
+    14,
+    { at: 'night' },
+  ),
+]
 
-function daysAgo(days: number, hour: number, minute: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() - days)
-  d.setHours(hour, minute, 0, 0)
-  return d.toISOString()
-}
-
-/** 開発環境のみ: 記録が空のときサンプルデータを投入 */
+/** 開発環境: サンプル記録を上書き投入し、日出没の表示パターンを確認できるようにする */
 export async function seedDevRecordsIfEmpty(): Promise<number> {
   if (!import.meta.env.DEV) return 0
-
-  const existing = await getAllRecords()
-  if (existing.length > 0) return 0
 
   for (const record of DEV_SEED_RECORDS) {
     await putRecord(record)
