@@ -29,7 +29,7 @@ export function RecordValueList({ record }: { record: FishingRecord }) {
       <Row label="体長">
         {record.fishSizeCm != null ? `${record.fishSizeCm} cm` : '—'}
       </Row>
-      <Row label="座標">
+      <Row label="場所">
         {coords ? (
           <a
             href={mapsUrl(record.latitude, record.longitude)}
@@ -38,10 +38,11 @@ export function RecordValueList({ record }: { record: FishingRecord }) {
             className="text-cyan-700 underline"
             onClick={(e) => e.stopPropagation()}
           >
-            {record.latitude.toFixed(5)}, {record.longitude.toFixed(5)}
+            {record.locationName ??
+              `${record.latitude.toFixed(5)}, ${record.longitude.toFixed(5)}`}
           </a>
         ) : (
-          '—'
+          (record.locationName ?? '—')
         )}
       </Row>
       <Row label="天気">{weatherCodeLabel(record.weatherCode)}</Row>

@@ -118,8 +118,9 @@ function RecordDetails({ record }: { record: FishingRecord }) {
         }}
       >
         {hasCoordinates(record)
-          ? `${record.latitude.toFixed(5)}, ${record.longitude.toFixed(5)}`
-          : '座標なし'}
+          ? (record.locationName ??
+            `${record.latitude.toFixed(5)}, ${record.longitude.toFixed(5)}`)
+          : (record.locationName ?? '座標なし')}
       </a>
     </div>
   )

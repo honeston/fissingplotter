@@ -16,6 +16,7 @@ export interface FishingRecord {
   recordedAt: string
   latitude: number | null
   longitude: number | null
+  locationName: string | null
   temperature: number | null
   weatherCode: number | null
   windSpeedMs: number | null
@@ -87,6 +88,7 @@ function validateRecord(input: unknown): FishingRecord {
     recordedAt: r.recordedAt,
     latitude,
     longitude,
+    locationName: optionalString(r.locationName),
     temperature: optionalNumber(r.temperature),
     weatherCode: optionalNumber(r.weatherCode),
     windSpeedMs: optionalNumber(r.windSpeedMs),
@@ -137,6 +139,7 @@ export async function upsertRecord(userId: string, input: unknown): Promise<Fish
         recordedAt: record.recordedAt,
         latitude: record.latitude,
         longitude: record.longitude,
+        locationName: record.locationName,
         temperature: record.temperature,
         weatherCode: record.weatherCode,
         windSpeedMs: record.windSpeedMs,
@@ -205,6 +208,7 @@ function storedToRecord(item: Record<string, unknown>): FishingRecord {
     latitude: item.latitude == null || item.latitude === '' ? null : Number(item.latitude),
     longitude:
       item.longitude == null || item.longitude === '' ? null : Number(item.longitude),
+    locationName: storedString(item.locationName),
     temperature: storedNumber(item.temperature),
     weatherCode: storedNumber(item.weatherCode),
     windSpeedMs: storedNumber(item.windSpeedMs),

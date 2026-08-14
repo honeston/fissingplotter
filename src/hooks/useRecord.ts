@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { getCurrentPosition } from '../lib/geolocation'
+import { fetchPlaceName } from '../lib/place'
 import { addRecord } from '../lib/sync'
 import { getSunTimes } from '../lib/sun'
 import { fetchTideLevel } from '../lib/tide'
@@ -87,6 +88,7 @@ export function useRecord() {
         setSteps((s) => ({ ...s, geo: 'error', weather: 'skipped', tide: 'skipped' }))
       }
 
+      let locationName: string | null = null
       let temperature: number | null = null
       let weatherCode: number | null = null
       let windSpeedMs: number | null = null
@@ -110,9 +112,10 @@ export function useRecord() {
           duskAt = sun.duskAt
         }
 
-        const [weatherSettled, tideSettled] = await Promise.allSettled([
+        const [weatherSettled, tideSettled, placeSettled] = await Promise.allSettled([
           fetchWeather(latitude, longitude),
           fetchTideLevel(latitude, longitude),
+          fetchPlaceName(latitude, longitude),
         ])
 
         if (weatherSettled.status === 'fulfilled') {
@@ -123,6 +126,10 @@ export function useRecord() {
           const message = errMessage(weatherSettled.reason, '天気の取得に失敗しました')
           warnings.push(message)
           nextErrors.weather = message
+        }
+
+        if (placeSettled.status === 'fulfilled') {
+          locationName = placeSettled.value
         }
 
         if (tideSettled.status === 'fulfilled') {
@@ -160,6 +167,7 @@ export function useRecord() {
           {
             latitude,
             longitude,
+            locationName,
             temperature,
             weatherCode,
             windSpeedMs,

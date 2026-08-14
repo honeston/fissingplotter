@@ -4,6 +4,7 @@ export interface FishingRecord {
   recordedAt: string
   latitude: number | null
   longitude: number | null
+  locationName: string | null
   temperature: number | null
   weatherCode: number | null
   windSpeedMs: number | null
