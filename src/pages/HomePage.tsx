@@ -33,8 +33,11 @@ export function HomePage() {
     if (!lastResult) return
     const node = summaryRef.current
     if (!node) return
-    node.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    node.focus({ preventScroll: true })
+    const revealButtons = () => {
+      node.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      node.focus({ preventScroll: true })
+    }
+    requestAnimationFrame(() => requestAnimationFrame(revealButtons))
   }, [lastResult])
 
   async function handleRecord() {
