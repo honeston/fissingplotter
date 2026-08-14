@@ -54,29 +54,39 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
   }
 
   return (
-    <div className="flex items-start justify-between gap-3">
-      <div className="flex min-w-0 flex-1 gap-3">
-        {photoUrl && (
-          <img
-            src={photoUrl}
-            alt={record.fishSpecies ?? '釣果写真'}
-            className="h-12 w-12 shrink-0 rounded-lg border border-sky-200 object-cover"
-          />
+    <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          {photoUrl && (
+            <img
+              src={photoUrl}
+              alt={record.fishSpecies ?? '釣果写真'}
+              className="h-12 w-12 shrink-0 rounded-lg border border-sky-200 object-cover"
+            />
+          )}
+          <p className="min-w-0 font-medium text-sky-950">
+            {record.fishSpecies ?? '（魚種なし）'}
+            {record.fishSizeCm != null ? (
+              <span className="ml-2 text-sm font-normal text-slate-600">
+                {record.fishSizeCm}cm
+              </span>
+            ) : null}
+          </p>
+        </div>
+        {onDelete && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete(record.id)
+            }}
+            className="shrink-0 rounded-md px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+          >
+            削除
+          </button>
         )}
-        <RecordDetails record={record} />
       </div>
-      {onDelete && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            onDelete(record.id)
-          }}
-          className="shrink-0 rounded-md px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-        >
-          削除
-        </button>
-      )}
+      <RecordDetails record={record} />
     </div>
   )
 }
@@ -85,21 +95,19 @@ function RecordDetails({ record }: { record: FishingRecord }) {
   const sunLine = formatSunLine(record)
 
   return (
-    <div className="min-w-0">
-      <p className="font-medium text-sky-950">
-        {record.fishSpecies ?? '（魚種なし）'}
-        {record.fishSizeCm != null ? (
-          <span className="ml-2 text-sm font-normal text-slate-600">{record.fishSizeCm}cm</span>
-        ) : null}
-      </p>
-      <p className="mt-1 text-xs text-slate-500">
+    <div className="mt-1 min-w-0">
+      <p className="whitespace-nowrap text-xs text-slate-500">
         {new Date(record.recordedAt).toLocaleString('ja-JP')}
       </p>
-      <p className="mt-1 text-xs text-slate-500">{formatWeatherLine(record)}</p>
+      <p className="mt-1 whitespace-nowrap text-xs text-slate-500">
+        {formatWeatherLine(record)}
+      </p>
       {sunLine !== '—' && (
-        <p className="mt-0.5 text-xs text-slate-500">{sunLine}</p>
+        <p className="mt-0.5 whitespace-nowrap text-xs text-slate-500">{sunLine}</p>
       )}
-      <p className="mt-0.5 text-xs text-slate-500">{formatTideLine(record)}</p>
+      <p className="mt-0.5 whitespace-nowrap text-xs text-slate-500">
+        {formatTideLine(record)}
+      </p>
       <a
         href={
           hasCoordinates(record)
@@ -108,7 +116,7 @@ function RecordDetails({ record }: { record: FishingRecord }) {
         }
         target="_blank"
         rel="noopener noreferrer"
-        className={`mt-1 inline-block text-xs text-cyan-700 ${hasCoordinates(record) ? 'underline' : 'text-slate-400 no-underline'}`}
+        className={`mt-1 inline-block whitespace-nowrap text-xs text-cyan-700 ${hasCoordinates(record) ? 'underline' : 'text-slate-400 no-underline'}`}
         onClick={(e) => {
           if (!hasCoordinates(record)) {
             e.preventDefault()
