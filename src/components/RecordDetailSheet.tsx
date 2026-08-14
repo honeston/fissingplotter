@@ -318,6 +318,13 @@ export function RecordDetailSheet({
                 weekday: 'short',
               })}
             </p>
+            <p className="pointer-events-none mt-0.5 text-center text-sm font-medium tabular-nums text-sky-950">
+              {new Date(record.recordedAt).toLocaleTimeString('ja-JP', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+              })}
+            </p>
           </div>
           <div className="mb-3 flex items-center justify-between">
             <h2

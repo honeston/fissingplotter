@@ -31,9 +31,6 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
         </div>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-slate-500">
-              {new Date(record.recordedAt).toLocaleString('ja-JP')}
-            </p>
             <RecordValueList record={record} />
           </div>
           {onDelete && (
@@ -64,13 +61,22 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
               className="h-12 w-12 shrink-0 rounded-lg border border-sky-200 object-cover"
             />
           )}
-          <p className="min-w-0 font-medium text-sky-950">
-            {record.fishSpecies ?? '（魚種なし）'}
-            {record.fishSizeCm != null ? (
-              <span className="ml-2 text-sm font-normal text-slate-600">
-                {record.fishSizeCm}cm
-              </span>
-            ) : null}
+          <p className="min-w-0">
+            <span className="block text-sm font-medium tabular-nums text-sky-950">
+              {new Date(record.recordedAt).toLocaleTimeString('ja-JP', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+              })}
+            </span>
+            <span className="mt-0.5 block font-medium text-sky-950">
+              {record.fishSpecies ?? '（魚種なし）'}
+              {record.fishSizeCm != null ? (
+                <span className="ml-2 text-sm font-normal text-slate-600">
+                  {record.fishSizeCm}cm
+                </span>
+              ) : null}
+            </span>
           </p>
         </div>
         {onDelete && (
@@ -96,9 +102,6 @@ function RecordDetails({ record }: { record: FishingRecord }) {
 
   return (
     <div className="mt-1 min-w-0">
-      <p className="whitespace-nowrap text-xs text-slate-500">
-        {new Date(record.recordedAt).toLocaleString('ja-JP')}
-      </p>
       <p className="mt-1 whitespace-nowrap text-xs text-slate-500">
         {formatWeatherLine(record)}
       </p>

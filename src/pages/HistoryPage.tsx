@@ -134,7 +134,7 @@ export function HistoryPage() {
       <div className="flex flex-col gap-6">
         {recordSections.map(({ dateKey, date, records: dayRecords }) => (
           <section key={dateKey}>
-            <p className="mb-3 text-sm font-medium text-sky-900">
+            <p className="mb-3 text-base font-semibold text-sky-950">
               {formatDateLabel(date)}の記録（{dayRecords.length}件）
             </p>
             <ul className="flex flex-col gap-3">
