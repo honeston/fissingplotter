@@ -5,7 +5,7 @@ import { RecordValueList } from './RecordValueList'
 
 function SavedRecordSummary({ result }: { result: RecordResult }) {
   const { record: saved, warnings } = result
-  const photoUrl = usePhotoUrl(saved)
+  const { url: photoUrl } = usePhotoUrl(saved)
 
   return (
     <section

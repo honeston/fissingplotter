@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { hasCoordinates } from '../lib/coordinates'
 import { formatSunLine, formatTideLine, formatWeatherLine } from '../lib/formatRecord'
 import { mapsUrl } from '../lib/maps'
@@ -12,22 +13,17 @@ interface RecordCardProps {
 }
 
 export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps) {
-  const photoUrl = usePhotoUrl(record)
+  const { url: photoUrl, loading: photoLoading } = usePhotoUrl(record)
 
   if (showLargePhoto) {
     return (
       <div>
-        <div className="mb-3 flex h-64 items-center justify-center overflow-hidden rounded-xl border border-sky-200 bg-sky-50">
-          {photoUrl ? (
-            <img
-              src={photoUrl}
-              alt={record.fishSpecies ?? '釣果写真'}
-              draggable={false}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <span className="text-sm text-slate-400">写真なし</span>
-          )}
+        <div className="relative mb-3 flex h-64 items-center justify-center overflow-hidden rounded-xl border border-sky-200 bg-sky-50">
+          <PhotoFrame
+            url={photoUrl}
+            loading={photoLoading}
+            alt={record.fishSpecies ?? '釣果写真'}
+          />
         </div>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
@@ -134,5 +130,60 @@ function RecordDetails({ record }: { record: FishingRecord }) {
           : (record.locationName ?? '座標なし')}
       </a>
     </div>
+  )
+}
+
+export function LoadingSpinner({
+  label = '読み込み中',
+  className = 'h-8 w-8',
+}: {
+  label?: string
+  className?: string
+}) {
+  return (
+    <span
+      className={`inline-block animate-spin rounded-full border-2 border-sky-200 border-t-cyan-700 ${className}`}
+      role="status"
+      aria-label={label}
+    />
+  )
+}
+
+function PhotoFrame({
+  url,
+  loading,
+  alt,
+}: {
+  url: string | null
+  loading: boolean
+  alt: string
+}) {
+  const [imageReady, setImageReady] = useState(false)
+
+  useEffect(() => {
+    setImageReady(false)
+  }, [url])
+
+  const showSpinner = loading || Boolean(url && !imageReady)
+
+  return (
+    <>
+      {showSpinner && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-sky-50">
+          <LoadingSpinner />
+        </div>
+      )}
+      {url ? (
+        <img
+          src={url}
+          alt={alt}
+          draggable={false}
+          onLoad={() => setImageReady(true)}
+          className={`h-full w-full object-cover ${imageReady ? 'opacity-100' : 'opacity-0'}`}
+        />
+      ) : (
+        !loading && <span className="text-sm text-slate-400">写真なし</span>
+      )}
+    </>
   )
 }

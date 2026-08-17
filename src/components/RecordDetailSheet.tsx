@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useRef } from 'react'
-import { RecordCard } from './RecordCard'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { LoadingSpinner, RecordCard } from './RecordCard'
 import { hasCoordinates } from '../lib/coordinates'
 import type { FishingRecord } from '../types/record'
 
@@ -18,7 +18,13 @@ interface RecordDetailSheetProps {
 const AXIS_LOCK_PX = 10
 const SWIPE_PX = 56
 const DISMISS_PX = 96
+const EDGE_RESISTANCE = 0.28
 const CLOSE_MS = 280
+const PEEK_PX = 28
+const GAP_PX = 8
+const MAX_CARD_PX = 448
+const PRELOAD_WINDOW = 2
+const MAX_PRELOAD_WINDOW = 6
 
 type GestureAxis = 'x' | 'y' | null
 
@@ -31,11 +37,49 @@ interface GestureState {
   fromHeader: boolean
 }
 
+interface TrackMetrics {
+  cardWidth: number
+  step: number
+  centerPad: number
+}
+
 function isInteractiveTarget(target: EventTarget | null) {
   return (
     target instanceof Element &&
-    Boolean(target.closest('button, a, input, textarea, select, .leaflet-container'))
+    Boolean(
+      target.closest('button, a, input, textarea, select, .leaflet-container'),
+    )
   )
+}
+
+function getTrackMetrics(): TrackMetrics {
+  const cardWidth = Math.min(MAX_CARD_PX, window.innerWidth - PEEK_PX * 2)
+  return {
+    cardWidth,
+    step: cardWidth + GAP_PX,
+    centerPad: Math.max(PEEK_PX, (window.innerWidth - cardWidth) / 2),
+  }
+}
+
+function restingX(metrics: TrackMetrics, index: number) {
+  return metrics.centerPad - index * metrics.step
+}
+
+function formatRecordDate(iso: string) {
+  return new Date(iso).toLocaleDateString('ja-JP', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  })
+}
+
+function formatRecordTime(iso: string) {
+  return new Date(iso).toLocaleTimeString('ja-JP', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
 }
 
 export function RecordDetailSheet({
@@ -50,20 +94,28 @@ export function RecordDetailSheet({
     records.length > 1 && currentIndex >= 0 && Boolean(onNavigate)
   const hasPrevious = hasNavigation && currentIndex > 0
   const hasNext = hasNavigation && currentIndex < records.length - 1
+  const lastIndex = Math.max(0, records.length - 1)
 
   const overlayRef = useRef<HTMLDivElement>(null)
-  const panelRef = useRef<HTMLDivElement>(null)
+  const yRef = useRef<HTMLDivElement>(null)
+  const trackRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const backdropRef = useRef<HTMLDivElement>(null)
   const closingRef = useRef(false)
+  const animatingRef = useRef(false)
   const dragXRef = useRef(0)
   const dragYRef = useRef(0)
+  const windowPadRef = useRef(PRELOAD_WINDOW)
+  const metricsRef = useRef<TrackMetrics>(getTrackMetrics())
+  const [windowPad, setWindowPad] = useState(PRELOAD_WINDOW)
+  const [metrics, setMetrics] = useState<TrackMetrics>(getTrackMetrics)
   const navRef = useRef({
     hasNavigation,
     hasPrevious,
     hasNext,
     currentIndex,
+    lastIndex,
     records,
     onNavigate,
     onClose,
@@ -82,10 +134,27 @@ export function RecordDetailSheet({
     hasPrevious,
     hasNext,
     currentIndex,
+    lastIndex,
     records,
     onNavigate,
     onClose,
   }
+  metricsRef.current = metrics
+  windowPadRef.current = windowPad
+
+  const windowFrom = hasNavigation
+    ? Math.max(0, currentIndex - windowPad)
+    : currentIndex
+  const windowTo = hasNavigation
+    ? Math.min(lastIndex, currentIndex + windowPad)
+    : currentIndex
+  const slides =
+    currentIndex >= 0
+      ? records.slice(windowFrom, windowTo + 1).map((item, offset) => ({
+          item,
+          index: windowFrom + offset,
+        }))
+      : [{ item: record, index: 0 }]
 
   useEffect(() => {
     const { body, documentElement } = document
@@ -100,15 +169,50 @@ export function RecordDetailSheet({
   }, [])
 
   useEffect(() => {
+    function onResize() {
+      const next = getTrackMetrics()
+      metricsRef.current = next
+      setMetrics(next)
+      if (!animatingRef.current && !gestureRef.current.active) {
+        applyTrackX(
+          navRef.current.hasNavigation
+            ? restingX(next, navRef.current.currentIndex)
+            : 0,
+          false,
+        )
+      }
+    }
+
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  useLayoutEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 })
     dragXRef.current = 0
     dragYRef.current = 0
-    applyPanelTransform(0, true)
+    animatingRef.current = false
+    windowPadRef.current = PRELOAD_WINDOW
+    setWindowPad(PRELOAD_WINDOW)
+    applyTrackX(
+      hasNavigation ? restingX(metricsRef.current, currentIndex) : 0,
+      false,
+    )
+    applyY(0, false)
     applyBackdrop(0)
-  }, [record.id])
+  }, [record.id, currentIndex, hasNavigation])
 
-  function applyPanelTransform(y: number, animate: boolean) {
-    const panel = panelRef.current
+  function applyTrackX(x: number, animate: boolean) {
+    const track = trackRef.current
+    if (!track) return
+    track.style.transition = animate
+      ? `transform ${CLOSE_MS}ms cubic-bezier(0.32, 0.72, 0, 1)`
+      : 'none'
+    track.style.transform = `translate3d(${x}px, 0, 0)`
+  }
+
+  function applyY(y: number, animate: boolean) {
+    const panel = yRef.current
     if (!panel) return
     panel.style.transition = animate
       ? `transform ${CLOSE_MS}ms cubic-bezier(0.32, 0.72, 0, 1)`
@@ -119,16 +223,36 @@ export function RecordDetailSheet({
   function applyBackdrop(y: number) {
     const backdrop = backdropRef.current
     if (!backdrop) return
-    const height = panelRef.current?.offsetHeight ?? 1
+    const height = yRef.current?.offsetHeight ?? 1
     const progress = Math.min(1, Math.max(0, y / height))
     backdrop.style.opacity = String(1 - progress)
+  }
+
+  function expandWindow(dragX: number) {
+    const { step } = metricsRef.current
+    const extra = Math.max(0, Math.ceil(Math.abs(dragX) / step) + 1)
+    const next = Math.min(MAX_PRELOAD_WINDOW, PRELOAD_WINDOW + extra)
+    if (next > windowPadRef.current) {
+      windowPadRef.current = next
+      setWindowPad(next)
+    }
+  }
+
+  function clampDragX(dx: number) {
+    const nav = navRef.current
+    const { step } = metricsRef.current
+    const minX = (nav.currentIndex - nav.lastIndex) * step
+    const maxX = nav.currentIndex * step
+    if (dx > maxX) return maxX + (dx - maxX) * EDGE_RESISTANCE
+    if (dx < minX) return minX + (dx - minX) * EDGE_RESISTANCE
+    return dx
   }
 
   function dismiss() {
     if (closingRef.current) return
     closingRef.current = true
-    const height = panelRef.current?.offsetHeight ?? window.innerHeight
-    applyPanelTransform(height, true)
+    const height = yRef.current?.offsetHeight ?? window.innerHeight
+    applyY(height, true)
     applyBackdrop(height)
     window.setTimeout(() => navRef.current.onClose(), CLOSE_MS)
   }
@@ -140,6 +264,22 @@ export function RecordDetailSheet({
     gesture.pointerId = null
   }
 
+  function animateNavigateTo(targetIndex: number) {
+    const nav = navRef.current
+    const target = nav.records[targetIndex]
+    if (!target || !nav.onNavigate || targetIndex === nav.currentIndex) {
+      applyTrackX(restingX(metricsRef.current, nav.currentIndex), true)
+      return
+    }
+
+    const navigate = nav.onNavigate
+    animatingRef.current = true
+    applyTrackX(restingX(metricsRef.current, targetIndex), true)
+    window.setTimeout(() => {
+      navigate(target)
+    }, CLOSE_MS)
+  }
+
   function finishGesture() {
     if (closingRef.current) return
 
@@ -148,6 +288,7 @@ export function RecordDetailSheet({
     const x = dragXRef.current
     const y = dragYRef.current
     const nav = navRef.current
+    const { step } = metricsRef.current
     resetGesture()
 
     if (axis === 'y' && y >= DISMISS_PX) {
@@ -155,30 +296,28 @@ export function RecordDetailSheet({
       return
     }
 
-    if (
-      axis === 'x' &&
-      nav.hasNavigation &&
-      nav.onNavigate &&
-      Math.abs(x) >= SWIPE_PX
-    ) {
-      if (x > 0 && nav.hasPrevious) {
-        nav.onNavigate(nav.records[nav.currentIndex - 1])
-        return
-      }
-      if (x < 0 && nav.hasNext) {
-        nav.onNavigate(nav.records[nav.currentIndex + 1])
+    if (axis === 'x' && nav.hasNavigation) {
+      const steps =
+        Math.abs(x) >= SWIPE_PX ? Math.round(-x / step) : 0
+      const targetIndex = Math.min(
+        nav.lastIndex,
+        Math.max(0, nav.currentIndex + steps),
+      )
+      if (targetIndex !== nav.currentIndex) {
+        animateNavigateTo(targetIndex)
         return
       }
     }
 
     dragXRef.current = 0
     dragYRef.current = 0
-    applyPanelTransform(0, true)
+    applyTrackX(restingX(metricsRef.current, nav.currentIndex), true)
+    applyY(0, true)
     applyBackdrop(0)
   }
 
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    if (closingRef.current) return
+    if (closingRef.current || animatingRef.current) return
     if (event.pointerType === 'mouse' && event.button !== 0) return
     if (isInteractiveTarget(event.target)) return
 
@@ -228,15 +367,18 @@ export function RecordDetailSheet({
     event.preventDefault()
 
     if (gesture.axis === 'x') {
-      dragXRef.current = dx
+      const x = clampDragX(dx)
+      dragXRef.current = x
       dragYRef.current = 0
+      expandWindow(x)
+      applyTrackX(restingX(metricsRef.current, nav.currentIndex) + x, false)
       return
     }
 
     const y = Math.max(0, dy)
     dragXRef.current = 0
     dragYRef.current = y
-    applyPanelTransform(y, false)
+    applyY(y, false)
     applyBackdrop(y)
   }
 
@@ -298,95 +440,182 @@ export function RecordDetailSheet({
         aria-hidden
       />
       <div
-        ref={panelRef}
-        className="detail-sheet-panel relative mx-auto flex h-[85dvh] w-full max-w-md flex-col rounded-t-2xl border border-sky-100 bg-white shadow-lg"
+        ref={yRef}
+        className="relative z-10 h-[85dvh] w-full"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        <div ref={headerRef} className="detail-sheet-header shrink-0 px-4 pt-2">
-          <div className="mb-2 cursor-grab select-none touch-none active:cursor-grabbing">
-            <div className="flex justify-center pt-1">
-              <span className="h-1 w-10 rounded-full bg-slate-300" aria-hidden />
-            </div>
-            <p className="pointer-events-none mt-2 text-center text-sm font-medium text-sky-950">
-              {new Date(record.recordedAt).toLocaleDateString('ja-JP', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                weekday: 'short',
-              })}
-            </p>
-            <p className="pointer-events-none mt-0.5 text-center text-sm font-medium tabular-nums text-sky-950">
-              {new Date(record.recordedAt).toLocaleTimeString('ja-JP', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false,
-              })}
-            </p>
-          </div>
-          <div className="mb-3 flex items-center justify-between">
-            <h2
-              id="record-detail-title"
-              className="text-sm font-semibold text-sky-950"
-            >
-              釣果詳細
-            </h2>
-            <button
-              type="button"
-              onClick={() => dismiss()}
-              className="rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-slate-100"
-            >
-              閉じる
-            </button>
-          </div>
+        <div ref={trackRef} className="absolute inset-y-0 left-0">
+          {slides.map(({ item, index }) => {
+            const interactive = index === currentIndex
+            return (
+              <DetailSheetPanel
+                key={item.id}
+                record={item}
+                index={index}
+                total={records.length}
+                hasNavigation={hasNavigation}
+                records={records}
+                offsetLeft={hasNavigation ? index * metrics.step : 0}
+                width={hasNavigation ? metrics.cardWidth : undefined}
+                onNavigate={
+                  interactive
+                    ? (next) => {
+                        if (animatingRef.current) return
+                        const nextIndex = records.findIndex(
+                          (r) => r.id === next.id,
+                        )
+                        if (nextIndex >= 0) animateNavigateTo(nextIndex)
+                      }
+                    : undefined
+                }
+                onDismiss={dismiss}
+                onDelete={interactive ? onDelete : undefined}
+                headerRef={interactive ? headerRef : undefined}
+                scrollRef={interactive ? scrollRef : undefined}
+                showMap
+                interactive={interactive}
+                titleId={interactive ? 'record-detail-title' : undefined}
+              />
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
 
-          {hasNavigation && (
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <button
-                type="button"
-                disabled={!hasPrevious}
-                onClick={() => onNavigate?.(records[currentIndex - 1])}
-                className="rounded-lg border border-sky-200 px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm enabled:hover:bg-sky-50 disabled:opacity-30"
-              >
-                ‹ 前
-              </button>
-              <span className="text-xs tabular-nums text-slate-500">
-                {currentIndex + 1} / {records.length}
-              </span>
-              <button
-                type="button"
-                disabled={!hasNext}
-                onClick={() => onNavigate?.(records[currentIndex + 1])}
-                className="rounded-lg border border-sky-200 px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm enabled:hover:bg-sky-50 disabled:opacity-30"
-              >
-                次 ›
-              </button>
-            </div>
-          )}
+function DetailSheetPanel({
+  record,
+  index,
+  total,
+  hasNavigation,
+  records,
+  offsetLeft,
+  width,
+  onNavigate,
+  onDismiss,
+  onDelete,
+  headerRef,
+  scrollRef,
+  showMap,
+  interactive,
+  titleId,
+}: {
+  record: FishingRecord
+  index: number
+  total: number
+  hasNavigation: boolean
+  records: FishingRecord[]
+  offsetLeft: number
+  width?: number
+  onNavigate?: (record: FishingRecord) => void
+  onDismiss: () => void
+  onDelete?: (id: string) => void
+  headerRef?: React.Ref<HTMLDivElement>
+  scrollRef?: React.Ref<HTMLDivElement>
+  showMap: boolean
+  interactive: boolean
+  titleId?: string
+}) {
+  const hasPrevious = index > 0
+  const hasNext = index < total - 1
+
+  return (
+    <div
+      className={`detail-sheet-panel absolute top-0 flex h-full flex-col rounded-t-2xl border border-sky-100 bg-white shadow-lg ${interactive ? '' : 'pointer-events-none'} ${hasNavigation ? '' : 'left-1/2 w-full max-w-md -translate-x-1/2'}`}
+      style={
+        hasNavigation
+          ? { left: offsetLeft, width }
+          : undefined
+      }
+      aria-hidden={!interactive}
+    >
+      <div ref={headerRef} className="detail-sheet-header shrink-0 px-4 pt-2">
+        <div className="mb-2 cursor-grab select-none touch-none active:cursor-grabbing">
+          <div className="flex justify-center pt-1">
+            <span className="h-1 w-10 rounded-full bg-slate-300" aria-hidden />
+          </div>
+          <p className="pointer-events-none mt-2 text-center text-sm font-medium text-sky-950">
+            {formatRecordDate(record.recordedAt)}
+          </p>
+          <p className="pointer-events-none mt-0.5 text-center text-sm font-medium tabular-nums text-sky-950">
+            {formatRecordTime(record.recordedAt)}
+          </p>
+        </div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 id={titleId} className="text-sm font-semibold text-sky-950">
+            釣果詳細
+          </h2>
+          <button
+            type="button"
+            onClick={() => onDismiss()}
+            disabled={!interactive}
+            className="rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-slate-100"
+          >
+            閉じる
+          </button>
         </div>
 
-        <div
-          ref={scrollRef}
-          className="detail-sheet-scroll min-h-0 flex-1 overflow-y-auto px-4 pb-6"
-        >
-          <RecordCard record={record} onDelete={onDelete} showLargePhoto />
-          {hasCoordinates(record) && (
-            <div
-              key={record.id}
-              className="mt-4 h-52 overflow-hidden rounded-xl border border-sky-100"
+        {hasNavigation && (
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              disabled={!interactive || !hasPrevious}
+              onClick={() => onNavigate?.(records[index - 1])}
+              className="rounded-lg border border-sky-200 px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm enabled:hover:bg-sky-50 disabled:opacity-30"
             >
+              ‹ 前
+            </button>
+            <span className="text-xs tabular-nums text-slate-500">
+              {index + 1} / {total}
+            </span>
+            <button
+              type="button"
+              disabled={!interactive || !hasNext}
+              onClick={() => onNavigate?.(records[index + 1])}
+              className="rounded-lg border border-sky-200 px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm enabled:hover:bg-sky-50 disabled:opacity-30"
+            >
+              次 ›
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div
+        ref={scrollRef}
+        className={
+          interactive
+            ? 'detail-sheet-scroll min-h-0 flex-1 overflow-y-auto px-4 pb-6'
+            : 'min-h-0 flex-1 overflow-hidden px-4 pb-6'
+        }
+      >
+        <RecordCard
+          record={record}
+          onDelete={interactive ? onDelete : undefined}
+          showLargePhoto
+        />
+        {hasCoordinates(record) && (
+          <div className="relative mt-4 h-52 overflow-hidden rounded-xl border border-sky-100">
+            {showMap ? (
               <Suspense
                 fallback={
-                  <div className="h-full w-full bg-sky-50" aria-hidden />
+                  <div className="flex h-full w-full items-center justify-center bg-sky-50">
+                    <LoadingSpinner />
+                  </div>
                 }
               >
                 <RecordsMap records={[record]} onSelectRecords={() => {}} />
               </Suspense>
-            </div>
-          )}
-        </div>
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-sky-50">
+                <LoadingSpinner />
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
