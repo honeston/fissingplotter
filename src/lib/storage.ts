@@ -1,5 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import type { FishingRecord, NewFishingRecord } from '../types/record'
+import { normalizeEditedFields } from './editedFields'
 import { getSunTimes } from './sun'
 
 interface FissingDB extends DBSchema {
@@ -79,6 +80,8 @@ function normalizeRecord(record: FishingRecord): FishingRecord {
     tideSlopeCmPerHour: record.tideSlopeCmPerHour ?? null,
     fishSizeCm: record.fishSizeCm ?? null,
     photoKey: record.photoKey ?? null,
+    editedFields: normalizeEditedFields(record.editedFields),
+    updatedAt: record.updatedAt ?? null,
   })
 }
 
@@ -105,6 +108,8 @@ function buildRecord(input: NewFishingRecord): FishingRecord {
     fishSpecies: input.fishSpecies,
     fishSizeCm: input.fishSizeCm ?? null,
     photoKey: input.photoKey ?? null,
+    editedFields: normalizeEditedFields(input.editedFields),
+    updatedAt: input.updatedAt ?? null,
   }
 }
 
@@ -118,6 +123,12 @@ export async function addRecord(input: NewFishingRecord): Promise<FishingRecord>
   const record = buildRecord(input)
   await putRecord(record)
   return record
+}
+
+export async function updateStoredRecord(record: FishingRecord): Promise<FishingRecord> {
+  const next = normalizeRecord(record)
+  await putRecord(next)
+  return next
 }
 
 /** 新しい順で全件取得。日出没が無い記録は座標から補完して保存する。 */

@@ -1,3 +1,6 @@
+/** ユーザーが手動修正した項目。魚種・体長は対象外。 */
+export type EditedField = 'recordedAt' | 'location'
+
 /** 釣り記録1件 */
 export interface FishingRecord {
   id: string
@@ -21,6 +24,8 @@ export interface FishingRecord {
   fishSpecies: string | null
   fishSizeCm: number | null
   photoKey: string | null
+  editedFields: EditedField[]
+  updatedAt?: string | null
 }
 
 /** 新規保存時に渡す入力（id / recordedAt は storage 側で付与可） */

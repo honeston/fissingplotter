@@ -1,5 +1,27 @@
 import type { FishingRecord } from '../types/record'
 
+/** datetime-local 用（端末ローカル時刻） */
+export function toDatetimeLocalValue(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+export function fromDatetimeLocalValue(value: string): string | null {
+  if (!value) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toISOString()
+}
+
+export function sameMinute(a: string, b: string): boolean {
+  const da = new Date(a)
+  const db = new Date(b)
+  if (Number.isNaN(da.getTime()) || Number.isNaN(db.getTime())) return a === b
+  return Math.floor(da.getTime() / 60_000) === Math.floor(db.getTime() / 60_000)
+}
+
 export function toDateKey(date: Date): string {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')

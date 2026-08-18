@@ -7,6 +7,7 @@ interface PhotoInputProps {
   photoBlob: Blob | null
   onPhotoChange: (blob: Blob | null) => void
   disabled?: boolean
+  canClear?: boolean
 }
 
 export function PhotoInput({
@@ -15,6 +16,7 @@ export function PhotoInput({
   photoBlob,
   onPhotoChange,
   disabled,
+  canClear = true,
 }: PhotoInputProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [compressing, setCompressing] = useState(false)
@@ -74,14 +76,16 @@ export function PhotoInput({
             <p className="text-xs text-slate-500">
               {photoBlob ? `${Math.round(photoBlob.size / 1024)}KB（圧縮済み）` : ''}
             </p>
-            <button
-              type="button"
-              disabled={disabled || compressing}
-              onClick={clearPhoto}
-              className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
-            >
-              削除
-            </button>
+            {canClear && (
+              <button
+                type="button"
+                disabled={disabled || compressing}
+                onClick={clearPhoto}
+                className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
+              >
+                削除
+              </button>
+            )}
           </div>
         </div>
       ) : (

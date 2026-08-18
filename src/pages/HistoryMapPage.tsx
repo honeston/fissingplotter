@@ -50,6 +50,14 @@ export function HistoryMapPage() {
     await reload()
   }
 
+  async function handleUpdated(updated: FishingRecord) {
+    setSelectedRecord(updated)
+    setClusterRecords((list) =>
+      list.map((item) => (item.id === updated.id ? updated : item)),
+    )
+    await reload()
+  }
+
   return (
     <main className="flex min-h-0 flex-1 flex-col px-4 pb-4 pt-6">
       <header className="mb-4">
@@ -107,6 +115,7 @@ export function HistoryMapPage() {
           onNavigate={setSelectedRecord}
           onClose={handleClose}
           onDelete={(id) => void handleDelete(id)}
+          onUpdated={(updated) => void handleUpdated(updated)}
         />
       )}
     </main>

@@ -1,7 +1,10 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { LoadingSpinner, RecordCard } from './RecordCard'
+import { hasEditedField } from '../lib/editedFields'
 import { hasCoordinates } from '../lib/coordinates'
 import type { FishingRecord } from '../types/record'
+import { LoadingSpinner, RecordCard } from './RecordCard'
+import { EditedMark } from './RecordValueList'
+import { RecordEditForm } from './RecordEditForm'
 
 const RecordsMap = lazy(() =>
   import('./RecordsMap').then((m) => ({ default: m.RecordsMap })),
@@ -13,6 +16,7 @@ interface RecordDetailSheetProps {
   onNavigate?: (record: FishingRecord) => void
   onClose: () => void
   onDelete?: (id: string) => void
+  onUpdated?: (record: FishingRecord) => void
 }
 
 const AXIS_LOCK_PX = 10
@@ -48,7 +52,9 @@ function isInteractiveTarget(target: EventTarget | null) {
   return (
     target instanceof Element &&
     Boolean(
-      target.closest('button, a, input, textarea, select, .leaflet-container'),
+      target.closest(
+        'button, a, input, textarea, select, .leaflet-container, [data-editing="true"]',
+      ),
     )
   )
 }
@@ -89,6 +95,7 @@ export function RecordDetailSheet({
   onNavigate,
   onClose,
   onDelete,
+  onUpdated,
 }: RecordDetailSheetProps) {
   const currentIndex = records.findIndex((r) => r.id === record.id)
   const hasNavigation =
@@ -476,6 +483,7 @@ export function RecordDetailSheet({
                 }
                 onDismiss={dismiss}
                 onDelete={interactive ? onDelete : undefined}
+                onUpdated={interactive ? onUpdated : undefined}
                 headerRef={interactive ? headerRef : undefined}
                 scrollRef={interactive ? scrollRef : undefined}
                 showMap
@@ -501,6 +509,7 @@ function DetailSheetPanel({
   onNavigate,
   onDismiss,
   onDelete,
+  onUpdated,
   headerRef,
   scrollRef,
   showMap,
@@ -517,17 +526,25 @@ function DetailSheetPanel({
   onNavigate?: (record: FishingRecord) => void
   onDismiss: () => void
   onDelete?: (id: string) => void
+  onUpdated?: (record: FishingRecord) => void
   headerRef?: React.Ref<HTMLDivElement>
   scrollRef?: React.Ref<HTMLDivElement>
   showMap: boolean
   interactive: boolean
   titleId?: string
 }) {
+  const [editing, setEditing] = useState(false)
   const hasPrevious = index > 0
   const hasNext = index < total - 1
+  const timeEdited = hasEditedField(record, 'recordedAt')
+
+  useEffect(() => {
+    setEditing(false)
+  }, [record.id])
 
   return (
     <div
+      data-editing={editing ? 'true' : undefined}
       className={`detail-sheet-panel absolute top-0 flex h-full flex-col rounded-t-2xl border border-sky-100 bg-white shadow-lg ${interactive ? '' : 'pointer-events-none'} ${hasNavigation ? '' : 'left-1/2 w-full max-w-md -translate-x-1/2'}`}
       style={
         hasNavigation
@@ -541,28 +558,49 @@ function DetailSheetPanel({
           <div className="flex justify-center pt-1">
             <span className="h-1 w-10 rounded-full bg-slate-300" aria-hidden />
           </div>
-          <p className="pointer-events-none mt-2 text-center text-sm font-medium text-sky-950">
+          <p
+            className={`pointer-events-none mt-2 text-center text-sm text-sky-950 ${
+              timeEdited ? 'font-bold' : 'font-medium'
+            }`}
+          >
             {formatRecordDate(record.recordedAt)}
+            {timeEdited ? <EditedMark /> : null}
           </p>
-          <p className="pointer-events-none mt-0.5 text-center text-sm font-medium tabular-nums text-sky-950">
+          <p
+            className={`pointer-events-none mt-0.5 text-center text-sm tabular-nums text-sky-950 ${
+              timeEdited ? 'font-bold' : 'font-medium'
+            }`}
+          >
             {formatRecordTime(record.recordedAt)}
           </p>
         </div>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between gap-2">
           <h2 id={titleId} className="text-sm font-semibold text-sky-950">
-            釣果詳細
+            {editing ? '記録を編集' : '釣果詳細'}
           </h2>
-          <button
-            type="button"
-            onClick={() => onDismiss()}
-            disabled={!interactive}
-            className="rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-slate-100"
-          >
-            閉じる
-          </button>
+          <div className="flex items-center gap-1">
+            {!editing && onUpdated && (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                disabled={!interactive}
+                className="rounded-md px-2 py-1 text-xs font-medium text-cyan-800 hover:bg-sky-50"
+              >
+                編集
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => (editing ? setEditing(false) : onDismiss())}
+              disabled={!interactive}
+              className="rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-slate-100"
+            >
+              {editing ? 'キャンセル' : '閉じる'}
+            </button>
+          </div>
         </div>
 
-        {hasNavigation && (
+        {hasNavigation && !editing && (
           <div className="mb-3 flex items-center justify-between gap-2">
             <button
               type="button"
@@ -595,29 +633,42 @@ function DetailSheetPanel({
             : 'min-h-0 flex-1 overflow-hidden px-4 pb-6'
         }
       >
-        <RecordCard
-          record={record}
-          onDelete={interactive ? onDelete : undefined}
-          showLargePhoto
-        />
-        {hasCoordinates(record) && (
-          <div className="relative mt-4 h-52 overflow-hidden rounded-xl border border-sky-100">
-            {showMap ? (
-              <Suspense
-                fallback={
+        {editing && onUpdated ? (
+          <RecordEditForm
+            record={record}
+            onCancel={() => setEditing(false)}
+            onSaved={(updated) => {
+              setEditing(false)
+              onUpdated(updated)
+            }}
+          />
+        ) : (
+          <>
+            <RecordCard
+              record={record}
+              onDelete={interactive ? onDelete : undefined}
+              showLargePhoto
+            />
+            {hasCoordinates(record) && (
+              <div className="relative mt-4 h-52 overflow-hidden rounded-xl border border-sky-100">
+                {showMap ? (
+                  <Suspense
+                    fallback={
+                      <div className="flex h-full w-full items-center justify-center bg-sky-50">
+                        <LoadingSpinner />
+                      </div>
+                    }
+                  >
+                    <RecordsMap records={[record]} onSelectRecords={() => {}} />
+                  </Suspense>
+                ) : (
                   <div className="flex h-full w-full items-center justify-center bg-sky-50">
                     <LoadingSpinner />
                   </div>
-                }
-              >
-                <RecordsMap records={[record]} onSelectRecords={() => {}} />
-              </Suspense>
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-sky-50">
-                <LoadingSpinner />
+                )}
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
     </div>

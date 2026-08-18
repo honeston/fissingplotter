@@ -84,8 +84,9 @@ export async function syncFromServer(): Promise<void> {
   }
 
   if (remote.length > 0) {
-    const latest = remote.reduce((a, b) => (a.recordedAt > b.recordedAt ? a : b))
-    localStorage.setItem(LAST_SYNC_KEY, latest.recordedAt)
+    const stamp = (r: FishingRecord) => r.updatedAt ?? r.recordedAt
+    const latest = remote.reduce((a, b) => (stamp(a) > stamp(b) ? a : b))
+    localStorage.setItem(LAST_SYNC_KEY, stamp(latest))
   } else if (!since) {
     localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString())
   }
@@ -99,32 +100,48 @@ export async function initialSync(userId: string): Promise<{ migrated: number }>
   return { migrated }
 }
 
-export async function addRecord(
-  input: NewFishingRecord,
+async function persistRecord(
+  record: FishingRecord,
   photoBlob?: Blob | null,
 ): Promise<FishingRecord> {
-  let record = await local.addRecord(input)
+  let next = record
 
   if (photoBlob) {
-    await local.savePhotoBlob(record.id, photoBlob)
+    await local.savePhotoBlob(next.id, photoBlob)
   }
 
   if (isCloudSyncEnabled() && isOnline()) {
     if (photoBlob) {
       try {
-        record = await uploadPhotoForRecord(record, photoBlob)
+        next = await uploadPhotoForRecord(next, photoBlob)
       } catch {
         // ローカル保存済み。uploadPendingPhotos で後から再試行
       }
     }
     try {
-      await api.postRecord(record)
+      await api.postRecord(next)
     } catch {
       // オフライン/一時障害時はローカル保存のみ
     }
   }
 
-  return record
+  return next
+}
+
+export async function addRecord(
+  input: NewFishingRecord,
+  photoBlob?: Blob | null,
+): Promise<FishingRecord> {
+  const record = await local.addRecord(input)
+  return persistRecord(record, photoBlob)
+}
+
+export async function updateRecord(
+  record: FishingRecord,
+  photoBlob?: Blob | null,
+): Promise<FishingRecord> {
+  const saved = await local.updateStoredRecord(record)
+  return persistRecord(saved, photoBlob)
 }
 
 export async function getAllRecords(): Promise<FishingRecord[]> {

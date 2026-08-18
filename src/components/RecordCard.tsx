@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { hasCoordinates } from '../lib/coordinates'
+import { hasEditedField } from '../lib/editedFields'
 import { formatSunLine, formatTideLine, formatWeatherLine } from '../lib/formatRecord'
 import { mapsUrl } from '../lib/maps'
 import { usePhotoUrl } from '../hooks/usePhotoUrl'
-import { RecordValueList } from './RecordValueList'
+import { EditedMark, RecordValueList } from './RecordValueList'
 import type { FishingRecord } from '../types/record'
 
 interface RecordCardProps {
@@ -58,12 +59,17 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
             />
           )}
           <p className="min-w-0">
-            <span className="block text-sm font-medium tabular-nums text-sky-950">
+            <span
+              className={`block text-sm tabular-nums text-sky-950 ${
+                hasEditedField(record, 'recordedAt') ? 'font-bold' : 'font-medium'
+              }`}
+            >
               {new Date(record.recordedAt).toLocaleTimeString('ja-JP', {
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: false,
               })}
+              {hasEditedField(record, 'recordedAt') ? <EditedMark /> : null}
             </span>
             <span className="mt-0.5 block font-medium text-sky-950">
               {record.fishSpecies ?? '（魚種なし）'}
@@ -95,6 +101,7 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
 
 function RecordDetails({ record }: { record: FishingRecord }) {
   const sunLine = formatSunLine(record)
+  const locationEdited = hasEditedField(record, 'location')
 
   return (
     <div className="mt-1 min-w-0">
@@ -115,7 +122,13 @@ function RecordDetails({ record }: { record: FishingRecord }) {
         }
         target="_blank"
         rel="noopener noreferrer"
-        className={`mt-1 inline-block whitespace-nowrap text-xs text-cyan-700 ${hasCoordinates(record) ? 'underline' : 'text-slate-400 no-underline'}`}
+        className={`mt-1 inline-block whitespace-nowrap text-xs ${
+          locationEdited
+            ? 'font-bold text-sky-950'
+            : hasCoordinates(record)
+              ? 'text-cyan-700 underline'
+              : 'text-slate-400 no-underline'
+        }`}
         onClick={(e) => {
           if (!hasCoordinates(record)) {
             e.preventDefault()
@@ -128,6 +141,7 @@ function RecordDetails({ record }: { record: FishingRecord }) {
           ? (record.locationName ??
             `${record.latitude.toFixed(5)}, ${record.longitude.toFixed(5)}`)
           : (record.locationName ?? '座標なし')}
+        {locationEdited ? <EditedMark /> : null}
       </a>
     </div>
   )

@@ -1,10 +1,7 @@
 import { useCallback, useState } from 'react'
+import { fetchDerivedConditions } from '../lib/conditions'
 import { getCurrentPosition } from '../lib/geolocation'
-import { fetchPlaceName } from '../lib/place'
 import { addRecord } from '../lib/sync'
-import { getSunTimes } from '../lib/sun'
-import { fetchTideLevel } from '../lib/tide'
-import { fetchWeather } from '../lib/weather'
 import type { FishingRecord, RecordFormInput } from '../types/record'
 
 export type StepState = 'idle' | 'pending' | 'ok' | 'error' | 'skipped'
@@ -75,6 +72,7 @@ export function useRecord() {
       const nextErrors: RecordStepErrors = {}
       let latitude: number | null = null
       let longitude: number | null = null
+      const recordedAt = new Date()
 
       try {
         const pos = await getCurrentPosition()
@@ -104,51 +102,33 @@ export function useRecord() {
       let tideSlopeCmPerHour: number | null = null
 
       if (latitude != null && longitude != null) {
-        const sun = getSunTimes(new Date(), latitude, longitude)
-        if (sun) {
-          dawnAt = sun.dawnAt
-          sunriseAt = sun.sunriseAt
-          sunsetAt = sun.sunsetAt
-          duskAt = sun.duskAt
-        }
-
-        const [weatherSettled, tideSettled, placeSettled] = await Promise.allSettled([
-          fetchWeather(latitude, longitude),
-          fetchTideLevel(latitude, longitude),
-          fetchPlaceName(latitude, longitude),
-        ])
-
-        if (weatherSettled.status === 'fulfilled') {
-          temperature = weatherSettled.value.temperature
-          weatherCode = weatherSettled.value.weatherCode
-          windSpeedMs = weatherSettled.value.windSpeedMs
-        } else {
-          const message = errMessage(weatherSettled.reason, '天気の取得に失敗しました')
-          warnings.push(message)
-          nextErrors.weather = message
-        }
-
-        if (placeSettled.status === 'fulfilled') {
-          locationName = placeSettled.value
-        }
-
-        if (tideSettled.status === 'fulfilled') {
-          tideLevel = tideSettled.value.levelCm
-          tideHarbor = tideSettled.value.harbor.name
-          tideCycle = tideSettled.value.tideCycle
-          moonPhase = tideSettled.value.moonPhase
-          moonAge = tideSettled.value.moonAge
-          tideSlopeCmPerHour = tideSettled.value.tideSlopeCmPerHour
-        } else {
-          const message = errMessage(tideSettled.reason, '潮位の取得に失敗しました')
-          warnings.push(message)
-          nextErrors.tide = message
-        }
-
+        const derived = await fetchDerivedConditions(
+          latitude,
+          longitude,
+          recordedAt,
+          'current',
+        )
+        locationName = derived.conditions.locationName
+        temperature = derived.conditions.temperature
+        weatherCode = derived.conditions.weatherCode
+        windSpeedMs = derived.conditions.windSpeedMs
+        dawnAt = derived.conditions.dawnAt
+        sunriseAt = derived.conditions.sunriseAt
+        sunsetAt = derived.conditions.sunsetAt
+        duskAt = derived.conditions.duskAt
+        tideLevel = derived.conditions.tideLevel
+        tideHarbor = derived.conditions.tideHarbor
+        tideCycle = derived.conditions.tideCycle
+        moonPhase = derived.conditions.moonPhase
+        moonAge = derived.conditions.moonAge
+        tideSlopeCmPerHour = derived.conditions.tideSlopeCmPerHour
+        warnings.push(...derived.warnings)
+        if (derived.errors.weather) nextErrors.weather = derived.errors.weather
+        if (derived.errors.tide) nextErrors.tide = derived.errors.tide
         setSteps((s) => ({
           ...s,
-          weather: weatherSettled.status === 'fulfilled' ? 'ok' : 'error',
-          tide: tideSettled.status === 'fulfilled' ? 'ok' : 'error',
+          weather: derived.weatherStatus,
+          tide: derived.tideStatus,
         }))
       }
 
@@ -165,6 +145,7 @@ export function useRecord() {
 
         saved = await addRecord(
           {
+            recordedAt: recordedAt.toISOString(),
             latitude,
             longitude,
             locationName,
@@ -184,6 +165,7 @@ export function useRecord() {
             fishSpecies: input.fishSpecies,
             fishSizeCm: input.fishSizeCm,
             photoKey: null,
+            editedFields: [],
           },
           input.photoBlob,
         )

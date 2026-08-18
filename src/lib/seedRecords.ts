@@ -6,7 +6,7 @@ const nullExtras = { fishSizeCm: null as number | null, photoKey: null as string
 
 type SeedBase = Omit<
   FishingRecord,
-  'recordedAt' | 'dawnAt' | 'sunriseAt' | 'sunsetAt' | 'duskAt'
+  'recordedAt' | 'dawnAt' | 'sunriseAt' | 'sunsetAt' | 'duskAt' | 'editedFields'
 >
 
 type SunOffset =
@@ -49,6 +49,7 @@ function stampSun(base: SeedBase, daysAgoCount: number, offset: SunOffset): Fish
     sunriseAt: stamped?.sunriseAt ?? null,
     sunsetAt: stamped?.sunsetAt ?? null,
     duskAt: stamped?.duskAt ?? null,
+    editedFields: [],
   }
 }
 

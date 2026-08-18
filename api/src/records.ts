@@ -33,7 +33,11 @@ export interface FishingRecord {
   fishSpecies: string | null
   fishSizeCm: number | null
   photoKey: string | null
+  editedFields: EditedField[]
+  updatedAt?: string | null
 }
+
+type EditedField = 'recordedAt' | 'location'
 
 function sortKey(recordedAt: string, id: string): string {
   return `${recordedAt}#${id}`
@@ -63,6 +67,19 @@ function storedNumber(value: unknown): number | null {
 
 function storedString(value: unknown): string | null {
   return value == null ? null : String(value)
+}
+
+const ALLOWED_EDITED_FIELDS = new Set(['recordedAt', 'location'])
+
+function parseEditedFields(value: unknown): EditedField[] {
+  if (!Array.isArray(value)) return []
+  const unique = new Set<EditedField>()
+  for (const item of value) {
+    if (typeof item === 'string' && ALLOWED_EDITED_FIELDS.has(item)) {
+      unique.add(item as EditedField)
+    }
+  }
+  return [...unique]
 }
 
 function validateRecord(input: unknown): FishingRecord {
@@ -105,6 +122,7 @@ function validateRecord(input: unknown): FishingRecord {
     fishSpecies: optionalString(r.fishSpecies),
     fishSizeCm: parseFishSizeCm(r.fishSizeCm),
     photoKey: typeof r.photoKey === 'string' ? r.photoKey : null,
+    editedFields: parseEditedFields(r.editedFields),
   }
 }
 
@@ -120,21 +138,45 @@ export async function listRecords(userId: string, since?: string): Promise<Fishi
 
   let records = (result.Items ?? []).map(storedToRecord)
   if (since) {
-    records = records.filter((r) => r.recordedAt > since)
+    records = records.filter((r) => (r.updatedAt ?? r.recordedAt) > since)
   }
   return records
+}
+
+async function findItemById(userId: string, id: string) {
+  const result = await doc.send(
+    new QueryCommand({
+      TableName: TABLE_NAME,
+      IndexName: 'by-id',
+      KeyConditionExpression: 'userId = :userId AND id = :id',
+      ExpressionAttributeValues: { ':userId': userId, ':id': id },
+      Limit: 1,
+    }),
+  )
+  return result.Items?.[0]
 }
 
 export async function upsertRecord(userId: string, input: unknown): Promise<FishingRecord> {
   const record = validateRecord(input)
   const now = new Date().toISOString()
+  const nextSortKey = sortKey(record.recordedAt, record.id)
+  const existing = await findItemById(userId, record.id)
+
+  if (existing && typeof existing.sortKey === 'string' && existing.sortKey !== nextSortKey) {
+    await doc.send(
+      new DeleteCommand({
+        TableName: TABLE_NAME,
+        Key: { userId, sortKey: existing.sortKey },
+      }),
+    )
+  }
 
   await doc.send(
     new PutCommand({
       TableName: TABLE_NAME,
       Item: {
         userId,
-        sortKey: sortKey(record.recordedAt, record.id),
+        sortKey: nextSortKey,
         id: record.id,
         recordedAt: record.recordedAt,
         latitude: record.latitude,
@@ -156,26 +198,17 @@ export async function upsertRecord(userId: string, input: unknown): Promise<Fish
         fishSpecies: record.fishSpecies,
         fishSizeCm: record.fishSizeCm,
         photoKey: record.photoKey,
+        editedFields: record.editedFields,
         updatedAt: now,
       },
     }),
   )
 
-  return record
+  return { ...record, updatedAt: now }
 }
 
 export async function deleteRecord(userId: string, id: string): Promise<void> {
-  const result = await doc.send(
-    new QueryCommand({
-      TableName: TABLE_NAME,
-      IndexName: 'by-id',
-      KeyConditionExpression: 'userId = :userId AND id = :id',
-      ExpressionAttributeValues: { ':userId': userId, ':id': id },
-      Limit: 1,
-    }),
-  )
-
-  const item = result.Items?.[0]
+  const item = await findItemById(userId, id)
   if (!item || typeof item.sortKey !== 'string') {
     return
   }
@@ -225,5 +258,7 @@ function storedToRecord(item: Record<string, unknown>): FishingRecord {
     fishSpecies: storedString(item.fishSpecies),
     fishSizeCm: Number.isFinite(fishSizeCm) ? fishSizeCm : null,
     photoKey: item.photoKey == null ? null : String(item.photoKey),
+    editedFields: parseEditedFields(item.editedFields),
+    updatedAt: storedString(item.updatedAt),
   }
 }

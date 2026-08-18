@@ -52,6 +52,11 @@ export function HistoryPage() {
     await reload()
   }
 
+  async function handleUpdated(updated: FishingRecord) {
+    setSelectedRecord(updated)
+    await reload()
+  }
+
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
       <header className="mb-6 flex items-start justify-between gap-3">
@@ -157,6 +162,7 @@ export function HistoryPage() {
           onNavigate={setSelectedRecord}
           onClose={() => setSelectedRecord(null)}
           onDelete={(id) => void handleDelete(id)}
+          onUpdated={(updated) => void handleUpdated(updated)}
         />
       )}
     </main>
