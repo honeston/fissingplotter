@@ -16,7 +16,8 @@ interface RecordDetailSheetProps {
 }
 
 const AXIS_LOCK_PX = 10
-const SWIPE_PX = 56
+const SWIPE_PX = 24
+const SNAP_FRACTION = 0.18
 const DISMISS_PX = 96
 const EDGE_RESISTANCE = 0.28
 const CLOSE_MS = 280
@@ -288,7 +289,6 @@ export function RecordDetailSheet({
     const x = dragXRef.current
     const y = dragYRef.current
     const nav = navRef.current
-    const { step } = metricsRef.current
     resetGesture()
 
     if (axis === 'y' && y >= DISMISS_PX) {
@@ -297,11 +297,14 @@ export function RecordDetailSheet({
     }
 
     if (axis === 'x' && nav.hasNavigation) {
-      const steps =
-        Math.abs(x) >= SWIPE_PX ? Math.round(-x / step) : 0
+      const absX = Math.abs(x)
+      let steps = 0
+      if (absX >= SWIPE_PX && absX >= metrics.step * SNAP_FRACTION) {
+        steps = Math.max(1, Math.round(absX / metrics.step))
+      }
       const targetIndex = Math.min(
         nav.lastIndex,
-        Math.max(0, nav.currentIndex + steps),
+        Math.max(0, nav.currentIndex + (x > 0 ? -steps : steps)),
       )
       if (targetIndex !== nav.currentIndex) {
         animateNavigateTo(targetIndex)
