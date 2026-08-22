@@ -11,6 +11,8 @@ interface PhotoInputProps {
   canClear?: boolean
 }
 
+type PhotoSource = 'camera' | 'gallery'
+
 export function PhotoInput({
   previewUrl,
   onPreviewChange,
@@ -24,6 +26,7 @@ export function PhotoInput({
   const [compressing, setCompressing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [photoSource, setPhotoSource] = useState<PhotoSource | null>(null)
 
   useEffect(() => {
     return () => {
@@ -31,7 +34,7 @@ export function PhotoInput({
     }
   }, [previewUrl])
 
-  async function handleFile(file: File | null) {
+  async function handleFile(file: File | null, source: PhotoSource) {
     setError('')
     if (!file) return
 
@@ -41,6 +44,7 @@ export function PhotoInput({
       if (previewUrl) URL.revokeObjectURL(previewUrl)
       onPreviewChange(URL.createObjectURL(blob))
       onPhotoChange(blob)
+      setPhotoSource(source)
     } catch (err) {
       setError(err instanceof Error ? err.message : '画像の処理に失敗しました')
     } finally {
@@ -54,6 +58,7 @@ export function PhotoInput({
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     onPreviewChange(null)
     onPhotoChange(null)
+    setPhotoSource(null)
     if (cameraInputRef.current) cameraInputRef.current.value = ''
     if (galleryInputRef.current) galleryInputRef.current.value = ''
   }
@@ -85,7 +90,7 @@ export function PhotoInput({
         capture="environment"
         className="hidden"
         disabled={pickerDisabled}
-        onChange={(e) => void handleFile(e.target.files?.[0] ?? null)}
+        onChange={(e) => void handleFile(e.target.files?.[0] ?? null, 'camera')}
       />
       <input
         ref={galleryInputRef}
@@ -93,7 +98,7 @@ export function PhotoInput({
         accept="image/*"
         className="hidden"
         disabled={pickerDisabled}
-        onChange={(e) => void handleFile(e.target.files?.[0] ?? null)}
+        onChange={(e) => void handleFile(e.target.files?.[0] ?? null, 'gallery')}
       />
       {previewUrl ? (
         <div className="flex items-start gap-3">
@@ -106,37 +111,65 @@ export function PhotoInput({
             <p className="text-xs text-slate-500">
               {photoBlob ? `${Math.round(photoBlob.size / 1024)}KB（圧縮済み）` : ''}
             </p>
-            {photoBlob && (
+            {photoBlob && photoSource === 'camera' && (
               <p className="text-xs leading-relaxed text-slate-500">
                 この写真はアプリにだけ残ります。カメラロールにも残す場合は下から保存してください。
               </p>
             )}
+            {photoBlob && photoSource === 'gallery' && (
+              <p className="text-xs leading-relaxed text-slate-500">
+                アルバムの写真を記録に添付します。
+              </p>
+            )}
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                disabled={pickerDisabled || saving}
-                onClick={() => cameraInputRef.current?.click()}
-                className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
-              >
-                撮り直す
-              </button>
-              <button
-                type="button"
-                disabled={pickerDisabled || saving}
-                onClick={() => galleryInputRef.current?.click()}
-                className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
-              >
-                アルバムから選ぶ
-              </button>
-              {photoBlob && (
-                <button
-                  type="button"
-                  disabled={disabled || compressing || saving}
-                  onClick={() => void handleSaveToDevice()}
-                  className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
-                >
-                  {saving ? '保存中…' : 'カメラロールに残す'}
-                </button>
+              {photoSource === 'camera' ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={pickerDisabled || saving}
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
+                  >
+                    撮り直す
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pickerDisabled || saving}
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
+                  >
+                    アルバムから選ぶ
+                  </button>
+                  {photoBlob && (
+                    <button
+                      type="button"
+                      disabled={disabled || compressing || saving}
+                      onClick={() => void handleSaveToDevice()}
+                      className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
+                    >
+                      {saving ? '保存中…' : 'カメラロールに残す'}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    disabled={pickerDisabled || saving}
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
+                  >
+                    選び直す
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pickerDisabled || saving}
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
+                  >
+                    カメラで撮る
+                  </button>
+                </>
               )}
               {canClear && (
                 <button
