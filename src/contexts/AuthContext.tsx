@@ -20,6 +20,9 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
   confirmSignUp: (email: string, code: string) => Promise<void>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>
+  requestEmailChange: (newEmail: string) => Promise<void>
+  confirmEmailChange: (code: string) => Promise<void>
   signOut: () => void
   refreshSession: () => Promise<void>
 }
@@ -103,6 +106,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await cognito.confirmSignUp(email, code)
   }, [])
 
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    await cognito.changePassword(currentPassword, newPassword)
+  }, [])
+
+  const requestEmailChange = useCallback(async (newEmail: string) => {
+    await cognito.requestEmailChange(newEmail)
+  }, [])
+
+  const confirmEmailChange = useCallback(async (code: string) => {
+    await cognito.confirmEmailChange(code)
+    setUserEmail(await cognito.getSignedInEmail())
+  }, [])
+
   const signOut = useCallback(() => {
     cognito.signOut()
     setAuthenticated(false)
@@ -120,6 +136,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       confirmSignUp,
+      changePassword,
+      requestEmailChange,
+      confirmEmailChange,
       signOut,
       refreshSession,
     }),
@@ -132,6 +151,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       confirmSignUp,
+      changePassword,
+      requestEmailChange,
+      confirmEmailChange,
       signOut,
       refreshSession,
     ],

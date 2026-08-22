@@ -133,3 +133,44 @@ export async function getSignedInEmail(): Promise<string | null> {
   if (typeof username === 'string' && username) return username
   return getCurrentCognitoUser()?.getUsername() ?? null
 }
+
+function requireCurrentUser(): CognitoUser {
+  const user = getCurrentCognitoUser()
+  if (!user) throw new Error('ログインしていません')
+  return user
+}
+
+export function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const user = requireCurrentUser()
+  return new Promise((resolve, reject) => {
+    user.changePassword(currentPassword, newPassword, (err) => {
+      if (err) reject(err)
+      else resolve()
+    })
+  })
+}
+
+/** 新しいメールアドレスへ確認コードを送る */
+export function requestEmailChange(newEmail: string): Promise<void> {
+  const user = requireCurrentUser()
+  return new Promise((resolve, reject) => {
+    user.updateAttributes(
+      [new CognitoUserAttribute({ Name: 'email', Value: newEmail })],
+      (err) => {
+        if (err) reject(err)
+        else resolve()
+      },
+    )
+  })
+}
+
+/** メールアドレス変更の確認コードを検証する */
+export function confirmEmailChange(code: string): Promise<void> {
+  const user = requireCurrentUser()
+  return new Promise((resolve, reject) => {
+    user.verifyAttribute('email', code, {
+      onSuccess: () => resolve(),
+      onFailure: (err) => reject(err),
+    })
+  })
+}

@@ -2,9 +2,12 @@ import { BrowserRouter, NavLink, Navigate, Route, Routes, useSearchParams } from
 import { RequireAuth } from './components/RequireAuth'
 import { SyncStatusBanner } from './components/SyncStatusBanner'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ChangeEmailPage } from './pages/ChangeEmailPage'
+import { ChangePasswordPage } from './pages/ChangePasswordPage'
 import { HistoryPage } from './pages/HistoryPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+import { MyPage } from './pages/MyPage'
 
 function HistoryMapRedirect() {
   const [searchParams] = useSearchParams()
@@ -26,6 +29,9 @@ function AppShell() {
           <Route path="/" element={<HomePage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/history/map" element={<HistoryMapRedirect />} />
+          <Route path="/mypage" element={<MyPage />} />
+          <Route path="/mypage/email" element={<ChangeEmailPage />} />
+          <Route path="/mypage/password" element={<ChangePasswordPage />} />
         </Route>
       </Routes>
       {showNav && (
@@ -51,6 +57,16 @@ function AppShell() {
               }
             >
               履歴
+            </NavLink>
+            <NavLink
+              to="/mypage"
+              className={({ isActive }) =>
+                `flex min-h-12 flex-1 items-center justify-center text-sm font-medium ${
+                  isActive ? 'text-cyan-800' : 'text-slate-400'
+                }`
+              }
+            >
+              マイページ
             </NavLink>
           </div>
         </nav>
