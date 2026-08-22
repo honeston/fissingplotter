@@ -4,6 +4,7 @@ import { FishSpeciesInput } from '../components/FishSpeciesInput'
 import { PhotoInput } from '../components/PhotoInput'
 import { RecordProgress } from '../components/RecordProgress'
 import { SavedRecordSummary } from '../components/SavedRecordSummary'
+import { canonicalFishSpeciesName } from '../lib/fishSpecies'
 import { useRecord } from '../hooks/useRecord'
 
 export function HomePage() {
@@ -56,7 +57,7 @@ export function HomePage() {
 
     try {
       await record({
-        fishSpecies: fishSpecies.trim() || null,
+        fishSpecies: fishSpecies.trim() ? canonicalFishSpeciesName(fishSpecies.trim()) : null,
         fishSizeCm: parsedSize,
         photoBlob,
       })

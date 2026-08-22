@@ -13,6 +13,7 @@
     "deploy:aws": "npm run build && node scripts/deploy-aws.mjs",
     "deploy:infra": "cd infra && sam build && sam deploy",
     "check:infra": "node scripts/check-infra.mjs",
+    "build:fish-species": "python3 scripts/build_fish_species.py",
     "prepare": "husky"
   },
   "dependencies": {

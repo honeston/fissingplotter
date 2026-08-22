@@ -7,7 +7,7 @@ import {
   toDatetimeLocalValue,
 } from '../lib/dates'
 import { withEditedField } from '../lib/editedFields'
-import { rememberFishSpecies } from '../lib/fishSpecies'
+import { rememberFishSpecies, canonicalFishSpeciesName } from '../lib/fishSpecies'
 import { getCurrentPosition } from '../lib/geolocation'
 import { updateRecord } from '../lib/sync'
 import type { FishingRecord } from '../types/record'
@@ -153,7 +153,8 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
       editedFields = withEditedField(editedFields, 'recordedAt')
     }
 
-    const species = draft.fishSpecies?.trim() || null
+    const speciesRaw = draft.fishSpecies?.trim() || ''
+    const species = speciesRaw ? canonicalFishSpeciesName(speciesRaw) : null
     if (species) rememberFishSpecies(species)
 
     setSaving(true)

@@ -1,10 +1,23 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { getRecentFishSpecies, rememberFishSpecies, searchFishSpecies } from '../lib/fishSpecies'
+import {
+  canonicalFishSpeciesName,
+  getRecentFishSpecies,
+  rememberFishSpecies,
+  searchFishSpecies,
+  type FishSpeciesMatch,
+} from '../lib/fishSpecies'
 
 interface FishSpeciesInputProps {
   value: string
   onChange: (value: string) => void
   disabled?: boolean
+}
+
+function formatSuggestionLabel(match: FishSpeciesMatch): string {
+  if (match.matchedTerm && match.matchedTerm !== match.name) {
+    return `${match.name}（${match.matchedTerm}）`
+  }
+  return match.name
 }
 
 export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInputProps) {
@@ -14,7 +27,7 @@ export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInput
   const composingRef = useRef(false)
   const [open, setOpen] = useState(false)
   const [highlight, setHighlight] = useState(0)
-  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [suggestions, setSuggestions] = useState<FishSpeciesMatch[]>([])
   /** IME 確定前の入力中文字列（Android 等で onChange が遅れるため） */
   const [composingQuery, setComposingQuery] = useState<string | null>(null)
 
@@ -35,9 +48,9 @@ export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInput
     return () => document.removeEventListener('pointerdown', onDocPointerDown)
   }, [])
 
-  function select(species: string) {
-    onChange(species)
-    rememberFishSpecies(species)
+  function select(match: FishSpeciesMatch) {
+    onChange(match.name)
+    rememberFishSpecies(match.name)
     setOpen(false)
   }
 
@@ -80,7 +93,7 @@ export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInput
         aria-expanded={showList}
         aria-autocomplete="list"
         aria-controls={`${listId}-listbox`}
-        placeholder="例: アジ"
+        placeholder="例: アジ、シーバス"
         value={value}
         onChange={(e) => {
           onChange(e.target.value)
@@ -110,7 +123,11 @@ export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInput
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
         onBlur={() => {
-          if (value.trim()) rememberFishSpecies(value)
+          const trimmed = value.trim()
+          if (!trimmed) return
+          const canonical = canonicalFishSpeciesName(trimmed)
+          if (canonical !== trimmed) onChange(canonical)
+          rememberFishSpecies(canonical)
         }}
         disabled={disabled}
         className="w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-base text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
@@ -121,8 +138,12 @@ export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInput
           role="listbox"
           className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-sky-200 bg-white py-1 shadow-lg"
         >
-          {suggestions.map((species, i) => (
-            <li key={species} role="option" aria-selected={i === highlight}>
+          {suggestions.map((match, i) => (
+            <li
+              key={`${match.name}-${match.matchedTerm ?? 'name'}-${i}`}
+              role="option"
+              aria-selected={i === highlight}
+            >
               <button
                 type="button"
                 className={`w-full px-4 py-2 text-left text-sm ${
@@ -130,11 +151,11 @@ export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInput
                 }`}
                 onPointerDown={(e) => {
                   e.preventDefault()
-                  select(species)
+                  select(match)
                 }}
               >
-                {species}
-                {getRecentFishSpecies().includes(species) && effectiveQuery.trim() === '' ? (
+                {formatSuggestionLabel(match)}
+                {getRecentFishSpecies().includes(match.name) && effectiveQuery.trim() === '' ? (
                   <span className="ml-2 text-xs text-slate-400">最近</span>
                 ) : null}
               </button>
