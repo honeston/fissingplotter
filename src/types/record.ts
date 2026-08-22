@@ -1,4 +1,4 @@
-/** ユーザーが手動修正した項目。魚種・体長は対象外。 */
+/** ユーザーが手動修正した項目。魚種・体長・重さは対象外。 */
 export type EditedField = 'recordedAt' | 'location'
 
 /** 釣り記録1件 */
@@ -23,6 +23,7 @@ export interface FishingRecord {
   tideSlopeCmPerHour: number | null
   fishSpecies: string | null
   fishSizeCm: number | null
+  fishWeightG: number | null
   photoKey: string | null
   editedFields: EditedField[]
   updatedAt?: string | null
@@ -38,5 +39,6 @@ export type NewFishingRecord = Omit<FishingRecord, 'id' | 'recordedAt'> & {
 export interface RecordFormInput {
   fishSpecies: string | null
   fishSizeCm: number | null
+  fishWeightG: number | null
   photoBlob: Blob | null
 }

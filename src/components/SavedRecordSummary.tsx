@@ -17,6 +17,7 @@ function SavedRecordSummary({ result }: { result: RecordResult }) {
         {new Date(saved.recordedAt).toLocaleString('ja-JP')}
         {saved.fishSpecies ? ` / ${saved.fishSpecies}` : ''}
         {saved.fishSizeCm != null ? ` / ${saved.fishSizeCm}cm` : ''}
+        {saved.fishWeightG != null ? ` / ${saved.fishWeightG}g` : ''}
       </p>
       {photoUrl && (
         <img

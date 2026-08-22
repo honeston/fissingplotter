@@ -98,6 +98,11 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
                   {record.fishSizeCm}cm
                 </span>
               ) : null}
+              {record.fishWeightG != null ? (
+                <span className="ml-2 text-sm font-normal text-slate-600">
+                  {record.fishWeightG}g
+                </span>
+              ) : null}
             </span>
           </p>
         </div>

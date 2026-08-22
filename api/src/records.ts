@@ -32,6 +32,7 @@ export interface FishingRecord {
   tideSlopeCmPerHour: number | null
   fishSpecies: string | null
   fishSizeCm: number | null
+  fishWeightG: number | null
   photoKey: string | null
   editedFields: EditedField[]
   updatedAt?: string | null
@@ -43,10 +44,10 @@ function sortKey(recordedAt: string, id: string): string {
   return `${recordedAt}#${id}`
 }
 
-function parseFishSizeCm(value: unknown): number | null {
+function parseNonNegativeNumber(value: unknown, field: string): number | null {
   if (value == null || value === '') return null
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-    throw new Error('Invalid fishSizeCm')
+    throw new Error(`Invalid ${field}`)
   }
   return value
 }
@@ -120,7 +121,8 @@ function validateRecord(input: unknown): FishingRecord {
     moonAge: optionalNumber(r.moonAge),
     tideSlopeCmPerHour: optionalNumber(r.tideSlopeCmPerHour),
     fishSpecies: optionalString(r.fishSpecies),
-    fishSizeCm: parseFishSizeCm(r.fishSizeCm),
+    fishSizeCm: parseNonNegativeNumber(r.fishSizeCm, 'fishSizeCm'),
+    fishWeightG: parseNonNegativeNumber(r.fishWeightG, 'fishWeightG'),
     photoKey: typeof r.photoKey === 'string' ? r.photoKey : null,
     editedFields: parseEditedFields(r.editedFields),
   }
@@ -197,6 +199,7 @@ export async function upsertRecord(userId: string, input: unknown): Promise<Fish
         tideSlopeCmPerHour: record.tideSlopeCmPerHour,
         fishSpecies: record.fishSpecies,
         fishSizeCm: record.fishSizeCm,
+        fishWeightG: record.fishWeightG,
         photoKey: record.photoKey,
         editedFields: record.editedFields,
         updatedAt: now,
@@ -230,11 +233,6 @@ export async function deleteRecord(userId: string, id: string): Promise<void> {
 }
 
 function storedToRecord(item: Record<string, unknown>): FishingRecord {
-  const fishSizeCm =
-    item.fishSizeCm == null || item.fishSizeCm === ''
-      ? null
-      : Number(item.fishSizeCm)
-
   return {
     id: String(item.id),
     recordedAt: String(item.recordedAt),
@@ -256,7 +254,8 @@ function storedToRecord(item: Record<string, unknown>): FishingRecord {
     moonAge: storedNumber(item.moonAge),
     tideSlopeCmPerHour: storedNumber(item.tideSlopeCmPerHour),
     fishSpecies: storedString(item.fishSpecies),
-    fishSizeCm: Number.isFinite(fishSizeCm) ? fishSizeCm : null,
+    fishSizeCm: storedNumber(item.fishSizeCm),
+    fishWeightG: storedNumber(item.fishWeightG),
     photoKey: item.photoKey == null ? null : String(item.photoKey),
     editedFields: parseEditedFields(item.editedFields),
     updatedAt: storedString(item.updatedAt),

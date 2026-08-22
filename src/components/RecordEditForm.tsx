@@ -32,10 +32,14 @@ interface RecordEditFormProps {
 export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProps) {
   const timeId = useId()
   const sizeId = useId()
+  const weightId = useId()
   const { url: existingPhotoUrl } = usePhotoUrl(record)
   const [draft, setDraft] = useState<FishingRecord>(record)
   const [fishSizeCm, setFishSizeCm] = useState(
     record.fishSizeCm != null ? String(record.fishSizeCm) : '',
+  )
+  const [fishWeightG, setFishWeightG] = useState(
+    record.fishWeightG != null ? String(record.fishWeightG) : '',
   )
   const [recordedLocal, setRecordedLocal] = useState(toDatetimeLocalValue(record.recordedAt))
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null)
@@ -53,6 +57,7 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
     originalRef.current = record
     setDraft(record)
     setFishSizeCm(record.fishSizeCm != null ? String(record.fishSizeCm) : '')
+    setFishWeightG(record.fishWeightG != null ? String(record.fishWeightG) : '')
     setRecordedLocal(toDatetimeLocalValue(record.recordedAt))
     setPhotoBlob(null)
     setPhotoPreviewUrl(null)
@@ -135,6 +140,16 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
       }
     }
 
+    const weightRaw = fishWeightG.trim()
+    let parsedWeight: number | null = null
+    if (weightRaw) {
+      parsedWeight = Number(weightRaw)
+      if (!Number.isFinite(parsedWeight) || parsedWeight < 0) {
+        setError('重さは 0 以上の数値で入力してください')
+        return
+      }
+    }
+
     const recordedAtRaw = fromDatetimeLocalValue(recordedLocal)
     if (!recordedAtRaw) {
       setError('記録日時を入力してください')
@@ -165,6 +180,7 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
           recordedAt,
           fishSpecies: species,
           fishSizeCm: parsedSize,
+          fishWeightG: parsedWeight,
           editedFields,
         },
         photoBlob,
@@ -216,6 +232,22 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
         placeholder="例: 25"
         value={fishSizeCm}
         onChange={(e) => setFishSizeCm(e.target.value)}
+        disabled={saving}
+        className="mb-4 w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-base text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
+      />
+
+      <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor={weightId}>
+        重さ g（任意）
+      </label>
+      <input
+        id={weightId}
+        type="number"
+        inputMode="decimal"
+        min={0}
+        step={1}
+        placeholder="例: 350"
+        value={fishWeightG}
+        onChange={(e) => setFishWeightG(e.target.value)}
         disabled={saving}
         className="mb-4 w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-base text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
       />

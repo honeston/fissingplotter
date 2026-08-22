@@ -48,6 +48,9 @@ export function RecordValueList({
           <Row label="体長">
             {record.fishSizeCm != null ? `${record.fishSizeCm} cm` : '—'}
           </Row>
+          <Row label="重さ">
+            {record.fishWeightG != null ? `${record.fishWeightG} g` : '—'}
+          </Row>
         </>
       )}
       <Row label="場所" edited={locationEdited}>

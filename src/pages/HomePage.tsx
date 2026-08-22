@@ -10,6 +10,7 @@ import { useRecord } from '../hooks/useRecord'
 export function HomePage() {
   const [fishSpecies, setFishSpecies] = useState('')
   const [fishSizeCm, setFishSizeCm] = useState('')
+  const [fishWeightG, setFishWeightG] = useState('')
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null)
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
   const { busy, steps, errors, lastResult, record, reset } = useRecord()
@@ -55,14 +56,26 @@ export function HomePage() {
       }
     }
 
+    const weightRaw = fishWeightG.trim()
+    let parsedWeight: number | null = null
+    if (weightRaw) {
+      parsedWeight = Number(weightRaw)
+      if (!Number.isFinite(parsedWeight) || parsedWeight < 0) {
+        setFatalError('重さは 0 以上の数値で入力してください')
+        return
+      }
+    }
+
     try {
       await record({
         fishSpecies: fishSpecies.trim() ? canonicalFishSpeciesName(fishSpecies.trim()) : null,
         fishSizeCm: parsedSize,
+        fishWeightG: parsedWeight,
         photoBlob,
       })
       setFishSpecies('')
       setFishSizeCm('')
+      setFishWeightG('')
       if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
       setPhotoPreviewUrl(null)
       setPhotoBlob(null)
@@ -96,21 +109,42 @@ export function HomePage() {
 
       <FishSpeciesInput value={fishSpecies} onChange={setFishSpecies} disabled={busy} />
 
-      <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor="fish-size">
-        体長 cm（任意）
-      </label>
-      <input
-        id="fish-size"
-        type="number"
-        inputMode="decimal"
-        min={0}
-        step={0.1}
-        placeholder="例: 25"
-        value={fishSizeCm}
-        onChange={(e) => setFishSizeCm(e.target.value)}
-        disabled={busy}
-        className="mb-4 w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-base text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
-      />
+      <div className="mb-4 grid grid-cols-2 gap-3">
+        <div>
+          <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor="fish-size">
+            体長 cm（任意）
+          </label>
+          <input
+            id="fish-size"
+            type="number"
+            inputMode="decimal"
+            min={0}
+            step={0.1}
+            placeholder="例: 25"
+            value={fishSizeCm}
+            onChange={(e) => setFishSizeCm(e.target.value)}
+            disabled={busy}
+            className="w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-base text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
+          />
+        </div>
+        <div>
+          <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor="fish-weight">
+            重さ g（任意）
+          </label>
+          <input
+            id="fish-weight"
+            type="number"
+            inputMode="decimal"
+            min={0}
+            step={1}
+            placeholder="例: 350"
+            value={fishWeightG}
+            onChange={(e) => setFishWeightG(e.target.value)}
+            disabled={busy}
+            className="w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-base text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
+          />
+        </div>
+      </div>
 
       <p className="mb-4 text-sm text-slate-500">
         ボタンを押すと、現在地・天気・気温・潮位を取得して保存します。位置情報が取れない場合も記録できます（オフライン時は端末のみ）。

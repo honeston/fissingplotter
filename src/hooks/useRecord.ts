@@ -164,6 +164,7 @@ export function useRecord() {
             tideSlopeCmPerHour,
             fishSpecies: input.fishSpecies,
             fishSizeCm: input.fishSizeCm,
+            fishWeightG: input.fishWeightG,
             photoKey: null,
             editedFields: [],
           },

@@ -2,7 +2,11 @@ import type { FishingRecord } from '../types/record'
 import { putRecord } from './storage'
 import { getSunTimes } from './sun'
 
-const nullExtras = { fishSizeCm: null as number | null, photoKey: null as string | null }
+const nullExtras = {
+  fishSizeCm: null as number | null,
+  fishWeightG: null as number | null,
+  photoKey: null as string | null,
+}
 
 type SeedBase = Omit<
   FishingRecord,
@@ -72,6 +76,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
       tideSlopeCmPerHour: 15.2,
       fishSpecies: 'アジ',
       fishSizeCm: 28,
+      fishWeightG: 280,
       photoKey: null,
     },
     0,
@@ -94,6 +99,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
       tideSlopeCmPerHour: -12.0,
       fishSpecies: 'メバル',
       fishSizeCm: 22,
+      fishWeightG: 180,
       photoKey: null,
     },
     0,
@@ -116,6 +122,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
       tideSlopeCmPerHour: 8.5,
       fishSpecies: 'カサゴ',
       fishSizeCm: 18,
+      fishWeightG: 120,
       photoKey: null,
     },
     1,
@@ -159,6 +166,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
       tideSlopeCmPerHour: -18.6,
       fishSpecies: 'シーバス',
       fishSizeCm: 65,
+      fishWeightG: 2500,
       photoKey: null,
     },
     3,
@@ -181,6 +189,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
       tideSlopeCmPerHour: null,
       fishSpecies: 'ヒラメ',
       fishSizeCm: 42,
+      fishWeightG: 900,
       photoKey: null,
     },
     5,
@@ -203,6 +212,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
       tideSlopeCmPerHour: 6.0,
       fishSpecies: 'サバ',
       fishSizeCm: 35,
+      fishWeightG: 500,
       photoKey: null,
     },
     5,
@@ -225,6 +235,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
       tideSlopeCmPerHour: 22.0,
       fishSpecies: 'カレイ',
       fishSizeCm: 30,
+      fishWeightG: 320,
       photoKey: null,
     },
     7,
@@ -247,6 +258,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
       tideSlopeCmPerHour: -4.5,
       fishSpecies: 'マゴチ',
       fishSizeCm: 55,
+      fishWeightG: 1800,
       photoKey: null,
     },
     10,
@@ -269,6 +281,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
       tideSlopeCmPerHour: 1.8,
       fishSpecies: 'アジ',
       fishSizeCm: 26,
+      fishWeightG: 240,
       photoKey: null,
     },
     14,
