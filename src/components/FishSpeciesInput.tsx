@@ -9,24 +9,30 @@ interface FishSpeciesInputProps {
 
 export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInputProps) {
   const listId = useId()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const composingRef = useRef(false)
   const [open, setOpen] = useState(false)
   const [highlight, setHighlight] = useState(0)
   const [suggestions, setSuggestions] = useState<string[]>([])
-  const containerRef = useRef<HTMLDivElement>(null)
+  /** IME 確定前の入力中文字列（Android 等で onChange が遅れるため） */
+  const [composingQuery, setComposingQuery] = useState<string | null>(null)
+
+  const effectiveQuery = composingQuery ?? value
 
   useEffect(() => {
-    setSuggestions(searchFishSpecies(value))
+    setSuggestions(searchFishSpecies(effectiveQuery))
     setHighlight(0)
-  }, [value])
+  }, [effectiveQuery])
 
   useEffect(() => {
-    function onDocClick(e: MouseEvent) {
+    function onDocPointerDown(e: PointerEvent) {
       if (!containerRef.current?.contains(e.target as Node)) {
         setOpen(false)
       }
     }
-    document.addEventListener('mousedown', onDocClick)
-    return () => document.removeEventListener('mousedown', onDocClick)
+    document.addEventListener('pointerdown', onDocPointerDown)
+    return () => document.removeEventListener('pointerdown', onDocPointerDown)
   }, [])
 
   function select(species: string) {
@@ -48,7 +54,7 @@ export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInput
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setHighlight((h) => (h - 1 + suggestions.length) % suggestions.length)
-    } else if (e.key === 'Enter' && suggestions[highlight]) {
+    } else if (e.key === 'Enter' && suggestions[highlight] && !e.nativeEvent.isComposing) {
       e.preventDefault()
       select(suggestions[highlight])
     } else if (e.key === 'Escape') {
@@ -64,10 +70,12 @@ export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInput
         魚種（任意）
       </label>
       <input
+        ref={inputRef}
         id={listId}
         type="text"
         inputMode="text"
         autoComplete="off"
+        enterKeyHint="done"
         role="combobox"
         aria-expanded={showList}
         aria-autocomplete="list"
@@ -76,6 +84,27 @@ export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInput
         value={value}
         onChange={(e) => {
           onChange(e.target.value)
+          if (!composingRef.current) setComposingQuery(null)
+          setOpen(true)
+        }}
+        onInput={() => {
+          if (!composingRef.current) return
+          setComposingQuery(inputRef.current?.value ?? '')
+          setOpen(true)
+        }}
+        onCompositionStart={() => {
+          composingRef.current = true
+          setComposingQuery(inputRef.current?.value ?? '')
+          setOpen(true)
+        }}
+        onCompositionUpdate={(e) => {
+          setComposingQuery(e.currentTarget.value)
+          setOpen(true)
+        }}
+        onCompositionEnd={(e) => {
+          composingRef.current = false
+          setComposingQuery(null)
+          onChange(e.currentTarget.value)
           setOpen(true)
         }}
         onFocus={() => setOpen(true)}
@@ -99,13 +128,13 @@ export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInput
                 className={`w-full px-4 py-2 text-left text-sm ${
                   i === highlight ? 'bg-cyan-50 text-cyan-900' : 'text-sky-950 hover:bg-sky-50'
                 }`}
-                onMouseDown={(e) => {
+                onPointerDown={(e) => {
                   e.preventDefault()
                   select(species)
                 }}
               >
                 {species}
-                {getRecentFishSpecies().includes(species) && value.trim() === '' ? (
+                {getRecentFishSpecies().includes(species) && effectiveQuery.trim() === '' ? (
                   <span className="ml-2 text-xs text-slate-400">最近</span>
                 ) : null}
               </button>
