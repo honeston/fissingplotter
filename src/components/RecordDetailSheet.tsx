@@ -109,6 +109,7 @@ export function RecordDetailSheet({
   const trackRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const sharedScrollTopRef = useRef(0)
   const backdropRef = useRef<HTMLDivElement>(null)
   const closingRef = useRef(false)
   const animatingRef = useRef(false)
@@ -118,6 +119,7 @@ export function RecordDetailSheet({
   const metricsRef = useRef<TrackMetrics>(getTrackMetrics())
   const [windowPad, setWindowPad] = useState(PRELOAD_WINDOW)
   const [metrics, setMetrics] = useState<TrackMetrics>(getTrackMetrics)
+  const [sheetExpanded, setSheetExpanded] = useState(false)
   const navRef = useRef({
     hasNavigation,
     hasPrevious,
@@ -196,7 +198,8 @@ export function RecordDetailSheet({
   }, [])
 
   useLayoutEffect(() => {
-    scrollRef.current?.scrollTo({ top: 0 })
+    syncSharedScrollTop(sharedScrollTopRef.current)
+    setSheetExpanded(sharedScrollTopRef.current > 36)
     dragXRef.current = 0
     dragYRef.current = 0
     animatingRef.current = false
@@ -209,6 +212,22 @@ export function RecordDetailSheet({
     applyY(0, false)
     applyBackdrop(0)
   }, [record.id, currentIndex, hasNavigation])
+
+  useLayoutEffect(() => {
+    syncSharedScrollTop(sharedScrollTopRef.current)
+  }, [windowFrom, windowTo, sheetExpanded])
+
+  function syncSharedScrollTop(top: number, source?: HTMLElement) {
+    sharedScrollTopRef.current = top
+    const track = trackRef.current
+    if (!track) return
+    track.querySelectorAll<HTMLElement>('.detail-sheet-scroll').forEach((el) => {
+      if (el === source) return
+      if (Math.abs(el.scrollTop - top) > 1) {
+        el.scrollTop = top
+      }
+    })
+  }
 
   function applyTrackX(x: number, animate: boolean) {
     const track = trackRef.current
@@ -280,6 +299,9 @@ export function RecordDetailSheet({
       return
     }
 
+    if (scrollRef.current) {
+      syncSharedScrollTop(scrollRef.current.scrollTop, scrollRef.current)
+    }
     const navigate = nav.onNavigate
     animatingRef.current = true
     applyTrackX(restingX(metricsRef.current, targetIndex), true)
@@ -451,47 +473,62 @@ export function RecordDetailSheet({
       />
       <div
         ref={yRef}
-        className="relative z-10 h-[85dvh] w-full"
+        className="relative z-10 w-full"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        <div ref={trackRef} className="absolute inset-y-0 left-0">
-          {slides.map(({ item, index }) => {
-            const interactive = index === currentIndex
-            return (
-              <DetailSheetPanel
-                key={item.id}
-                record={item}
-                index={index}
-                total={records.length}
-                hasNavigation={hasNavigation}
-                records={records}
-                offsetLeft={hasNavigation ? index * metrics.step : 0}
-                width={hasNavigation ? metrics.cardWidth : undefined}
-                onNavigate={
-                  interactive
-                    ? (next) => {
-                        if (animatingRef.current) return
-                        const nextIndex = records.findIndex(
-                          (r) => r.id === next.id,
-                        )
-                        if (nextIndex >= 0) animateNavigateTo(nextIndex)
-                      }
-                    : undefined
-                }
-                onDismiss={dismiss}
-                onDelete={interactive ? onDelete : undefined}
-                onUpdated={interactive ? onUpdated : undefined}
-                headerRef={interactive ? headerRef : undefined}
-                scrollRef={interactive ? scrollRef : undefined}
-                showMap
-                interactive={interactive}
-                titleId={interactive ? 'record-detail-title' : undefined}
-              />
-            )
-          })}
+        <div
+          className={`relative w-full transition-[height] duration-300 ease-out ${
+            sheetExpanded ? 'h-dvh' : 'h-[85dvh]'
+          }`}
+        >
+          <div ref={trackRef} className="absolute inset-y-0 left-0">
+            {slides.map(({ item, index }) => {
+              const interactive = index === currentIndex
+              return (
+                <DetailSheetPanel
+                  key={item.id}
+                  record={item}
+                  index={index}
+                  total={records.length}
+                  hasNavigation={hasNavigation}
+                  records={records}
+                  offsetLeft={hasNavigation ? index * metrics.step : 0}
+                  width={hasNavigation ? metrics.cardWidth : undefined}
+                  onNavigate={
+                    interactive
+                      ? (next) => {
+                          if (animatingRef.current) return
+                          const nextIndex = records.findIndex(
+                            (r) => r.id === next.id,
+                          )
+                          if (nextIndex >= 0) animateNavigateTo(nextIndex)
+                        }
+                      : undefined
+                  }
+                  onDismiss={dismiss}
+                  onDelete={interactive ? onDelete : undefined}
+                  onUpdated={interactive ? onUpdated : undefined}
+                  headerRef={interactive ? headerRef : undefined}
+                  scrollRef={interactive ? scrollRef : undefined}
+                  expanded={sheetExpanded}
+                  onExpandedChange={interactive ? setSheetExpanded : undefined}
+                  onScrollTopChange={
+                    interactive
+                      ? (top) => {
+                          syncSharedScrollTop(top, scrollRef.current ?? undefined)
+                        }
+                      : undefined
+                  }
+                  showMap
+                  interactive={interactive}
+                  titleId={interactive ? 'record-detail-title' : undefined}
+                />
+              )
+            })}
+          </div>
         </div>
       </div>
     </div>
@@ -512,6 +549,9 @@ function DetailSheetPanel({
   onUpdated,
   headerRef,
   scrollRef,
+  expanded = false,
+  onExpandedChange,
+  onScrollTopChange,
   showMap,
   interactive,
   titleId,
@@ -529,6 +569,9 @@ function DetailSheetPanel({
   onUpdated?: (record: FishingRecord) => void
   headerRef?: React.Ref<HTMLDivElement>
   scrollRef?: React.Ref<HTMLDivElement>
+  expanded?: boolean
+  onExpandedChange?: (expanded: boolean) => void
+  onScrollTopChange?: (top: number) => void
   showMap: boolean
   interactive: boolean
   titleId?: string
@@ -538,47 +581,109 @@ function DetailSheetPanel({
   const hasPrevious = index > 0
   const hasNext = index < total - 1
   const timeEdited = hasEditedField(record, 'recordedAt')
+  const onScrollTopChangeRef = useRef(onScrollTopChange)
+  onScrollTopChangeRef.current = onScrollTopChange
 
   useEffect(() => {
     setEditing(false)
     setConfirmingDelete(false)
   }, [record.id])
 
+  useEffect(() => {
+    if (!interactive || !onExpandedChange) return
+    if (!scrollRef || typeof scrollRef === 'function') return
+    const el = scrollRef.current
+    if (!el) return
+
+    let isExpanded = el.scrollTop > 36
+    function onScroll() {
+      const top = el.scrollTop
+      onScrollTopChangeRef.current?.(top)
+      if (!isExpanded && top > 36) {
+        isExpanded = true
+        onExpandedChange(true)
+      } else if (isExpanded && top < 8) {
+        isExpanded = false
+        onExpandedChange(false)
+      }
+    }
+
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [interactive, scrollRef, record.id, onExpandedChange])
+
   return (
     <div
       data-editing={editing ? 'true' : undefined}
-      className={`detail-sheet-panel absolute top-0 flex h-full flex-col rounded-t-2xl border border-sky-100 bg-white shadow-lg ${interactive ? '' : 'pointer-events-none'} ${hasNavigation ? '' : 'left-1/2 w-full max-w-md -translate-x-1/2'}`}
-      style={
-        hasNavigation
-          ? { left: offsetLeft, width }
-          : undefined
-      }
+      className={`detail-sheet-panel absolute top-0 flex h-full flex-col border-sky-100 bg-white shadow-lg transition-[border-radius] duration-300 ${
+        expanded
+          ? 'rounded-none border-0'
+          : 'rounded-t-2xl border'
+      } ${interactive ? '' : 'pointer-events-none'} ${
+        hasNavigation ? '' : 'left-1/2 w-full max-w-md -translate-x-1/2'
+      }`}
+      style={{
+        ...(hasNavigation ? { left: offsetLeft, width } : undefined),
+        ...(expanded
+          ? { paddingTop: 'env(safe-area-inset-top, 0px)' }
+          : undefined),
+      }}
       aria-hidden={!interactive}
     >
-      <div ref={headerRef} className="detail-sheet-header shrink-0 px-4 pt-2">
-        <div className="mb-2 cursor-grab select-none touch-none active:cursor-grabbing">
+      <div
+        ref={headerRef}
+        className={`detail-sheet-header shrink-0 px-4 transition-[padding] duration-200 ${
+          expanded ? 'pt-1 pb-0' : 'pt-2'
+        }`}
+      >
+        <div
+          className={`cursor-grab select-none touch-none active:cursor-grabbing ${
+            expanded ? 'mb-1' : 'mb-2'
+          }`}
+        >
           <div className="flex justify-center pt-1">
             <span className="h-1 w-10 rounded-full bg-slate-300" aria-hidden />
           </div>
-          <p
-            className={`pointer-events-none mt-2 text-center text-sm text-sky-950 ${
-              timeEdited ? 'font-bold' : 'font-medium'
+          <div
+            className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
+              expanded
+                ? 'pointer-events-none grid-rows-[0fr] opacity-0'
+                : 'grid-rows-[1fr] opacity-100'
             }`}
           >
-            {formatRecordDate(record.recordedAt)}
-            {timeEdited ? <EditedMark /> : null}
-          </p>
-          <p
-            className={`pointer-events-none mt-0.5 text-center text-sm tabular-nums text-sky-950 ${
-              timeEdited ? 'font-bold' : 'font-medium'
-            }`}
-          >
-            {formatRecordTime(record.recordedAt)}
-          </p>
+            <div className="overflow-hidden">
+              <p
+                className={`pointer-events-none mt-2 text-center text-sm text-sky-950 ${
+                  timeEdited ? 'font-bold' : 'font-medium'
+                }`}
+              >
+                {formatRecordDate(record.recordedAt)}
+                {timeEdited ? <EditedMark /> : null}
+              </p>
+              <p
+                className={`pointer-events-none mt-0.5 text-center text-sm tabular-nums text-sky-950 ${
+                  timeEdited ? 'font-bold' : 'font-medium'
+                }`}
+              >
+                {formatRecordTime(record.recordedAt)}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 id={titleId} className="text-sm font-semibold text-sky-950">
-            {editing ? '記録を編集' : '釣果詳細'}
+        <div
+          className={`flex items-center justify-between gap-2 ${
+            expanded ? 'mb-2' : 'mb-3'
+          }`}
+        >
+          <h2
+            id={titleId}
+            className="min-w-0 truncate text-sm font-semibold text-sky-950"
+          >
+            {editing
+              ? '記録を編集'
+              : expanded
+                ? formatRecordDate(record.recordedAt)
+                : '釣果詳細'}
           </h2>
           <div className="flex items-center gap-1">
             {!editing && onDelete && !confirmingDelete && (
@@ -650,37 +755,45 @@ function DetailSheetPanel({
         )}
 
         {hasNavigation && !editing && !confirmingDelete && (
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <button
-              type="button"
-              disabled={!interactive || !hasPrevious}
-              onClick={() => onNavigate?.(records[index - 1])}
-              className="rounded-lg border border-sky-200 px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm enabled:hover:bg-sky-50 disabled:opacity-30"
-            >
-              ‹ 前
-            </button>
-            <span className="text-xs tabular-nums text-slate-500">
-              {index + 1} / {total}
-            </span>
-            <button
-              type="button"
-              disabled={!interactive || !hasNext}
-              onClick={() => onNavigate?.(records[index + 1])}
-              className="rounded-lg border border-sky-200 px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm enabled:hover:bg-sky-50 disabled:opacity-30"
-            >
-              次 ›
-            </button>
+          <div
+            className={`grid transition-[grid-template-rows,opacity,margin] duration-200 ease-out ${
+              expanded
+                ? 'pointer-events-none mb-0 grid-rows-[0fr] opacity-0'
+                : 'mb-3 grid-rows-[1fr] opacity-100'
+            }`}
+          >
+            <div className="overflow-hidden">
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  disabled={!interactive || !hasPrevious}
+                  onClick={() => onNavigate?.(records[index - 1])}
+                  className="rounded-lg border border-sky-200 px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm enabled:hover:bg-sky-50 disabled:opacity-30"
+                >
+                  ‹ 前
+                </button>
+                <span className="text-xs tabular-nums text-slate-500">
+                  {index + 1} / {total}
+                </span>
+                <button
+                  type="button"
+                  disabled={!interactive || !hasNext}
+                  onClick={() => onNavigate?.(records[index + 1])}
+                  className="rounded-lg border border-sky-200 px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm enabled:hover:bg-sky-50 disabled:opacity-30"
+                >
+                  次 ›
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
       <div
         ref={scrollRef}
-        className={
-          interactive
-            ? 'detail-sheet-scroll min-h-0 flex-1 overflow-y-auto px-4 pb-6'
-            : 'min-h-0 flex-1 overflow-hidden px-4 pb-6'
-        }
+        className={`detail-sheet-scroll min-h-0 flex-1 overflow-y-auto px-4 pb-6 ${
+          interactive ? '' : 'pointer-events-none'
+        }`}
       >
         {editing && onUpdated ? (
           <RecordEditForm
