@@ -3,6 +3,7 @@ import { hasCoordinates } from '../lib/coordinates'
 import { hasEditedField } from '../lib/editedFields'
 import { formatSunLine, formatTideLine, formatWeatherLine } from '../lib/formatRecord'
 import { mapsUrl } from '../lib/maps'
+import { saveImageToDevice } from '../lib/saveImageToDevice'
 import { usePhotoUrl } from '../hooks/usePhotoUrl'
 import { EditedMark, RecordValueList } from './RecordValueList'
 import type { FishingRecord } from '../types/record'
@@ -15,6 +16,21 @@ interface RecordCardProps {
 
 export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps) {
   const { url: photoUrl, loading: photoLoading } = usePhotoUrl(record)
+  const [savingPhoto, setSavingPhoto] = useState(false)
+  const [saveError, setSaveError] = useState('')
+
+  async function handleSavePhoto() {
+    if (!photoUrl) return
+    setSaveError('')
+    setSavingPhoto(true)
+    try {
+      await saveImageToDevice(photoUrl)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : '端末への保存に失敗しました')
+    } finally {
+      setSavingPhoto(false)
+    }
+  }
 
   if (showLargePhoto) {
     return (
@@ -26,6 +42,26 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
             alt={record.fishSpecies ?? '釣果写真'}
           />
         </div>
+        {photoUrl && !photoLoading && (
+          <div className="mb-3">
+            <button
+              type="button"
+              disabled={savingPhoto}
+              onClick={(e) => {
+                e.stopPropagation()
+                void handleSavePhoto()
+              }}
+              className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
+            >
+              {savingPhoto ? '保存中…' : '保存'}
+            </button>
+            {saveError && (
+              <p className="mt-1.5 text-sm text-red-600" role="alert">
+                {saveError}
+              </p>
+            )}
+          </div>
+        )}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <RecordValueList record={record} />

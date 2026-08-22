@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { compressImage } from '../lib/compressImage'
+import { saveImageToDevice } from '../lib/saveImageToDevice'
 
 interface PhotoInputProps {
   previewUrl: string | null
@@ -20,6 +21,7 @@ export function PhotoInput({
 }: PhotoInputProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [compressing, setCompressing] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -53,6 +55,19 @@ export function PhotoInput({
     if (inputRef.current) inputRef.current.value = ''
   }
 
+  async function handleSaveToDevice() {
+    if (!photoBlob) return
+    setError('')
+    setSaving(true)
+    try {
+      await saveImageToDevice(photoBlob)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '端末への保存に失敗しました')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="mb-4">
       <span className="mb-2 block text-sm font-medium text-sky-900">写真（任意）</span>
@@ -72,20 +87,37 @@ export function PhotoInput({
             alt="選択した写真"
             className="h-24 w-24 rounded-xl border border-sky-200 object-cover"
           />
-          <div className="flex flex-col gap-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
             <p className="text-xs text-slate-500">
               {photoBlob ? `${Math.round(photoBlob.size / 1024)}KB（圧縮済み）` : ''}
             </p>
-            {canClear && (
-              <button
-                type="button"
-                disabled={disabled || compressing}
-                onClick={clearPhoto}
-                className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
-              >
-                削除
-              </button>
+            {photoBlob && (
+              <p className="text-xs leading-relaxed text-slate-500">
+                この写真はアプリにだけ残ります。カメラロールにも残す場合は下から保存してください。
+              </p>
             )}
+            <div className="flex flex-wrap gap-2">
+              {photoBlob && (
+                <button
+                  type="button"
+                  disabled={disabled || compressing || saving}
+                  onClick={() => void handleSaveToDevice()}
+                  className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
+                >
+                  {saving ? '保存中…' : 'カメラロールに残す'}
+                </button>
+              )}
+              {canClear && (
+                <button
+                  type="button"
+                  disabled={disabled || compressing || saving}
+                  onClick={clearPhoto}
+                  className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
+                >
+                  削除
+                </button>
+              )}
+            </div>
           </div>
         </div>
       ) : (
