@@ -592,24 +592,25 @@ function DetailSheetPanel({
   useEffect(() => {
     if (!interactive || !onExpandedChange) return
     if (!scrollRef || typeof scrollRef === 'function') return
-    const el = scrollRef.current
-    if (!el) return
+    const refObject = scrollRef
+    const setExpanded = onExpandedChange
 
-    let isExpanded = el.scrollTop > 36
     function onScroll() {
-      const top = el.scrollTop
+      const node = refObject.current
+      if (!node) return
+      const top = node.scrollTop
       onScrollTopChangeRef.current?.(top)
-      if (!isExpanded && top > 36) {
-        isExpanded = true
-        onExpandedChange(true)
-      } else if (isExpanded && top < 8) {
-        isExpanded = false
-        onExpandedChange(false)
+      if (top > 36) {
+        setExpanded(true)
+      } else if (top < 8) {
+        setExpanded(false)
       }
     }
 
-    el.addEventListener('scroll', onScroll, { passive: true })
-    return () => el.removeEventListener('scroll', onScroll)
+    const node = refObject.current
+    if (!node) return
+    node.addEventListener('scroll', onScroll, { passive: true })
+    return () => node.removeEventListener('scroll', onScroll)
   }, [interactive, scrollRef, record.id, onExpandedChange])
 
   return (
