@@ -4,13 +4,21 @@ import { RecordDetailSheet } from '../components/RecordDetailSheet'
 import { recordsWithCoordinates } from '../lib/coordinates'
 import { RecordsMap } from '../components/RecordsMap'
 import { useRecords } from '../hooks/useRecords'
-import { filterRecordsByDate, formatDateLabel } from '../lib/dates'
+import {
+  dateFromKey,
+  filterRecordsByDate,
+  filterRecordsByDateRange,
+  formatDateRangeLabel,
+  normalizeDateRange,
+} from '../lib/dates'
 import { deleteRecord } from '../lib/sync'
 import type { FishingRecord } from '../types/record'
 
 export function HistoryMapPage() {
   const { records, loading, error, reload } = useRecords()
   const [searchParams] = useSearchParams()
+  const fromKey = searchParams.get('from')
+  const toKey = searchParams.get('to')
   const dateKey = searchParams.get('date')
   const [selectedRecord, setSelectedRecord] = useState<FishingRecord | null>(
     null,
@@ -25,13 +33,38 @@ export function HistoryMapPage() {
   }, [statusMessage])
 
   const displayedRecords = useMemo(() => {
-    if (!dateKey) return records
-    return filterRecordsByDate(records, dateKey)
-  }, [records, dateKey])
+    if (fromKey) {
+      return filterRecordsByDateRange(records, fromKey, toKey ?? fromKey)
+    }
+    if (dateKey) {
+      return filterRecordsByDate(records, dateKey)
+    }
+    return records
+  }, [records, fromKey, toKey, dateKey])
 
   const mappableRecords = recordsWithCoordinates(displayedRecords)
-  const selectedDate = dateKey ? new Date(`${dateKey}T00:00:00`) : undefined
-  const historyBackTo = dateKey ? `/history?date=${dateKey}` : '/history'
+  const selectedRange = useMemo(() => {
+    if (fromKey) {
+      const from = dateFromKey(fromKey)
+      const to = dateFromKey(toKey ?? fromKey)
+      if (from && to) return normalizeDateRange({ from, to })
+    }
+    if (dateKey) {
+      const date = dateFromKey(dateKey)
+      if (date) return normalizeDateRange({ from: date, to: date })
+    }
+    return undefined
+  }, [fromKey, toKey, dateKey])
+
+  const historyBackTo = useMemo(() => {
+    if (fromKey) {
+      const to = toKey ?? fromKey
+      if (fromKey === to) return `/history?date=${fromKey}`
+      return `/history?from=${fromKey}&to=${to}`
+    }
+    if (dateKey) return `/history?date=${dateKey}`
+    return '/history'
+  }, [fromKey, toKey, dateKey])
 
   function handleSelectRecords(group: FishingRecord[]) {
     setClusterRecords(group)
@@ -73,9 +106,9 @@ export function HistoryMapPage() {
           Fissing Plotter
         </p>
         <h1 className="mt-1 text-2xl font-semibold text-sky-950">釣果マップ</h1>
-        {selectedDate && !Number.isNaN(selectedDate.getTime()) && (
+        {selectedRange && (
           <p className="mt-1 text-sm text-slate-500">
-            {formatDateLabel(selectedDate)}の記録
+            {formatDateRangeLabel(selectedRange.from, selectedRange.to)}の記録
           </p>
         )}
       </header>

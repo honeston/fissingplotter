@@ -40,6 +40,45 @@ export function filterRecordsByDate(
   return records.filter((r) => recordDateKey(r) === dateKey)
 }
 
+export function filterRecordsByDateRange(
+  records: FishingRecord[],
+  fromKey: string,
+  toKey: string,
+): FishingRecord[] {
+  const [start, end] = fromKey <= toKey ? [fromKey, toKey] : [toKey, fromKey]
+  return records.filter((r) => {
+    const key = recordDateKey(r)
+    return key >= start && key <= end
+  })
+}
+
+export function dateFromKey(dateKey: string | null): Date | undefined {
+  if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return undefined
+  const date = new Date(`${dateKey}T00:00:00`)
+  return Number.isNaN(date.getTime()) ? undefined : date
+}
+
+export interface DateRangeSelection {
+  from: Date
+  to: Date
+}
+
+/** react-day-picker の部分選択を正規化（from のみの場合は同日範囲） */
+export function normalizeDateRange(
+  range: { from?: Date; to?: Date } | undefined,
+): DateRangeSelection | undefined {
+  if (!range?.from) return undefined
+  const from = range.from
+  const to = range.to ?? range.from
+  if (from <= to) return { from, to }
+  return { from: to, to: from }
+}
+
+export function formatDateRangeLabel(from: Date, to: Date): string {
+  if (toDateKey(from) === toDateKey(to)) return formatDateLabel(from)
+  return `${formatDateLabel(from)} 〜 ${formatDateLabel(to)}`
+}
+
 export function datesWithRecords(records: FishingRecord[]): Set<string> {
   return new Set(records.map(recordDateKey))
 }
@@ -92,15 +131,17 @@ export function groupRecordsByDate(records: FishingRecord[]): RecordsByDate[] {
 
 export function recordsGroupedForDisplay(
   records: FishingRecord[],
-  selectedDate: Date | undefined,
+  selectedRange: { from?: Date; to?: Date } | undefined,
 ): RecordsByDate[] {
   const sorted = sortRecordsNewestFirst(records)
-  if (selectedDate) {
-    const dateKey = toDateKey(selectedDate)
-    const dayRecords = filterRecordsByDate(sorted, dateKey)
-    return dayRecords.length > 0
-      ? [{ dateKey, date: selectedDate, records: dayRecords }]
-      : []
+  const normalized = normalizeDateRange(selectedRange)
+  if (normalized) {
+    const filtered = filterRecordsByDateRange(
+      sorted,
+      toDateKey(normalized.from),
+      toDateKey(normalized.to),
+    )
+    return groupRecordsByDate(filtered)
   }
   return groupRecordsByDate(sorted)
 }

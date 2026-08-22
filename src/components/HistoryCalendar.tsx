@@ -1,19 +1,19 @@
 import { useMemo } from 'react'
-import { DayPicker } from 'react-day-picker'
+import { DayPicker, type DateRange } from 'react-day-picker'
 import { ja } from 'react-day-picker/locale'
 import { datesWithRecords, toDateKey } from '../lib/dates'
 import type { FishingRecord } from '../types/record'
 
 interface HistoryCalendarProps {
   records: FishingRecord[]
-  selectedDate: Date | undefined
-  onSelectDate: (date: Date | undefined) => void
+  selectedRange: DateRange | undefined
+  onSelectRange: (range: DateRange | undefined) => void
 }
 
 export function HistoryCalendar({
   records,
-  selectedDate,
-  onSelectDate,
+  selectedRange,
+  onSelectRange,
 }: HistoryCalendarProps) {
   const recordDates = useMemo(() => datesWithRecords(records), [records])
 
@@ -27,10 +27,10 @@ export function HistoryCalendar({
   return (
     <div className="rounded-xl border border-sky-100 bg-white p-3 shadow-sm">
       <DayPicker
-        mode="single"
+        mode="range"
         locale={ja}
-        selected={selectedDate}
-        onSelect={onSelectDate}
+        selected={selectedRange}
+        onSelect={onSelectRange}
         fixedWeeks
         showOutsideDays
         modifiers={modifiers}
@@ -57,6 +57,9 @@ export function HistoryCalendar({
           day_button:
             'mx-auto flex h-9 w-9 items-center justify-center rounded-md text-sm hover:bg-sky-50 disabled:opacity-30',
           outside: 'text-slate-300',
+          range_start: 'rounded-l-md bg-cyan-100',
+          range_end: 'rounded-r-md bg-cyan-100',
+          range_middle: 'bg-cyan-50',
         }}
       />
     </div>

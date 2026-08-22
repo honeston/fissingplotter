@@ -1,28 +1,54 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import type { DateRange } from 'react-day-picker'
 import { HistoryCalendar } from '../components/HistoryCalendar'
 import { RecordCard } from '../components/RecordCard'
 import { RecordDetailSheet } from '../components/RecordDetailSheet'
 import { useRecords } from '../hooks/useRecords'
 import {
+  dateFromKey,
   formatDateLabel,
+  formatDateRangeLabel,
+  normalizeDateRange,
   recordsGroupedForDisplay,
   toDateKey,
+  type DateRangeSelection,
 } from '../lib/dates'
 import { deleteRecord } from '../lib/sync'
 import type { FishingRecord } from '../types/record'
 
-function dateFromKey(dateKey: string | null): Date | undefined {
-  if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return undefined
-  const date = new Date(`${dateKey}T00:00:00`)
-  return Number.isNaN(date.getTime()) ? undefined : date
+function dateRangeFromSearchParams(
+  params: URLSearchParams,
+): DateRange | undefined {
+  const fromKey = params.get('from')
+  const toKey = params.get('to')
+  if (fromKey) {
+    const from = dateFromKey(fromKey)
+    const to = dateFromKey(toKey ?? fromKey)
+    if (from && to) return { from, to }
+    return undefined
+  }
+  const dateKey = params.get('date')
+  if (dateKey) {
+    const date = dateFromKey(dateKey)
+    if (date) return { from: date, to: date }
+  }
+  return undefined
+}
+
+function mapSearchParams(range: DateRangeSelection | undefined): string {
+  if (!range) return ''
+  const from = toDateKey(range.from)
+  const to = toDateKey(range.to)
+  if (from === to) return `?date=${from}`
+  return `?from=${from}&to=${to}`
 }
 
 export function HistoryPage() {
   const { records, loading, error, reload } = useRecords()
   const [searchParams] = useSearchParams()
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(() =>
-    dateFromKey(searchParams.get('date')),
+  const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(() =>
+    dateRangeFromSearchParams(searchParams),
   )
   const [selectedRecord, setSelectedRecord] = useState<FishingRecord | null>(
     null,
@@ -35,9 +61,14 @@ export function HistoryPage() {
     return () => window.clearTimeout(timer)
   }, [statusMessage])
 
+  const normalizedRange = useMemo(
+    () => normalizeDateRange(selectedRange),
+    [selectedRange],
+  )
+
   const recordSections = useMemo(
-    () => recordsGroupedForDisplay(records, selectedDate),
-    [records, selectedDate],
+    () => recordsGroupedForDisplay(records, selectedRange),
+    [records, selectedRange],
   )
 
   const navigableRecords = useMemo(
@@ -93,17 +124,26 @@ export function HistoryPage() {
       <div className="mb-4">
         <HistoryCalendar
           records={records}
-          selectedDate={selectedDate}
-          onSelectDate={setSelectedDate}
+          selectedRange={selectedRange}
+          onSelectRange={setSelectedRange}
         />
+        <p className="mt-2 text-center text-xs text-slate-500">
+          開始日と終了日をタップして期間を指定
+        </p>
       </div>
 
-      {selectedDate && (
-        <div className="mb-3 flex justify-end">
+      {normalizedRange && (
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <p className="text-sm text-sky-900">
+            {formatDateRangeLabel(normalizedRange.from, normalizedRange.to)}
+            <span className="ml-1 text-slate-500">
+              （{navigableRecords.length}件）
+            </span>
+          </p>
           <button
             type="button"
-            onClick={() => setSelectedDate(undefined)}
-            className="text-xs text-cyan-700 underline"
+            onClick={() => setSelectedRange(undefined)}
+            className="shrink-0 text-xs text-cyan-700 underline"
           >
             すべて表示
           </button>
@@ -113,11 +153,7 @@ export function HistoryPage() {
       <div className="mb-4 flex flex-wrap gap-2">
         {navigableRecords.length > 0 ? (
           <Link
-            to={
-              selectedDate
-                ? `/history/map?date=${toDateKey(selectedDate)}`
-                : '/history/map'
-            }
+            to={`/history/map${mapSearchParams(normalizedRange)}`}
             className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
           >
             マップ表示
@@ -143,7 +179,9 @@ export function HistoryPage() {
         records.length > 0 &&
         recordSections.length === 0 && (
           <p className="rounded-xl border border-dashed border-sky-200 bg-white/70 px-4 py-8 text-center text-sm text-slate-500">
-            この日の記録はありません
+            {normalizedRange
+              ? 'この期間の記録はありません'
+              : 'この日の記録はありません'}
           </p>
         )}
 
