@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { RecordDetailSheet } from '../components/RecordDetailSheet'
 import { recordsWithCoordinates } from '../lib/coordinates'
@@ -16,6 +16,13 @@ export function HistoryMapPage() {
     null,
   )
   const [clusterRecords, setClusterRecords] = useState<FishingRecord[]>([])
+  const [statusMessage, setStatusMessage] = useState('')
+
+  useEffect(() => {
+    if (!statusMessage) return
+    const timer = window.setTimeout(() => setStatusMessage(''), 2500)
+    return () => window.clearTimeout(timer)
+  }, [statusMessage])
 
   const displayedRecords = useMemo(() => {
     if (!dateKey) return records
@@ -47,6 +54,7 @@ export function HistoryMapPage() {
     setSelectedRecord((current) =>
       current?.id === id ? nextRecord : current,
     )
+    setStatusMessage('削除しました')
     await reload()
   }
 
@@ -72,6 +80,14 @@ export function HistoryMapPage() {
         )}
       </header>
 
+      {statusMessage && (
+        <p
+          className="fixed left-1/2 top-4 z-[80] w-[min(100%-2rem,28rem)] -translate-x-1/2 rounded-lg border border-sky-200 bg-white px-4 py-2.5 text-center text-sm text-sky-900 shadow-lg"
+          role="status"
+        >
+          {statusMessage}
+        </p>
+      )}
       {loading && <p className="text-sm text-slate-500">読み込み中…</p>}
       {error && <p className="text-sm text-red-700">{error}</p>}
 

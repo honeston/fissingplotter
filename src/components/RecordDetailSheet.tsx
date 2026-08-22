@@ -534,12 +534,14 @@ function DetailSheetPanel({
   titleId?: string
 }) {
   const [editing, setEditing] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
   const hasPrevious = index > 0
   const hasNext = index < total - 1
   const timeEdited = hasEditedField(record, 'recordedAt')
 
   useEffect(() => {
     setEditing(false)
+    setConfirmingDelete(false)
   }, [record.id])
 
   return (
@@ -579,7 +581,17 @@ function DetailSheetPanel({
             {editing ? '記録を編集' : '釣果詳細'}
           </h2>
           <div className="flex items-center gap-1">
-            {!editing && onUpdated && (
+            {!editing && onDelete && !confirmingDelete && (
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                disabled={!interactive}
+                className="rounded-md px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+              >
+                削除
+              </button>
+            )}
+            {!editing && onUpdated && !confirmingDelete && (
               <button
                 type="button"
                 onClick={() => setEditing(true)}
@@ -591,16 +603,53 @@ function DetailSheetPanel({
             )}
             <button
               type="button"
-              onClick={() => (editing ? setEditing(false) : onDismiss())}
+              onClick={() => {
+                if (editing) {
+                  setEditing(false)
+                  return
+                }
+                if (confirmingDelete) {
+                  setConfirmingDelete(false)
+                  return
+                }
+                onDismiss()
+              }}
               disabled={!interactive}
               className="rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-slate-100"
             >
-              {editing ? 'キャンセル' : '閉じる'}
+              {editing || confirmingDelete ? 'キャンセル' : '閉じる'}
             </button>
           </div>
         </div>
 
-        {hasNavigation && !editing && (
+        {confirmingDelete && onDelete && (
+          <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-3">
+            <p className="text-sm text-red-800">この記録を削除しますか？</p>
+            <div className="mt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={!interactive}
+                onClick={() => setConfirmingDelete(false)}
+                className="rounded-lg border border-sky-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-sky-50"
+              >
+                やめる
+              </button>
+              <button
+                type="button"
+                disabled={!interactive}
+                onClick={() => {
+                  setConfirmingDelete(false)
+                  onDelete(record.id)
+                }}
+                className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+              >
+                削除する
+              </button>
+            </div>
+          </div>
+        )}
+
+        {hasNavigation && !editing && !confirmingDelete && (
           <div className="mb-3 flex items-center justify-between gap-2">
             <button
               type="button"
@@ -644,11 +693,7 @@ function DetailSheetPanel({
           />
         ) : (
           <>
-            <RecordCard
-              record={record}
-              onDelete={interactive ? onDelete : undefined}
-              showLargePhoto
-            />
+            <RecordCard record={record} showLargePhoto />
             {hasCoordinates(record) && (
               <div className="relative mt-4 h-52 overflow-hidden rounded-xl border border-sky-100">
                 {showMap ? (

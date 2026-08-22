@@ -62,23 +62,7 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
             )}
           </div>
         )}
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <RecordValueList record={record} />
-          </div>
-          {onDelete && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                onDelete(record.id)
-              }}
-              className="shrink-0 rounded-md px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-            >
-              削除
-            </button>
-          )}
-        </div>
+        <RecordValueList record={record} />
       </div>
     )
   }
@@ -122,6 +106,7 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
             type="button"
             onClick={(e) => {
               e.stopPropagation()
+              if (!window.confirm('この記録を削除しますか？')) return
               onDelete(record.id)
             }}
             className="shrink-0 rounded-md px-2 py-1 text-xs text-red-600 hover:bg-red-50"

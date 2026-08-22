@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { HistoryCalendar } from '../components/HistoryCalendar'
 import { RecordCard } from '../components/RecordCard'
@@ -27,6 +27,13 @@ export function HistoryPage() {
   const [selectedRecord, setSelectedRecord] = useState<FishingRecord | null>(
     null,
   )
+  const [statusMessage, setStatusMessage] = useState('')
+
+  useEffect(() => {
+    if (!statusMessage) return
+    const timer = window.setTimeout(() => setStatusMessage(''), 2500)
+    return () => window.clearTimeout(timer)
+  }, [statusMessage])
 
   const recordSections = useMemo(
     () => recordsGroupedForDisplay(records, selectedDate),
@@ -49,6 +56,7 @@ export function HistoryPage() {
     setSelectedRecord((current) =>
       current?.id === id ? nextRecord : current,
     )
+    setStatusMessage('削除しました')
     await reload()
   }
 
@@ -74,6 +82,14 @@ export function HistoryPage() {
         </Link>
       </header>
 
+      {statusMessage && (
+        <p
+          className="fixed left-1/2 top-4 z-[80] w-[min(100%-2rem,28rem)] -translate-x-1/2 rounded-lg border border-sky-200 bg-white px-4 py-2.5 text-center text-sm text-sky-900 shadow-lg"
+          role="status"
+        >
+          {statusMessage}
+        </p>
+      )}
       <div className="mb-4">
         <HistoryCalendar
           records={records}
@@ -144,10 +160,7 @@ export function HistoryPage() {
                   onClick={() => setSelectedRecord(record)}
                   className="cursor-pointer rounded-xl border border-sky-100 bg-white px-4 py-3 shadow-sm transition hover:border-sky-200 active:bg-sky-50"
                 >
-                  <RecordCard
-                    record={record}
-                    onDelete={(id) => void handleDelete(id)}
-                  />
+                  <RecordCard record={record} />
                 </li>
               ))}
             </ul>
