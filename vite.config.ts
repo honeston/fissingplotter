@@ -8,22 +8,12 @@ export default defineConfig({
     // amazon-cognito-identity-js が Node の global を参照するため
     global: 'globalThis',
   },
-  optimizeDeps: {
-    exclude: ['@huggingface/transformers'],
-  },
-  worker: {
-    format: 'es',
-  },
   plugins: [
     react(),
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
-      workbox: {
-        // MobileCLIP / ONNX Runtime の WASM は初回利用時にネットワーク取得（precache しない）
-        globIgnores: ['**/*ort-wasm*.wasm'],
-      },
       manifest: {
         name: 'Fissing Plotter',
         short_name: 'Fissing',

@@ -1,22 +1,13 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import type { FishPhotoCandidate } from '../lib/fishSpeciesClip'
+import { useEffect, useId, useRef, useState } from 'react'
 import { getRecentFishSpecies, rememberFishSpecies, searchFishSpecies } from '../lib/fishSpecies'
 
 interface FishSpeciesInputProps {
   value: string
   onChange: (value: string) => void
   disabled?: boolean
-  photoCandidates?: FishPhotoCandidate[]
-  photoIdentifying?: boolean
 }
 
-export function FishSpeciesInput({
-  value,
-  onChange,
-  disabled,
-  photoCandidates = [],
-  photoIdentifying = false,
-}: FishSpeciesInputProps) {
+export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInputProps) {
   const listId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -28,24 +19,11 @@ export function FishSpeciesInput({
   const [composingQuery, setComposingQuery] = useState<string | null>(null)
 
   const effectiveQuery = composingQuery ?? value
-  const photoCandidateSet = useMemo(
-    () => new Set(photoCandidates.map((c) => c.species)),
-    [photoCandidates],
-  )
 
   useEffect(() => {
-    const textResults = searchFishSpecies(effectiveQuery)
-    if (effectiveQuery.trim()) {
-      setSuggestions(textResults)
-    } else if (photoCandidates.length > 0) {
-      const photoNames = photoCandidates.map((c) => c.species)
-      const rest = textResults.filter((s) => !photoNames.includes(s))
-      setSuggestions([...photoNames, ...rest].slice(0, 8))
-    } else {
-      setSuggestions(textResults)
-    }
+    setSuggestions(searchFishSpecies(effectiveQuery))
     setHighlight(0)
-  }, [effectiveQuery, photoCandidates])
+  }, [effectiveQuery])
 
   useEffect(() => {
     function onDocPointerDown(e: PointerEvent) {
@@ -91,16 +69,6 @@ export function FishSpeciesInput({
       <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor={listId}>
         魚種（任意）
       </label>
-      {photoIdentifying && (
-        <p className="mb-2 text-xs text-slate-500" role="status">
-          写真から魚種候補を推定中…（初回はモデル取得に時間がかかります）
-        </p>
-      )}
-      {!photoIdentifying && photoCandidates.length > 0 && effectiveQuery.trim() === '' && (
-        <p className="mb-2 text-xs text-slate-500">
-          写真からの参考候補です。必ず確認して選んでください。
-        </p>
-      )}
       <input
         ref={inputRef}
         id={listId}
@@ -166,12 +134,7 @@ export function FishSpeciesInput({
                 }}
               >
                 {species}
-                {photoCandidateSet.has(species) && effectiveQuery.trim() === '' ? (
-                  <span className="ml-2 text-xs text-violet-600">写真</span>
-                ) : null}
-                {getRecentFishSpecies().includes(species) &&
-                effectiveQuery.trim() === '' &&
-                !photoCandidateSet.has(species) ? (
+                {getRecentFishSpecies().includes(species) && effectiveQuery.trim() === '' ? (
                   <span className="ml-2 text-xs text-slate-400">最近</span>
                 ) : null}
               </button>

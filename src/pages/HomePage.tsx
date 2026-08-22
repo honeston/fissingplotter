@@ -4,7 +4,6 @@ import { FishSpeciesInput } from '../components/FishSpeciesInput'
 import { PhotoInput } from '../components/PhotoInput'
 import { RecordProgress } from '../components/RecordProgress'
 import { SavedRecordSummary } from '../components/SavedRecordSummary'
-import { useFishSpeciesFromPhoto } from '../hooks/useFishSpeciesFromPhoto'
 import { useRecord } from '../hooks/useRecord'
 
 export function HomePage() {
@@ -13,14 +12,6 @@ export function HomePage() {
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null)
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
   const { busy, steps, errors, lastResult, record, reset } = useRecord()
-  const {
-    candidates: photoCandidates,
-    identify: identifyFishFromPhoto,
-    clear: clearPhotoCandidates,
-    identifying: photoIdentifying,
-    error: photoIdentifyError,
-    enabled: photoIdentifyEnabled,
-  } = useFishSpeciesFromPhoto()
   const [fatalError, setFatalError] = useState('')
   const statusRef = useRef<HTMLDivElement>(null)
   const summaryRef = useRef<HTMLDivElement>(null)
@@ -49,14 +40,6 @@ export function HomePage() {
     requestAnimationFrame(() => requestAnimationFrame(revealButtons))
   }, [lastResult])
 
-  useEffect(() => {
-    if (!photoBlob) {
-      clearPhotoCandidates()
-      return
-    }
-    void identifyFishFromPhoto(photoBlob)
-  }, [photoBlob, identifyFishFromPhoto, clearPhotoCandidates])
-
   async function handleRecord() {
     setFatalError('')
     reset()
@@ -82,7 +65,6 @@ export function HomePage() {
       if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
       setPhotoPreviewUrl(null)
       setPhotoBlob(null)
-      clearPhotoCandidates()
     } catch (err) {
       setFatalError(err instanceof Error ? err.message : '記録に失敗しました')
     }
@@ -111,18 +93,7 @@ export function HomePage() {
         disabled={busy}
       />
 
-      <FishSpeciesInput
-        value={fishSpecies}
-        onChange={setFishSpecies}
-        disabled={busy}
-        photoCandidates={photoIdentifyEnabled ? photoCandidates : []}
-        photoIdentifying={photoIdentifyEnabled && photoIdentifying}
-      />
-      {photoIdentifyError && (
-        <p className="-mt-2 mb-4 text-xs text-amber-700" role="status">
-          写真からの魚種推定: {photoIdentifyError}
-        </p>
-      )}
+      <FishSpeciesInput value={fishSpecies} onChange={setFishSpecies} disabled={busy} />
 
       <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor="fish-size">
         体長 cm（任意）
