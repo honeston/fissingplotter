@@ -1,5 +1,4 @@
-import { lazy, Suspense } from 'react'
-import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, NavLink, Navigate, Route, Routes, useSearchParams } from 'react-router-dom'
 import { RequireAuth } from './components/RequireAuth'
 import { SyncStatusBanner } from './components/SyncStatusBanner'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -7,9 +6,12 @@ import { HistoryPage } from './pages/HistoryPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 
-const HistoryMapPage = lazy(() =>
-  import('./pages/HistoryMapPage').then((m) => ({ default: m.HistoryMapPage })),
-)
+function HistoryMapRedirect() {
+  const [searchParams] = useSearchParams()
+  const next = new URLSearchParams(searchParams)
+  next.set('map', '1')
+  return <Navigate to={`/history?${next.toString()}`} replace />
+}
 
 function AppShell() {
   const { authenticated, loading } = useAuth()
@@ -23,18 +25,7 @@ function AppShell() {
         <Route element={<RequireAuth />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/history" element={<HistoryPage />} />
-          <Route
-            path="/history/map"
-            element={
-              <Suspense
-                fallback={
-                  <p className="px-4 py-6 text-sm text-slate-500">読み込み中…</p>
-                }
-              >
-                <HistoryMapPage />
-              </Suspense>
-            }
-          />
+          <Route path="/history/map" element={<HistoryMapRedirect />} />
         </Route>
       </Routes>
       {showNav && (

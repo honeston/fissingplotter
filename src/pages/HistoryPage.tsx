@@ -1,21 +1,24 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import type { DateRange } from 'react-day-picker'
 import { HistoryCalendar } from '../components/HistoryCalendar'
 import { RecordCard } from '../components/RecordCard'
 import { RecordDetailSheet } from '../components/RecordDetailSheet'
 import { useRecords } from '../hooks/useRecords'
+import { recordsWithCoordinates } from '../lib/coordinates'
 import {
   dateFromKey,
   formatDateLabel,
   formatDateRangeLabel,
   normalizeDateRange,
   recordsGroupedForDisplay,
-  toDateKey,
-  type DateRangeSelection,
 } from '../lib/dates'
 import { deleteRecord } from '../lib/sync'
 import type { FishingRecord } from '../types/record'
+
+const RecordsMap = lazy(() =>
+  import('../components/RecordsMap').then((m) => ({ default: m.RecordsMap })),
+)
 
 function dateRangeFromSearchParams(
   params: URLSearchParams,
@@ -36,23 +39,19 @@ function dateRangeFromSearchParams(
   return undefined
 }
 
-function mapSearchParams(range: DateRangeSelection | undefined): string {
-  if (!range) return ''
-  const from = toDateKey(range.from)
-  const to = toDateKey(range.to)
-  if (from === to) return `?date=${from}`
-  return `?from=${from}&to=${to}`
-}
-
 export function HistoryPage() {
   const { records, loading, error, reload } = useRecords()
   const [searchParams] = useSearchParams()
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(() =>
     dateRangeFromSearchParams(searchParams),
   )
+  const [showMap, setShowMap] = useState(
+    () => searchParams.get('map') === '1',
+  )
   const [selectedRecord, setSelectedRecord] = useState<FishingRecord | null>(
     null,
   )
+  const [sheetRecords, setSheetRecords] = useState<FishingRecord[]>([])
   const [statusMessage, setStatusMessage] = useState('')
 
   useEffect(() => {
@@ -76,14 +75,34 @@ export function HistoryPage() {
     [recordSections],
   )
 
+  const mappableRecords = useMemo(
+    () => recordsWithCoordinates(navigableRecords),
+    [navigableRecords],
+  )
+
+  function openRecord(record: FishingRecord, context: FishingRecord[]) {
+    setSheetRecords(context)
+    setSelectedRecord(record)
+  }
+
+  function handleCloseSheet() {
+    setSelectedRecord(null)
+    setSheetRecords([])
+  }
+
+  function handleMapSelectRecords(group: FishingRecord[]) {
+    const first = group[0]
+    if (first) openRecord(first, group)
+  }
+
   async function handleDelete(id: string) {
-    const index = navigableRecords.findIndex((r) => r.id === id)
+    const index = sheetRecords.findIndex((r) => r.id === id)
+    const remaining = sheetRecords.filter((r) => r.id !== id)
     const nextRecord =
-      index >= 0
-        ? (navigableRecords[index + 1] ?? navigableRecords[index - 1] ?? null)
-        : null
+      remaining[Math.min(index, remaining.length - 1)] ?? null
 
     await deleteRecord(id)
+    setSheetRecords(remaining)
     setSelectedRecord((current) =>
       current?.id === id ? nextRecord : current,
     )
@@ -93,8 +112,14 @@ export function HistoryPage() {
 
   async function handleUpdated(updated: FishingRecord) {
     setSelectedRecord(updated)
+    setSheetRecords((list) =>
+      list.map((item) => (item.id === updated.id ? updated : item)),
+    )
     await reload()
   }
+
+  const mapButtonClass =
+    'rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm'
 
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
@@ -145,25 +170,48 @@ export function HistoryPage() {
             onClick={() => setSelectedRange(undefined)}
             className="shrink-0 text-xs text-cyan-700 underline"
           >
-            すべて表示
+            期間を解除
           </button>
         </div>
       )}
 
       <div className="mb-4 flex flex-wrap gap-2">
-        {navigableRecords.length > 0 ? (
-          <Link
-            to={`/history/map${mapSearchParams(normalizedRange)}`}
-            className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
+        {navigableRecords.length > 0 && mappableRecords.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setShowMap((open) => !open)}
+            className={mapButtonClass}
           >
-            マップ表示
-          </Link>
+            {showMap ? 'マップを閉じる' : 'マップ表示'}
+          </button>
         ) : (
-          <span className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 opacity-40 shadow-sm">
-            マップ表示
-          </span>
+          <span className={`${mapButtonClass} opacity-40`}>マップ表示</span>
         )}
       </div>
+
+      {showMap && mappableRecords.length > 0 && (
+        <div className="mb-6 h-[40dvh] w-full overflow-hidden rounded-xl border border-sky-100 shadow-sm">
+          <Suspense
+            fallback={
+              <div
+                className="h-full w-full rounded-xl bg-sky-50"
+                aria-hidden
+              />
+            }
+          >
+            <RecordsMap
+              records={navigableRecords}
+              onSelectRecords={handleMapSelectRecords}
+            />
+          </Suspense>
+        </div>
+      )}
+
+      {showMap && navigableRecords.length > 0 && mappableRecords.length === 0 && (
+        <p className="mb-6 rounded-xl border border-dashed border-sky-200 bg-white/70 px-4 py-6 text-center text-sm text-slate-500">
+          座標付きの記録がありません
+        </p>
+      )}
 
       {loading && <p className="text-sm text-slate-500">読み込み中…</p>}
       {error && <p className="text-sm text-red-700">{error}</p>}
@@ -195,7 +243,7 @@ export function HistoryPage() {
               {dayRecords.map((record) => (
                 <li
                   key={record.id}
-                  onClick={() => setSelectedRecord(record)}
+                  onClick={() => openRecord(record, navigableRecords)}
                   className="cursor-pointer rounded-xl border border-sky-100 bg-white px-4 py-3 shadow-sm transition hover:border-sky-200 active:bg-sky-50"
                 >
                   <RecordCard record={record} />
@@ -209,9 +257,9 @@ export function HistoryPage() {
       {selectedRecord && (
         <RecordDetailSheet
           record={selectedRecord}
-          records={navigableRecords}
+          records={sheetRecords}
           onNavigate={setSelectedRecord}
-          onClose={() => setSelectedRecord(null)}
+          onClose={handleCloseSheet}
           onDelete={(id) => void handleDelete(id)}
           onUpdated={(updated) => void handleUpdated(updated)}
         />
