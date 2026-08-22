@@ -19,7 +19,8 @@ export function PhotoInput({
   disabled,
   canClear = true,
 }: PhotoInputProps) {
-  const inputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
   const [compressing, setCompressing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -44,7 +45,8 @@ export function PhotoInput({
       setError(err instanceof Error ? err.message : '画像の処理に失敗しました')
     } finally {
       setCompressing(false)
-      if (inputRef.current) inputRef.current.value = ''
+      if (cameraInputRef.current) cameraInputRef.current.value = ''
+      if (galleryInputRef.current) galleryInputRef.current.value = ''
     }
   }
 
@@ -52,7 +54,8 @@ export function PhotoInput({
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     onPreviewChange(null)
     onPhotoChange(null)
-    if (inputRef.current) inputRef.current.value = ''
+    if (cameraInputRef.current) cameraInputRef.current.value = ''
+    if (galleryInputRef.current) galleryInputRef.current.value = ''
   }
 
   async function handleSaveToDevice() {
@@ -68,16 +71,28 @@ export function PhotoInput({
     }
   }
 
+  const pickerDisabled = disabled || compressing
+  const pickButtonClassName =
+    'flex min-h-12 flex-1 items-center justify-center rounded-xl border border-dashed border-sky-300 bg-sky-50/50 px-3 py-3 text-sm font-medium text-cyan-800 disabled:opacity-60'
+
   return (
     <div className="mb-4">
       <span className="mb-2 block text-sm font-medium text-sky-900">写真（任意）</span>
       <input
-        ref={inputRef}
+        ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
         className="hidden"
-        disabled={disabled || compressing}
+        disabled={pickerDisabled}
+        onChange={(e) => void handleFile(e.target.files?.[0] ?? null)}
+      />
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        disabled={pickerDisabled}
         onChange={(e) => void handleFile(e.target.files?.[0] ?? null)}
       />
       {previewUrl ? (
@@ -97,6 +112,22 @@ export function PhotoInput({
               </p>
             )}
             <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={pickerDisabled || saving}
+                onClick={() => cameraInputRef.current?.click()}
+                className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
+              >
+                撮り直す
+              </button>
+              <button
+                type="button"
+                disabled={pickerDisabled || saving}
+                onClick={() => galleryInputRef.current?.click()}
+                className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
+              >
+                アルバムから選ぶ
+              </button>
               {photoBlob && (
                 <button
                   type="button"
@@ -121,14 +152,24 @@ export function PhotoInput({
           </div>
         </div>
       ) : (
-        <button
-          type="button"
-          disabled={disabled || compressing}
-          onClick={() => inputRef.current?.click()}
-          className="flex min-h-12 w-full items-center justify-center rounded-xl border border-dashed border-sky-300 bg-sky-50/50 px-4 py-3 text-sm font-medium text-cyan-800 disabled:opacity-60"
-        >
-          {compressing ? '圧縮中…' : '写真を追加'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            disabled={pickerDisabled}
+            onClick={() => cameraInputRef.current?.click()}
+            className={pickButtonClassName}
+          >
+            {compressing ? '圧縮中…' : 'カメラで撮る'}
+          </button>
+          <button
+            type="button"
+            disabled={pickerDisabled}
+            onClick={() => galleryInputRef.current?.click()}
+            className={pickButtonClassName}
+          >
+            {compressing ? '圧縮中…' : 'アルバムから選ぶ'}
+          </button>
+        </div>
       )}
       {error && (
         <p className="mt-2 text-sm text-red-600" role="alert">
