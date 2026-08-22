@@ -484,7 +484,7 @@ export function RecordDetailSheet({
             sheetExpanded ? 'h-dvh' : 'h-[85dvh]'
           }`}
         >
-          <div ref={trackRef} className="absolute inset-y-0 left-0">
+          <div ref={trackRef} className="absolute inset-y-0 left-0 w-full">
             {slides.map(({ item, index }) => {
               const interactive = index === currentIndex
               return (
@@ -496,7 +496,7 @@ export function RecordDetailSheet({
                   hasNavigation={hasNavigation}
                   records={records}
                   offsetLeft={hasNavigation ? index * metrics.step : 0}
-                  width={hasNavigation ? metrics.cardWidth : undefined}
+                  width={metrics.cardWidth}
                   onNavigate={
                     interactive
                       ? (next) => {
@@ -620,11 +620,11 @@ function DetailSheetPanel({
         expanded
           ? 'rounded-none border-0'
           : 'rounded-t-2xl border'
-      } ${interactive ? '' : 'pointer-events-none'} ${
-        hasNavigation ? '' : 'left-1/2 w-full max-w-md -translate-x-1/2'
-      }`}
+      } ${interactive ? '' : 'pointer-events-none'}`}
       style={{
-        ...(hasNavigation ? { left: offsetLeft, width } : undefined),
+        left: hasNavigation ? offsetLeft : '50%',
+        width,
+        transform: hasNavigation ? undefined : 'translateX(-50%)',
         ...(expanded
           ? { paddingTop: 'env(safe-area-inset-top, 0px)' }
           : undefined),
