@@ -481,7 +481,9 @@ export function RecordDetailSheet({
       >
         <div
           className={`relative w-full transition-[height] duration-300 ease-out ${
-            sheetExpanded ? 'h-dvh' : 'h-[85dvh]'
+            sheetExpanded
+              ? 'h-[calc(100dvh-max(0.75rem,env(safe-area-inset-top,0px)))]'
+              : 'h-[85dvh]'
           }`}
         >
           <div ref={trackRef} className="absolute inset-y-0 left-0 w-full">
@@ -616,18 +618,13 @@ function DetailSheetPanel({
   return (
     <div
       data-editing={editing ? 'true' : undefined}
-      className={`detail-sheet-panel absolute top-0 flex h-full flex-col border-sky-100 bg-white shadow-lg transition-[border-radius] duration-300 ${
-        expanded
-          ? 'rounded-none border-0'
-          : 'rounded-t-2xl border'
-      } ${interactive ? '' : 'pointer-events-none'}`}
+      className={`detail-sheet-panel absolute top-0 flex h-full flex-col rounded-t-2xl border border-sky-100 bg-white shadow-lg ${
+        interactive ? '' : 'pointer-events-none'
+      }`}
       style={{
         left: hasNavigation ? offsetLeft : '50%',
         width,
         transform: hasNavigation ? undefined : 'translateX(-50%)',
-        ...(expanded
-          ? { paddingTop: 'env(safe-area-inset-top, 0px)' }
-          : undefined),
       }}
       aria-hidden={!interactive}
     >
