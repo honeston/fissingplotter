@@ -4,6 +4,8 @@ import { SyncStatusBanner } from './components/SyncStatusBanner'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ChangeEmailPage } from './pages/ChangeEmailPage'
 import { ChangePasswordPage } from './pages/ChangePasswordPage'
+import { FishEncyclopediaPage } from './pages/FishEncyclopediaPage'
+import { FishEncyclopediaSpeciesPage } from './pages/FishEncyclopediaSpeciesPage'
 import { HistoryPage } from './pages/HistoryPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
@@ -32,6 +34,11 @@ function AppShell() {
           <Route path="/mypage" element={<MyPage />} />
           <Route path="/mypage/email" element={<ChangeEmailPage />} />
           <Route path="/mypage/password" element={<ChangePasswordPage />} />
+          <Route path="/mypage/encyclopedia" element={<FishEncyclopediaPage />} />
+          <Route
+            path="/mypage/encyclopedia/:species"
+            element={<FishEncyclopediaSpeciesPage />}
+          />
         </Route>
       </Routes>
       {showNav && (

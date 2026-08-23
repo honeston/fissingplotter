@@ -187,6 +187,9 @@ export function HistoryPage() {
         ) : (
           <span className={`${mapButtonClass} opacity-40`}>マップ表示</span>
         )}
+        <Link to="/mypage/encyclopedia" className={mapButtonClass}>
+          マイ魚種図鑑
+        </Link>
       </div>
 
       {showMap && mappableRecords.length > 0 && (

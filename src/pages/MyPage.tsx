@@ -76,10 +76,18 @@ export function MyPage() {
             title="マイタックル"
             description="ロッド・リール・ルアーなど、愛用のタックルを管理します。"
           />
-          <FutureMenuItem
-            title="マイ魚種図鑑"
-            description="釣った魚を図鑑形式で記録・閲覧します。"
-          />
+          <Link
+            to="/mypage/encyclopedia"
+            className="flex items-start justify-between gap-3 rounded-xl border border-sky-200 bg-white px-4 py-3 shadow-sm transition hover:border-sky-300 active:bg-sky-50"
+          >
+            <div className="min-w-0">
+              <p className="font-medium text-sky-950">マイ魚種図鑑</p>
+              <p className="mt-1 text-sm text-slate-500">
+                釣った魚を図鑑形式で記録・閲覧します。
+              </p>
+            </div>
+            <span className="shrink-0 text-sm font-medium text-cyan-800">開く</span>
+          </Link>
         </div>
       </section>
     </main>
