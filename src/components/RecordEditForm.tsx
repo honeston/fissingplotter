@@ -1,4 +1,6 @@
 import { lazy, Suspense, useEffect, useId, useRef, useState } from 'react'
+import { usePhotoUrl } from '../hooks/usePhotoUrl'
+import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import { fetchDerivedConditions } from '../lib/conditions'
 import { sameCoordinates } from '../lib/coordinates'
 import {
@@ -10,12 +12,23 @@ import { withEditedField } from '../lib/editedFields'
 import { rememberFishSpecies, canonicalFishSpeciesName } from '../lib/fishSpecies'
 import { getCurrentPosition } from '../lib/geolocation'
 import { updateRecord } from '../lib/sync'
+import {
+  lengthUnitLabel,
+  parseSizeToCm,
+  parseWeightToG,
+  sizeInputStep,
+  sizePlaceholder,
+  sizeToInputString,
+  weightInputStep,
+  weightPlaceholder,
+  weightToInputString,
+  weightUnitLabel,
+} from '../lib/units'
 import type { FishingRecord } from '../types/record'
 import { FishSpeciesInput } from './FishSpeciesInput'
 import { LoadingSpinner } from './RecordCard'
 import { RecordValueList } from './RecordValueList'
 import { PhotoInput } from './PhotoInput'
-import { usePhotoUrl } from '../hooks/usePhotoUrl'
 
 const CoordinatePickerMap = lazy(() =>
   import('./CoordinatePickerMap').then((m) => ({ default: m.CoordinatePickerMap })),
@@ -34,13 +47,16 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
   const sizeId = useId()
   const weightId = useId()
   const { url: existingPhotoUrl } = usePhotoUrl(record)
+  const { prefs } = useUnitPrefs()
   const [draft, setDraft] = useState<FishingRecord>(record)
-  const [fishSizeCm, setFishSizeCm] = useState(
-    record.fishSizeCm != null ? String(record.fishSizeCm) : '',
+  const [fishSizeInput, setFishSizeInput] = useState(
+    record.fishSizeCm != null ? sizeToInputString(record.fishSizeCm, prefs.length) : '',
   )
-  const [fishWeightG, setFishWeightG] = useState(
-    record.fishWeightG != null ? String(record.fishWeightG) : '',
+  const [fishWeightInput, setFishWeightInput] = useState(
+    record.fishWeightG != null ? weightToInputString(record.fishWeightG, prefs.weight) : '',
   )
+  const lengthUnitRef = useRef(prefs.length)
+  const weightUnitRef = useRef(prefs.weight)
   const [recordedLocal, setRecordedLocal] = useState(toDatetimeLocalValue(record.recordedAt))
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null)
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
@@ -56,14 +72,20 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
   useEffect(() => {
     originalRef.current = record
     setDraft(record)
-    setFishSizeCm(record.fishSizeCm != null ? String(record.fishSizeCm) : '')
-    setFishWeightG(record.fishWeightG != null ? String(record.fishWeightG) : '')
+    setFishSizeInput(
+      record.fishSizeCm != null ? sizeToInputString(record.fishSizeCm, prefs.length) : '',
+    )
+    setFishWeightInput(
+      record.fishWeightG != null ? weightToInputString(record.fishWeightG, prefs.weight) : '',
+    )
+    lengthUnitRef.current = prefs.length
+    weightUnitRef.current = prefs.weight
     setRecordedLocal(toDatetimeLocalValue(record.recordedAt))
     setPhotoBlob(null)
     setPhotoPreviewUrl(null)
     setWarnings([])
     setError('')
-  }, [record])
+  }, [record, prefs.length, prefs.weight])
 
   useEffect(() => {
     const gen = ++fetchGen.current
@@ -130,24 +152,16 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
 
   async function handleSave() {
     setError('')
-    const sizeRaw = fishSizeCm.trim()
-    let parsedSize: number | null = null
-    if (sizeRaw) {
-      parsedSize = Number(sizeRaw)
-      if (!Number.isFinite(parsedSize) || parsedSize < 0) {
-        setError('体長は 0 以上の数値で入力してください')
-        return
-      }
+    const parsedSize = parseSizeToCm(fishSizeInput, prefs.length)
+    if (parsedSize === 'invalid') {
+      setError('体長は 0 以上の数値で入力してください')
+      return
     }
 
-    const weightRaw = fishWeightG.trim()
-    let parsedWeight: number | null = null
-    if (weightRaw) {
-      parsedWeight = Number(weightRaw)
-      if (!Number.isFinite(parsedWeight) || parsedWeight < 0) {
-        setError('重さは 0 以上の数値で入力してください')
-        return
-      }
+    const parsedWeight = parseWeightToG(fishWeightInput, prefs.weight)
+    if (parsedWeight === 'invalid') {
+      setError('重さは 0 以上の数値で入力してください')
+      return
     }
 
     const recordedAtRaw = fromDatetimeLocalValue(recordedLocal)
@@ -221,33 +235,33 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
       />
 
       <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor={sizeId}>
-        体長 cm（任意）
+        体長 {lengthUnitLabel(prefs.length)}（任意）
       </label>
       <input
         id={sizeId}
         type="number"
         inputMode="decimal"
         min={0}
-        step={0.1}
-        placeholder="例: 25"
-        value={fishSizeCm}
-        onChange={(e) => setFishSizeCm(e.target.value)}
+        step={sizeInputStep(prefs.length)}
+        placeholder={sizePlaceholder(prefs.length)}
+        value={fishSizeInput}
+        onChange={(e) => setFishSizeInput(e.target.value)}
         disabled={saving}
         className="mb-4 w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-base text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
       />
 
       <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor={weightId}>
-        重さ g（任意）
+        重さ {weightUnitLabel(prefs.weight)}（任意）
       </label>
       <input
         id={weightId}
         type="number"
         inputMode="decimal"
         min={0}
-        step={1}
-        placeholder="例: 350"
-        value={fishWeightG}
-        onChange={(e) => setFishWeightG(e.target.value)}
+        step={weightInputStep(prefs.weight)}
+        placeholder={weightPlaceholder(prefs.weight)}
+        value={fishWeightInput}
+        onChange={(e) => setFishWeightInput(e.target.value)}
         disabled={saving}
         className="mb-4 w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-base text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
       />

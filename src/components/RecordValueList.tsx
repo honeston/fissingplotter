@@ -3,7 +3,9 @@ import { hasCoordinates } from '../lib/coordinates'
 import { hasEditedField } from '../lib/editedFields'
 import { formatSunLine, formatTideCycleMoon, formatTideSlope } from '../lib/formatRecord'
 import { mapsUrl } from '../lib/maps'
+import { formatFishSize, formatFishWeight } from '../lib/units'
 import { weatherCodeLabel } from '../lib/weatherCode'
+import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import type { FishingRecord } from '../types/record'
 
 export function EditedMark() {
@@ -39,18 +41,15 @@ export function RecordValueList({
 }) {
   const coords = hasCoordinates(record)
   const locationEdited = hasEditedField(record, 'location')
+  const { prefs } = useUnitPrefs()
 
   return (
     <dl className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-3 gap-y-2 text-sm">
       {!omitCatchFields && (
         <>
           <Row label="魚種">{record.fishSpecies ?? '—'}</Row>
-          <Row label="体長">
-            {record.fishSizeCm != null ? `${record.fishSizeCm} cm` : '—'}
-          </Row>
-          <Row label="重さ">
-            {record.fishWeightG != null ? `${record.fishWeightG} g` : '—'}
-          </Row>
+          <Row label="体長">{formatFishSize(record.fishSizeCm, prefs.length)}</Row>
+          <Row label="重さ">{formatFishWeight(record.fishWeightG, prefs.weight)}</Row>
         </>
       )}
       <Row label="場所" edited={locationEdited}>

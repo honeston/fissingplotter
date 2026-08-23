@@ -1,11 +1,14 @@
 import { Link } from 'react-router-dom'
 import { usePhotoUrl } from '../hooks/usePhotoUrl'
+import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import type { RecordResult } from '../hooks/useRecord'
+import { formatFishSize, formatFishWeight } from '../lib/units'
 import { RecordValueList } from './RecordValueList'
 
 function SavedRecordSummary({ result }: { result: RecordResult }) {
   const { record: saved, warnings } = result
   const { url: photoUrl } = usePhotoUrl(saved)
+  const { prefs } = useUnitPrefs()
 
   return (
     <section
@@ -16,8 +19,12 @@ function SavedRecordSummary({ result }: { result: RecordResult }) {
       <p className="mt-1 text-xs text-cyan-800">
         {new Date(saved.recordedAt).toLocaleString('ja-JP')}
         {saved.fishSpecies ? ` / ${saved.fishSpecies}` : ''}
-        {saved.fishSizeCm != null ? ` / ${saved.fishSizeCm}cm` : ''}
-        {saved.fishWeightG != null ? ` / ${saved.fishWeightG}g` : ''}
+        {saved.fishSizeCm != null
+          ? ` / ${formatFishSize(saved.fishSizeCm, prefs.length)}`
+          : ''}
+        {saved.fishWeightG != null
+          ? ` / ${formatFishWeight(saved.fishWeightG, prefs.weight)}`
+          : ''}
       </p>
       {photoUrl && (
         <img

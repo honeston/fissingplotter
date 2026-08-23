@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useUnitPrefs } from '../hooks/useUnitPrefs'
+import type { LengthUnit, WeightUnit } from '../lib/units'
 
 interface FutureMenuItemProps {
   title: string
@@ -23,8 +25,58 @@ function FutureMenuItem({ title, description }: FutureMenuItemProps) {
   )
 }
 
+const LENGTH_OPTIONS: { value: LengthUnit; label: string }[] = [
+  { value: 'cm', label: 'cm' },
+  { value: 'in', label: 'inch' },
+]
+
+const WEIGHT_OPTIONS: { value: WeightUnit; label: string }[] = [
+  { value: 'g', label: 'g' },
+  { value: 'kg', label: 'kg' },
+  { value: 'oz', label: 'oz' },
+]
+
+function UnitToggleGroup<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value: T
+  options: { value: T; label: string }[]
+  onChange: (next: T) => void
+}) {
+  return (
+    <div>
+      <p className="text-sm font-medium text-sky-950">{label}</p>
+      <div className="mt-2 flex gap-2">
+        {options.map((option) => {
+          const active = option.value === value
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onChange(option.value)}
+              aria-pressed={active}
+              className={`min-w-16 flex-1 rounded-lg border px-3 py-2 text-sm font-medium shadow-sm ${
+                active
+                  ? 'border-cyan-600 bg-cyan-50 text-cyan-900'
+                  : 'border-sky-200 bg-white text-cyan-800'
+              }`}
+            >
+              {option.label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export function MyPage() {
   const { cloudEnabled, userEmail } = useAuth()
+  const { prefs, setLengthUnit, setWeightUnit } = useUnitPrefs()
 
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
@@ -32,6 +84,27 @@ export function MyPage() {
         <p className="text-sm font-medium tracking-wide text-cyan-700">Fissing Plotter</p>
         <h1 className="mt-1 text-2xl font-semibold text-sky-950">マイページ</h1>
       </header>
+
+      <section className="mb-6 rounded-xl border border-sky-200 bg-white px-4 py-3 shadow-sm">
+        <h2 className="text-sm font-medium text-sky-900">単位設定</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          記録の体長・重さの表示と入力に使う単位です。保存値は変わりません。
+        </p>
+        <div className="mt-4 flex flex-col gap-4">
+          <UnitToggleGroup
+            label="体長"
+            value={prefs.length}
+            options={LENGTH_OPTIONS}
+            onChange={setLengthUnit}
+          />
+          <UnitToggleGroup
+            label="重さ"
+            value={prefs.weight}
+            options={WEIGHT_OPTIONS}
+            onChange={setWeightUnit}
+          />
+        </div>
+      </section>
 
       <section className="mb-6 rounded-xl border border-sky-200 bg-white px-4 py-3 shadow-sm">
         <h2 className="text-sm font-medium text-sky-900">アカウント</h2>

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useRecords } from '../hooks/useRecords'
+import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import { dateFromKey, formatDateLabel } from '../lib/dates'
 import {
   buildSpeciesStats,
@@ -9,6 +10,7 @@ import {
   type SpeciesStat,
   type SortDirection,
 } from '../lib/fishEncyclopedia'
+import { formatFishSize, formatFishWeight } from '../lib/units'
 
 const SORT_OPTIONS: { key: SpeciesSortKey; label: string }[] = [
   { key: 'count', label: '数' },
@@ -17,13 +19,6 @@ const SORT_OPTIONS: { key: SpeciesSortKey; label: string }[] = [
   { key: 'maxWeightG', label: '最大重量' },
 ]
 
-function formatSize(cm: number | null): string {
-  return cm != null ? `${cm} cm` : '—'
-}
-
-function formatWeight(g: number | null): string {
-  return g != null ? `${g} g` : '—'
-}
 
 function formatBestCatchDay(dateKey: string | null, count: number): string {
   if (!dateKey) return '—'
@@ -111,6 +106,7 @@ export function FishEncyclopediaPage() {
 }
 
 function SpeciesStatCard({ stat }: { stat: SpeciesStat }) {
+  const { prefs } = useUnitPrefs()
   return (
     <Link
       to={`/mypage/encyclopedia/${encodeURIComponent(stat.species)}`}
@@ -124,11 +120,11 @@ function SpeciesStatCard({ stat }: { stat: SpeciesStat }) {
       <dl className="mt-2 space-y-1.5 text-sm text-slate-600">
         <div className="flex items-center justify-between gap-2">
           <dt className="shrink-0">最大サイズ</dt>
-          <dd className="font-medium text-sky-950">{formatSize(stat.maxSizeCm)}</dd>
+          <dd className="font-medium text-sky-950">{formatFishSize(stat.maxSizeCm, prefs.length)}</dd>
         </div>
         <div className="flex items-center justify-between gap-2">
           <dt className="shrink-0">最大重量</dt>
-          <dd className="font-medium text-sky-950">{formatWeight(stat.maxWeightG)}</dd>
+          <dd className="font-medium text-sky-950">{formatFishWeight(stat.maxWeightG, prefs.weight)}</dd>
         </div>
         <div className="flex items-center justify-between gap-2">
           <dt className="shrink-0">最大釣果日</dt>

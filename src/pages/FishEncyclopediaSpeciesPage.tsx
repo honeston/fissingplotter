@@ -3,18 +3,13 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { RecordCard } from '../components/RecordCard'
 import { RecordDetailSheet } from '../components/RecordDetailSheet'
 import { useRecords } from '../hooks/useRecords'
+import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import { dateFromKey, formatDateLabel, groupRecordsByDate, recordDateKey } from '../lib/dates'
 import { buildSpeciesStats, findSpeciesStat } from '../lib/fishEncyclopedia'
+import { formatFishSize, formatFishWeight } from '../lib/units'
 import { deleteRecord } from '../lib/sync'
 import type { FishingRecord } from '../types/record'
 
-function formatSize(cm: number | null): string {
-  return cm != null ? `${cm} cm` : '—'
-}
-
-function formatWeight(g: number | null): string {
-  return g != null ? `${g} g` : '—'
-}
 
 function formatBestCatchDay(dateKey: string | null, count: number): string {
   if (!dateKey) return '—'
@@ -24,6 +19,7 @@ function formatBestCatchDay(dateKey: string | null, count: number): string {
 }
 
 export function FishEncyclopediaSpeciesPage() {
+  const { prefs } = useUnitPrefs()
   const { species: speciesParam } = useParams<{ species: string }>()
   const species = speciesParam ? decodeURIComponent(speciesParam) : ''
   const [searchParams, setSearchParams] = useSearchParams()
@@ -173,7 +169,7 @@ export function FishEncyclopediaSpeciesPage() {
                       onClick={() => scrollToRecord(speciesStat.maxSizeRecord!)}
                       className="font-medium text-cyan-800 underline decoration-cyan-200 underline-offset-2"
                     >
-                      {formatSize(speciesStat.maxSizeCm)}
+                      {formatFishSize(speciesStat.maxSizeCm, prefs.length)}
                     </button>
                   ) : (
                     <span className="font-medium text-sky-950">—</span>
@@ -189,7 +185,7 @@ export function FishEncyclopediaSpeciesPage() {
                       onClick={() => scrollToRecord(speciesStat.maxWeightRecord!)}
                       className="font-medium text-cyan-800 underline decoration-cyan-200 underline-offset-2"
                     >
-                      {formatWeight(speciesStat.maxWeightG)}
+                      {formatFishWeight(speciesStat.maxWeightG, prefs.weight)}
                     </button>
                   ) : (
                     <span className="font-medium text-sky-950">—</span>

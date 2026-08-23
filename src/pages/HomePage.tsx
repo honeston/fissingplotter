@@ -4,13 +4,27 @@ import { FishSpeciesInput } from '../components/FishSpeciesInput'
 import { PhotoInput } from '../components/PhotoInput'
 import { RecordProgress } from '../components/RecordProgress'
 import { SavedRecordSummary } from '../components/SavedRecordSummary'
-import { canonicalFishSpeciesName } from '../lib/fishSpecies'
 import { useRecord } from '../hooks/useRecord'
+import { useUnitPrefs } from '../hooks/useUnitPrefs'
+import { canonicalFishSpeciesName } from '../lib/fishSpecies'
+import {
+  lengthUnitLabel,
+  parseSizeToCm,
+  parseWeightToG,
+  sizeInputStep,
+  sizePlaceholder,
+  sizeToInputString,
+  weightInputStep,
+  weightPlaceholder,
+  weightToInputString,
+  weightUnitLabel,
+} from '../lib/units'
 
 export function HomePage() {
+  const { prefs } = useUnitPrefs()
   const [fishSpecies, setFishSpecies] = useState('')
-  const [fishSizeCm, setFishSizeCm] = useState('')
-  const [fishWeightG, setFishWeightG] = useState('')
+  const [fishSizeInput, setFishSizeInput] = useState('')
+  const [fishWeightInput, setFishWeightInput] = useState('')
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null)
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
   const { busy, steps, errors, lastResult, record, reset } = useRecord()
@@ -18,6 +32,8 @@ export function HomePage() {
   const statusRef = useRef<HTMLDivElement>(null)
   const summaryRef = useRef<HTMLDivElement>(null)
   const topRef = useRef<HTMLElement>(null)
+  const lengthUnitRef = useRef(prefs.length)
+  const weightUnitRef = useRef(prefs.weight)
 
   function scrollToTop() {
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -42,28 +58,42 @@ export function HomePage() {
     requestAnimationFrame(() => requestAnimationFrame(revealButtons))
   }, [lastResult])
 
+  useEffect(() => {
+    if (lengthUnitRef.current === prefs.length) return
+    const previous = lengthUnitRef.current
+    lengthUnitRef.current = prefs.length
+    setFishSizeInput((current) => {
+      const cm = parseSizeToCm(current, previous)
+      if (cm == null || cm === 'invalid') return current.trim() ? current : ''
+      return sizeToInputString(cm, prefs.length)
+    })
+  }, [prefs.length])
+
+  useEffect(() => {
+    if (weightUnitRef.current === prefs.weight) return
+    const previous = weightUnitRef.current
+    weightUnitRef.current = prefs.weight
+    setFishWeightInput((current) => {
+      const g = parseWeightToG(current, previous)
+      if (g == null || g === 'invalid') return current.trim() ? current : ''
+      return weightToInputString(g, prefs.weight)
+    })
+  }, [prefs.weight])
+
   async function handleRecord() {
     setFatalError('')
     reset()
 
-    const sizeRaw = fishSizeCm.trim()
-    let parsedSize: number | null = null
-    if (sizeRaw) {
-      parsedSize = Number(sizeRaw)
-      if (!Number.isFinite(parsedSize) || parsedSize < 0) {
-        setFatalError('体長は 0 以上の数値で入力してください')
-        return
-      }
+    const parsedSize = parseSizeToCm(fishSizeInput, prefs.length)
+    if (parsedSize === 'invalid') {
+      setFatalError('体長は 0 以上の数値で入力してください')
+      return
     }
 
-    const weightRaw = fishWeightG.trim()
-    let parsedWeight: number | null = null
-    if (weightRaw) {
-      parsedWeight = Number(weightRaw)
-      if (!Number.isFinite(parsedWeight) || parsedWeight < 0) {
-        setFatalError('重さは 0 以上の数値で入力してください')
-        return
-      }
+    const parsedWeight = parseWeightToG(fishWeightInput, prefs.weight)
+    if (parsedWeight === 'invalid') {
+      setFatalError('重さは 0 以上の数値で入力してください')
+      return
     }
 
     try {
@@ -74,8 +104,8 @@ export function HomePage() {
         photoBlob,
       })
       setFishSpecies('')
-      setFishSizeCm('')
-      setFishWeightG('')
+      setFishSizeInput('')
+      setFishWeightInput('')
       if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
       setPhotoPreviewUrl(null)
       setPhotoBlob(null)
@@ -112,34 +142,34 @@ export function HomePage() {
       <div className="mb-4 grid grid-cols-2 gap-3">
         <div>
           <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor="fish-size">
-            体長 cm（任意）
+            体長 {lengthUnitLabel(prefs.length)}（任意）
           </label>
           <input
             id="fish-size"
             type="number"
             inputMode="decimal"
             min={0}
-            step={0.1}
-            placeholder="例: 25"
-            value={fishSizeCm}
-            onChange={(e) => setFishSizeCm(e.target.value)}
+            step={sizeInputStep(prefs.length)}
+            placeholder={sizePlaceholder(prefs.length)}
+            value={fishSizeInput}
+            onChange={(e) => setFishSizeInput(e.target.value)}
             disabled={busy}
             className="w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-base text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
           />
         </div>
         <div>
           <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor="fish-weight">
-            重さ g（任意）
+            重さ {weightUnitLabel(prefs.weight)}（任意）
           </label>
           <input
             id="fish-weight"
             type="number"
             inputMode="decimal"
             min={0}
-            step={1}
-            placeholder="例: 350"
-            value={fishWeightG}
-            onChange={(e) => setFishWeightG(e.target.value)}
+            step={weightInputStep(prefs.weight)}
+            placeholder={weightPlaceholder(prefs.weight)}
+            value={fishWeightInput}
+            onChange={(e) => setFishWeightInput(e.target.value)}
             disabled={busy}
             className="w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-base text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
           />
@@ -164,11 +194,7 @@ export function HomePage() {
         >
           {busy ? '記録中…' : '記録する'}
         </button>
-        <div
-          ref={statusRef}
-          tabIndex={-1}
-          className="mt-4 scroll-mt-4 outline-none"
-        >
+        <div ref={statusRef} tabIndex={-1} className="mt-4 scroll-mt-4 outline-none">
           <RecordProgress steps={steps} errors={errors} />
           {lastResult && (
             <div ref={summaryRef} tabIndex={-1} className="scroll-mt-4 outline-none">

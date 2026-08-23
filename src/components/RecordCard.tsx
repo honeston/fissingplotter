@@ -3,8 +3,10 @@ import { hasCoordinates } from '../lib/coordinates'
 import { hasEditedField } from '../lib/editedFields'
 import { formatSunLine, formatTideLine, formatWeatherLine } from '../lib/formatRecord'
 import { mapsUrl } from '../lib/maps'
+import { formatFishSize, formatFishWeight } from '../lib/units'
 import { saveImageToDevice } from '../lib/saveImageToDevice'
 import { usePhotoUrl } from '../hooks/usePhotoUrl'
+import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import { EditedMark, RecordValueList } from './RecordValueList'
 import type { FishingRecord } from '../types/record'
 
@@ -16,6 +18,7 @@ interface RecordCardProps {
 
 export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps) {
   const { url: photoUrl, loading: photoLoading } = usePhotoUrl(record)
+  const { prefs } = useUnitPrefs()
   const [savingPhoto, setSavingPhoto] = useState(false)
   const [saveError, setSaveError] = useState('')
 
@@ -95,12 +98,12 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
               {record.fishSpecies ?? '（魚種なし）'}
               {record.fishSizeCm != null ? (
                 <span className="ml-2 text-sm font-normal text-slate-600">
-                  {record.fishSizeCm}cm
+                  {formatFishSize(record.fishSizeCm, prefs.length)}
                 </span>
               ) : null}
               {record.fishWeightG != null ? (
                 <span className="ml-2 text-sm font-normal text-slate-600">
-                  {record.fishWeightG}g
+                  {formatFishWeight(record.fishWeightG, prefs.weight)}
                 </span>
               ) : null}
             </span>
