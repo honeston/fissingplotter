@@ -13,10 +13,17 @@
 
 ```bash
 npm install
-npm run dev
+cp .env.development.local.example .env.development.local
 ```
 
-`.env` 未設定時は IndexedDB のみ（ログイン不要）。AWS 連携時は `.env.example` を参照。
+**ローカル（本番と分離）** — [`docs/local-dev.md`](docs/local-dev.md)
+
+```bash
+npm run dev:api   # ターミナル1: LocalStack + SAM local (Docker Lambda)
+npm run dev       # ターミナル2: Vite
+```
+
+**本番** — GitHub Actions のみ。[`docs/deploy-aws.md`](docs/deploy-aws.md)
 
 ## 機能
 
@@ -34,11 +41,7 @@ npm run preview
 
 ### AWS（本番）
 
-```bash
-cd infra && sam build && sam deploy --guided
-cp .env.example .env   # Outputs を設定
-npm run deploy:aws
-```
+GitHub Actions（`main` push / `workflow_dispatch`）のみ。手順は [`docs/deploy-aws.md`](docs/deploy-aws.md)。
 
 ### Cloudflare（レガシー）
 

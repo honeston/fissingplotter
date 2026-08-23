@@ -1,0 +1,21 @@
+# ローカル開発用（本番 AWS とは別）。DynamoDB + S3 を LocalStack で提供。
+services:
+  localstack:
+    image: localstack/localstack:4
+    ports:
+      - '4566:4566'
+    environment:
+      SERVICES: dynamodb,s3
+      DEFAULT_REGION: ap-northeast-1
+      EAGER_SERVICE_LOADING: '1'
+    volumes:
+      - localstack-data:/var/lib/localstack
+    networks:
+      - fissingplotter-local
+
+networks:
+  fissingplotter-local:
+    name: fissingplotter-local
+
+volumes:
+  localstack-data:

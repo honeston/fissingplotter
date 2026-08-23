@@ -88,6 +88,7 @@ Phase 5 時点のホスティング。IndexedDB のみ（クラウド同期な�
 | GET | `/records` | JWT | 一覧（`?since=` 差分） |
 | POST | `/records` | JWT | 作成 / 更新 |
 | DELETE | `/records/{id}` | JWT | 削除 |
+| GET | `/weather/current` | JWT | 現在の天気（`?lat=&lng=`） |
 
 ### SAM Outputs → フロント `.env` 対応
 
@@ -104,22 +105,31 @@ Phase 5 時点のホスティング。IndexedDB のみ（クラウド同期な�
 
 ## 設定・シークレット
 
-### ローカル（`.env`）
+### ローカル（`.env.development.local`）
 
-[`/.env.example`](../.env.example) をコピー。未設定時は IndexedDB のみモード。
+[`/.env.development.local.example`](../.env.development.local.example) をコピー。`npm run dev` 時のみ読み込まれる。
+
+| 変数 | 用途 |
+|------|------|
+| `VITE_API_URL` | ローカル SAM API（`http://127.0.0.1:3000`） |
+| `VITE_COGNITO_*` | ログイン（開発用 Pool 推奨） |
+| `OPENWEATHER_API_KEY` | ローカル Lambda → `infra/env.local.json` |
+
+手順: [`docs/local-dev.md`](local-dev.md)
 
 ### Git 管理外
 
-| ファイル / 場所 | 内容 |
-|----------------|------|
-| `.env` | Vite ビルド時注入 |
-| `infra/samconfig.toml` | SAM デプロイ設定（[`samconfig.toml.example`](../infra/samconfig.toml.example) からコピー） |
+| ファイル | 内容 |
+|---------|------|
+| `.env.development.local` | ローカルフロント + OpenWeather |
+| `infra/env.local.json` | SAM local の Lambda 環境変数 |
 
 ### GitHub Actions Secrets
 
 | Secret | 値 | 設定済み |
 |--------|-----|---------|
 | `AWS_ROLE_ARN` | `arn:aws:iam::319640345981:role/github-actions-deploy-roll` | ✅ |
+| `OPENWEATHER_API_KEY` | OpenWeatherMap API キー → Lambda `OPENWEATHER_API_KEY` | 要設定 |
 
 ### IAM / OIDC（GitHub Actions 用）
 
@@ -135,20 +145,16 @@ Phase 5 時点のホスティング。IndexedDB のみ（クラウド同期な�
 | 権限ポリシー | [`infra/iam/github-actions-permissions-policy.json`](../infra/iam/github-actions-permissions-policy.json) | ✅ |
 | ロール最終使用 | デプロイ成功（2026-08-11） | |
 
-手動デプロイ用 IAM ユーザー `ken`（`AdministratorAccess`）は開発・初回デプロイ用。CI とは別経路。
-
 OIDC 設定手順: [`docs/deploy-aws.md`](deploy-aws.md#github-actions-oidc)
 
 ---
 
 ## デプロイ経路
 
-| 経路 | コマンド / トリガー | 対象 |
-|------|-------------------|------|
-| 手動（インフラ） | `npm run deploy:infra` | SAM スタック |
-| 手動（フロント） | `npm run deploy:aws` | build → S3 → CloudFront 無効化 |
-| GitHub Actions | `.github/workflows/deploy-aws.yml` | `workflow_dispatch`（push は未启用） |
-| Cloudflare | `npm run deploy` | Pages（レガシー） |
+| 経路 | トリガー | 対象 |
+|------|---------|------|
+| GitHub Actions | `main` push / `workflow_dispatch` | SAM + フロント（S3 / CloudFront） |
+| Cloudflare | （レガシー） | Pages |
 
 詳細: [`docs/deploy-aws.md`](deploy-aws.md)、[`docs/deploy.md`](deploy.md)
 
@@ -158,7 +164,7 @@ OIDC 設定手順: [`docs/deploy-aws.md`](deploy-aws.md#github-actions-oidc)
 
 | サービス | 用途 | インフラ管理 |
 |---------|------|-------------|
-| Open-Meteo | 気温 | なし（クライアント直接） |
+| OpenWeatherMap | 気温・風 | Lambda プロキシ（15分グリッドキャッシュ） |
 | tide736 | 潮位 | なし（クライアント直接） |
 | GitHub | ソース・CI | リポジトリ |
 | Cloudflare | レガシー CDN | アカウント手動 |

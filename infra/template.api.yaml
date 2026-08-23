@@ -1,0 +1,92 @@
+# ローカル SAM（sam local start-api）専用。本番デプロイには template.yaml を使う。
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Fissing Plotter — local API only (Docker Lambda + LocalStack)
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 128
+
+Resources:
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: local
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowHeaders:
+          - Authorization
+          - Content-Type
+        AllowMethods:
+          - GET
+          - POST
+          - DELETE
+          - OPTIONS
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handler.handler
+      CodeUri: ../api/
+      Environment:
+        Variables:
+          LOCAL_DEV: 'true'
+          TABLE_NAME: fissingplotter-records
+          WEATHER_CACHE_TABLE: fissingplotter-weather-cache
+          MEDIA_BUCKET_NAME: fissingplotter-media-local
+          AWS_ENDPOINT_URL: http://localstack:4566
+          AWS_REGION: ap-northeast-1
+      Events:
+        Health:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /health
+            Method: GET
+        GetRecords:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /records
+            Method: GET
+        PostRecord:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /records
+            Method: POST
+        DeleteRecord:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /records/{id}
+            Method: DELETE
+        PresignPhoto:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /photos/presign
+            Method: POST
+        GetPhotoUrl:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /photos/{recordId}/url
+            Method: GET
+        GetCurrentWeather:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /weather/current
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/handler.ts
+        Minify: false
+        Target: es2022
+        Sourcemap: true

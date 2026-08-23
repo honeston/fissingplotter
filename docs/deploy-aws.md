@@ -1,91 +1,17 @@
 # AWS デプロイ手順
 
-本番推奨構成: **S3 + CloudFront + Cognito + API Gateway + Lambda + DynamoDB**。
+本番構成: **S3 + CloudFront + Cognito + API Gateway + Lambda + DynamoDB**。
+
+デプロイは **GitHub Actions のみ**。ローカルからの `sam deploy` / `npm run deploy:infra` / `npm run deploy:aws` は使わない。
 
 詳細なリソース一覧・不足チェックは [`docs/infra.md`](infra.md) を参照。
-
-## 前提
-
-- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) 設定済み
-- [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
-- Node.js 20+
-- リージョン: `ap-northeast-1`（変更する場合は `infra/samconfig.toml` と workflow を合わせる）
-
-## 1. インフラ初回デプロイ
-
-```bash
-cp infra/samconfig.toml.example infra/samconfig.toml
-# 必要なら samconfig.toml を編集
-
-cd infra
-sam build
-sam deploy --guided
-```
-
-または:
-
-```bash
-npm run deploy:infra
-```
-
-### デプロイ後: Outputs を `.env` に反映
-
-```bash
-aws cloudformation describe-stacks --stack-name fissingplotter \
-  --query 'Stacks[0].Outputs' --output table
-```
-
-```bash
-cp .env.example .env
-# VITE_API_URL, VITE_COGNITO_USER_POOL_ID, VITE_COGNITO_CLIENT_ID を設定
-```
-
-## 2. フロントエンドデプロイ
-
-`.env` を設定したうえで:
-
-```bash
-npm run deploy:aws
-```
-
-内部処理: `npm run build` → S3 アップロード → CloudFront キャッシュ無効化（[`scripts/deploy-aws.mjs`](../scripts/deploy-aws.mjs)）。
-
-## 3. 動作確認
-
-```bash
-# API ヘルス（認証不要）
-curl "$(grep VITE_API_URL .env | cut -d= -f2)/health"
-# → {"ok":true}
-```
-
-ブラウザ:
-
-1. SAM Outputs の `WebsiteUrl` を HTTPS で開く
-2. ユーザー登録 / ログイン
-3. 記録 → 履歴に反映 → 別端末で同期確認
-
-チェックリスト全文: [`docs/infra.md#不足チェックリスト`](infra.md#不足チェックリスト)
-
-## カスタムドメイン（任意）
-
-CloudFront 用 ACM 証明書は **us-east-1** で作成する。
-
-`sam deploy` の parameter overrides 例:
-
-```
-DomainName=fissingplotter.example.com
-HostedZoneId=Z1234567890ABC
-AcmCertificateArn=arn:aws:acm:us-east-1:123456789012:certificate/abc-123
-```
-
-`samconfig.toml` の `parameter_overrides` に追記してもよい（[`infra/samconfig.toml.example`](../infra/samconfig.toml.example) 参照）。
 
 ## GitHub Actions
 
 [`.github/workflows/deploy-aws.yml`](../.github/workflows/deploy-aws.yml) が SAM + フロントデプロイを実行。
 
-- トリガー: **`workflow_dispatch` のみ**（`main` push はコメントアウト）
-- 必要 Secret: `AWS_ROLE_ARN`
+- トリガー: `main` push / `workflow_dispatch`
+- 必要 Secret: `AWS_ROLE_ARN`、天気機能には `OPENWEATHER_API_KEY`
 
 ### 登録する Secret
 
@@ -94,6 +20,9 @@ GitHub リポジトリ → Settings → Secrets and variables → Actions:
 | Name | Value |
 |------|-------|
 | `AWS_ROLE_ARN` | `arn:aws:iam::319640345981:role/github-actions-deploy-roll` |
+| `OPENWEATHER_API_KEY` | [OpenWeatherMap](https://openweathermap.org/) の API キー（Current Weather 用） |
+
+`OPENWEATHER_API_KEY` は SAM の `OpenWeatherApiKey` パラメータ経由で Lambda 環境変数に注入されます。GitHub ログには出力されません。Secret 未設定のデプロイでは既存のキーを上書きしません（スタック更新時は前回値を維持）。
 
 ### GitHub Actions OIDC（設定済み）
 
@@ -120,13 +49,29 @@ GitHub リポジトリ → Settings → Secrets and variables → Actions:
 3. ~~GitHub Secret 登録~~ ✅
 4. **workflow 実行** — Actions → Deploy AWS → Run workflow
 
-## インフラ更新
-
-`infra/template.yaml` または `api/` を変更したら:
+## 動作確認
 
 ```bash
-cd infra && sam build && sam deploy
-npm run deploy:aws
+curl "https://nedsyr5jic.execute-api.ap-northeast-1.amazonaws.com/prod/health"
+# → {"ok":true}
+```
+
+ブラウザ:
+
+1. CloudFront の `WebsiteUrl` を HTTPS で開く
+2. ユーザー登録 / ログイン
+3. 記録 → 履歴に反映 → 別端末で同期確認
+
+チェックリスト全文: [`docs/infra.md#不足チェックリスト`](infra.md#不足チェックリスト)
+
+## カスタムドメイン（任意）
+
+CloudFront 用 ACM 証明書は **us-east-1** で作成する。スタックパラメータ例:
+
+```
+DomainName=fissingplotter.example.com
+HostedZoneId=Z1234567890ABC
+AcmCertificateArn=arn:aws:acm:us-east-1:123456789012:certificate/abc-123
 ```
 
 ## トラブルシュート
@@ -139,7 +84,7 @@ npm run deploy:aws
 | スタックが `ROLLBACK_FAILED` | 権限修正後、CloudFormation で `fissingplotter` スタックを削除してから再デプロイ |
 | `Not authorized to perform sts:AssumeRoleWithWebIdentity` | [OIDC AssumeRole 失敗](#oidc-assumerole-失敗) を参照 |
 | workflow で S3 PutObject 拒否 | 許可ポリシー `StaticSiteBucket` の ARN に `319640345981` が入っているか |
-| ログインできない | `.env` の Cognito ID が Outputs と一致しているか |
+| ログインできない | フロントビルドに注入された Cognito ID がスタック Outputs と一致しているか |
 | API 401 | トークン期限切れ → 再ログイン |
 | 同期しない | `isCloudSyncEnabled()` — 3 つの `VITE_*` がビルド時に注入されているか |
 | 古い UI が表示 | CloudFront 無効化完了を待つ（数分） |
@@ -154,8 +99,6 @@ npm run deploy:aws
 arn:aws:cloudformation:ap-northeast-1:319640345981:stack/aws-sam-cli-managed-default/*
 arn:aws:cloudformation:ap-northeast-1:319640345981:stack/aws-sam-cli-managed-default/
 ```
-
-参照: [`infra/iam/github-actions-permissions-policy.json`](../infra/iam/github-actions-permissions-policy.json)
 
 不足検知: `npm run check:infra`
 

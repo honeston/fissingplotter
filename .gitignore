@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 .env
+.env.development.local
+infra/env.local.json
 .aws-sam
 infra/.aws-sam
 infra/samconfig.toml

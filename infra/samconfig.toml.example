@@ -10,5 +10,7 @@ confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 parameter_overrides = "AppName=fissingplotter"
 
+# OpenWeatherMap API key は GitHub Actions Secret OPENWEATHER_API_KEY から渡す（このファイルには書かない）
+
 # Optional custom domain (requires ACM cert in us-east-1):
 # parameter_overrides = "AppName=fissingplotter DomainName=fissingplotter.example.com HostedZoneId=Z1234567890ABC AcmCertificateArn=arn:aws:acm:us-east-1:123456789012:certificate/abc-123"
