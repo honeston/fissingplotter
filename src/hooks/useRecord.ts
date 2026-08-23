@@ -165,6 +165,7 @@ export function useRecord() {
             fishSpecies: input.fishSpecies,
             fishSizeCm: input.fishSizeCm,
             fishWeightG: input.fishWeightG,
+            tackle: input.tackle,
             photoKey: null,
             editedFields: [],
           },

@@ -10,6 +10,7 @@ import { HistoryPage } from './pages/HistoryPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { MyPage } from './pages/MyPage'
+import { MyTacklePage } from './pages/MyTacklePage'
 
 function HistoryMapRedirect() {
   const [searchParams] = useSearchParams()
@@ -32,6 +33,7 @@ function AppShell() {
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/history/map" element={<HistoryMapRedirect />} />
           <Route path="/mypage" element={<MyPage />} />
+          <Route path="/mypage/tackle" element={<MyTacklePage />} />
           <Route path="/mypage/email" element={<ChangeEmailPage />} />
           <Route path="/mypage/password" element={<ChangePasswordPage />} />
           <Route path="/mypage/encyclopedia" element={<FishEncyclopediaPage />} />

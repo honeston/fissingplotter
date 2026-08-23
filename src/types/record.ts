@@ -1,3 +1,5 @@
+import type { TackleFields } from './tackle'
+
 /** ユーザーが手動修正した項目。魚種・体長・重さは対象外。 */
 export type EditedField = 'recordedAt' | 'location'
 
@@ -24,6 +26,8 @@ export interface FishingRecord {
   fishSpecies: string | null
   fishSizeCm: number | null
   fishWeightG: number | null
+  /** 記録時点のタックル（スナップショット） */
+  tackle: TackleFields | null
   photoKey: string | null
   editedFields: EditedField[]
   updatedAt?: string | null
@@ -40,5 +44,6 @@ export interface RecordFormInput {
   fishSpecies: string | null
   fishSizeCm: number | null
   fishWeightG: number | null
+  tackle: TackleFields | null
   photoBlob: Blob | null
 }

@@ -33,12 +33,22 @@ export interface FishingRecord {
   fishSpecies: string | null
   fishSizeCm: number | null
   fishWeightG: number | null
+  tackle: TackleFields | null
   photoKey: string | null
   editedFields: EditedField[]
   updatedAt?: string | null
 }
 
 type EditedField = 'recordedAt' | 'location'
+
+export type TackleFields = {
+  name: string
+  rod: string
+  reel: string
+  line: string
+  lureOrBait: string
+  rig: string
+}
 
 function sortKey(recordedAt: string, id: string): string {
   return `${recordedAt}#${id}`
@@ -83,6 +93,29 @@ function parseEditedFields(value: unknown): EditedField[] {
   return [...unique]
 }
 
+function parseTackleFields(value: unknown): TackleFields | null {
+  if (value == null) return null
+  if (typeof value !== 'object') return null
+  const v = value as Record<string, unknown>
+  const fields: TackleFields = {
+    name: typeof v.name === 'string' ? v.name.trim() : '',
+    rod: typeof v.rod === 'string' ? v.rod.trim() : '',
+    reel: typeof v.reel === 'string' ? v.reel.trim() : '',
+    line: typeof v.line === 'string' ? v.line.trim() : '',
+    lureOrBait: typeof v.lureOrBait === 'string' ? v.lureOrBait.trim() : '',
+    rig: typeof v.rig === 'string' ? v.rig.trim() : '',
+  }
+  const hasContent = Boolean(
+    fields.name ||
+      fields.rod ||
+      fields.reel ||
+      fields.line ||
+      fields.lureOrBait ||
+      fields.rig,
+  )
+  return hasContent ? fields : null
+}
+
 function validateRecord(input: unknown): FishingRecord {
   if (!input || typeof input !== 'object') {
     throw new Error('Invalid record body')
@@ -123,6 +156,7 @@ function validateRecord(input: unknown): FishingRecord {
     fishSpecies: optionalString(r.fishSpecies),
     fishSizeCm: parseNonNegativeNumber(r.fishSizeCm, 'fishSizeCm'),
     fishWeightG: parseNonNegativeNumber(r.fishWeightG, 'fishWeightG'),
+    tackle: parseTackleFields(r.tackle),
     photoKey: typeof r.photoKey === 'string' ? r.photoKey : null,
     editedFields: parseEditedFields(r.editedFields),
   }
@@ -200,6 +234,7 @@ export async function upsertRecord(userId: string, input: unknown): Promise<Fish
         fishSpecies: record.fishSpecies,
         fishSizeCm: record.fishSizeCm,
         fishWeightG: record.fishWeightG,
+        tackle: record.tackle,
         photoKey: record.photoKey,
         editedFields: record.editedFields,
         updatedAt: now,
@@ -256,6 +291,7 @@ function storedToRecord(item: Record<string, unknown>): FishingRecord {
     fishSpecies: storedString(item.fishSpecies),
     fishSizeCm: storedNumber(item.fishSizeCm),
     fishWeightG: storedNumber(item.fishWeightG),
+    tackle: parseTackleFields(item.tackle),
     photoKey: item.photoKey == null ? null : String(item.photoKey),
     editedFields: parseEditedFields(item.editedFields),
     updatedAt: storedString(item.updatedAt),

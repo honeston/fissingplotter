@@ -7,6 +7,7 @@ import { formatFishSize, formatFishWeight } from '../lib/units'
 import { weatherCodeLabel } from '../lib/weatherCode'
 import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import type { FishingRecord } from '../types/record'
+import { hasTackleContent } from '../types/tackle'
 
 export function EditedMark() {
   return <strong className="ml-1 font-bold">（編集済み）</strong>
@@ -50,6 +51,18 @@ export function RecordValueList({
           <Row label="魚種">{record.fishSpecies ?? '—'}</Row>
           <Row label="体長">{formatFishSize(record.fishSizeCm, prefs.length)}</Row>
           <Row label="重さ">{formatFishWeight(record.fishWeightG, prefs.weight)}</Row>
+          {hasTackleContent(record.tackle) && (
+            <>
+              {record.tackle!.name ? <Row label="タックル">{record.tackle!.name}</Row> : null}
+              {record.tackle!.rod ? <Row label="ロッド">{record.tackle!.rod}</Row> : null}
+              {record.tackle!.reel ? <Row label="リール">{record.tackle!.reel}</Row> : null}
+              {record.tackle!.line ? <Row label="ライン">{record.tackle!.line}</Row> : null}
+              {record.tackle!.lureOrBait ? (
+                <Row label="ルアー／エサ">{record.tackle!.lureOrBait}</Row>
+              ) : null}
+              {record.tackle!.rig ? <Row label="仕掛け">{record.tackle!.rig}</Row> : null}
+            </>
+          )}
         </>
       )}
       <Row label="場所" edited={locationEdited}>

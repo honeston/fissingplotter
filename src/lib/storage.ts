@@ -1,5 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import type { FishingRecord, NewFishingRecord } from '../types/record'
+import type { MyTackle } from '../types/tackle'
+import { normalizeTackleFields } from '../types/tackle'
 import { normalizeEditedFields } from './editedFields'
 import { getSunTimes } from './sun'
 
@@ -13,12 +15,18 @@ interface FissingDB extends DBSchema {
     key: string
     value: Blob
   }
+  tackles: {
+    key: string
+    value: MyTackle
+    indexes: { 'by-updatedAt': string }
+  }
 }
 
 const DB_NAME = 'fissingplotter'
-const DB_VERSION = 2
+const DB_VERSION = 3
 const STORE = 'records'
 const PHOTO_STORE = 'photoBlobs'
+const TACKLE_STORE = 'tackles'
 
 let dbPromise: Promise<IDBPDatabase<FissingDB>> | null = null
 
@@ -32,6 +40,10 @@ function getDb() {
         }
         if (oldVersion < 2) {
           db.createObjectStore(PHOTO_STORE)
+        }
+        if (oldVersion < 3) {
+          const tackles = db.createObjectStore(TACKLE_STORE, { keyPath: 'id' })
+          tackles.createIndex('by-updatedAt', 'updatedAt')
         }
       },
     })
@@ -80,6 +92,7 @@ function normalizeRecord(record: FishingRecord): FishingRecord {
     tideSlopeCmPerHour: record.tideSlopeCmPerHour ?? null,
     fishSizeCm: record.fishSizeCm ?? null,
     fishWeightG: record.fishWeightG ?? null,
+    tackle: normalizeTackleFields(record.tackle),
     photoKey: record.photoKey ?? null,
     editedFields: normalizeEditedFields(record.editedFields),
     updatedAt: record.updatedAt ?? null,
@@ -109,6 +122,7 @@ function buildRecord(input: NewFishingRecord): FishingRecord {
     fishSpecies: input.fishSpecies,
     fishSizeCm: input.fishSizeCm ?? null,
     fishWeightG: input.fishWeightG ?? null,
+    tackle: normalizeTackleFields(input.tackle),
     photoKey: input.photoKey ?? null,
     editedFields: normalizeEditedFields(input.editedFields),
     updatedAt: input.updatedAt ?? null,
@@ -181,4 +195,45 @@ export async function getPhotoBlob(recordId: string): Promise<Blob | undefined> 
 export async function deletePhotoBlob(recordId: string): Promise<void> {
   const db = await getDb()
   await db.delete(PHOTO_STORE, recordId)
+}
+
+function normalizeMyTackle(tackle: MyTackle): MyTackle {
+  const fields = normalizeTackleFields(tackle) ?? {
+    name: '',
+    rod: '',
+    reel: '',
+    line: '',
+    lureOrBait: '',
+    rig: '',
+  }
+  return {
+    id: tackle.id,
+    updatedAt: tackle.updatedAt || new Date().toISOString(),
+    ...fields,
+  }
+}
+
+/** 更新日時の新しい順 */
+export async function listMyTackles(): Promise<MyTackle[]> {
+  const db = await getDb()
+  const list = await db.getAllFromIndex(TACKLE_STORE, 'by-updatedAt')
+  return list.reverse().map(normalizeMyTackle)
+}
+
+export async function getMyTackle(id: string): Promise<MyTackle | undefined> {
+  const db = await getDb()
+  const tackle = await db.get(TACKLE_STORE, id)
+  return tackle ? normalizeMyTackle(tackle) : undefined
+}
+
+export async function putMyTackle(tackle: MyTackle): Promise<MyTackle> {
+  const next = normalizeMyTackle(tackle)
+  const db = await getDb()
+  await db.put(TACKLE_STORE, next)
+  return next
+}
+
+export async function deleteMyTackle(id: string): Promise<void> {
+  const db = await getDb()
+  await db.delete(TACKLE_STORE, id)
 }

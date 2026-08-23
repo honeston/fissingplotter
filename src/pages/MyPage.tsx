@@ -3,28 +3,6 @@ import { useAuth } from '../contexts/AuthContext'
 import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import type { LengthUnit, WeightUnit } from '../lib/units'
 
-interface FutureMenuItemProps {
-  title: string
-  description: string
-}
-
-function FutureMenuItem({ title, description }: FutureMenuItemProps) {
-  return (
-    <div
-      className="flex items-start justify-between gap-3 rounded-xl border border-sky-200 bg-white/70 px-4 py-3 shadow-sm"
-      aria-disabled="true"
-    >
-      <div className="min-w-0">
-        <p className="font-medium text-sky-950">{title}</p>
-        <p className="mt-1 text-sm text-slate-500">{description}</p>
-      </div>
-      <span className="shrink-0 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700">
-        準備中
-      </span>
-    </div>
-  )
-}
-
 const LENGTH_OPTIONS: { value: LengthUnit; label: string }[] = [
   { value: 'cm', label: 'cm' },
   { value: 'in', label: 'inch' },
@@ -88,10 +66,18 @@ export function MyPage() {
       <section className="mb-6">
         <h2 className="mb-3 text-sm font-medium text-sky-900">マイデータ</h2>
         <div className="flex flex-col gap-3">
-          <FutureMenuItem
-            title="マイタックル"
-            description="ロッド・リール・ルアーなど、愛用のタックルを管理します。"
-          />
+          <Link
+            to="/mypage/tackle"
+            className="flex items-start justify-between gap-3 rounded-xl border border-sky-200 bg-white px-4 py-3 shadow-sm transition hover:border-sky-300 active:bg-sky-50"
+          >
+            <div className="min-w-0">
+              <p className="font-medium text-sky-950">マイタックル</p>
+              <p className="mt-1 text-sm text-slate-500">
+                ロッド・リール・ルアーなど、愛用のタックルを管理します。
+              </p>
+            </div>
+            <span className="shrink-0 text-sm font-medium text-cyan-800">開く</span>
+          </Link>
           <Link
             to="/mypage/encyclopedia"
             className="flex items-start justify-between gap-3 rounded-xl border border-sky-200 bg-white px-4 py-3 shadow-sm transition hover:border-sky-300 active:bg-sky-50"

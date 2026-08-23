@@ -25,10 +25,17 @@ import {
   weightUnitLabel,
 } from '../lib/units'
 import type { FishingRecord } from '../types/record'
+import {
+  EMPTY_TACKLE_FIELDS,
+  hasTackleContent,
+  normalizeTackleFields,
+  type TackleFields,
+} from '../types/tackle'
 import { FishSpeciesInput } from './FishSpeciesInput'
 import { LoadingSpinner } from './RecordCard'
 import { RecordValueList } from './RecordValueList'
 import { PhotoInput } from './PhotoInput'
+import { TackleFieldsForm } from './TackleFieldsForm'
 
 const CoordinatePickerMap = lazy(() =>
   import('./CoordinatePickerMap').then((m) => ({ default: m.CoordinatePickerMap })),
@@ -55,6 +62,10 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
   const [fishWeightInput, setFishWeightInput] = useState(
     record.fishWeightG != null ? weightToInputString(record.fishWeightG, prefs.weight) : '',
   )
+  const [tackleDraft, setTackleDraft] = useState<TackleFields>(
+    record.tackle ?? EMPTY_TACKLE_FIELDS,
+  )
+  const [tackleOpen, setTackleOpen] = useState(hasTackleContent(record.tackle))
   const lengthUnitRef = useRef(prefs.length)
   const weightUnitRef = useRef(prefs.weight)
   const [recordedLocal, setRecordedLocal] = useState(toDatetimeLocalValue(record.recordedAt))
@@ -78,6 +89,8 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
     setFishWeightInput(
       record.fishWeightG != null ? weightToInputString(record.fishWeightG, prefs.weight) : '',
     )
+    setTackleDraft(record.tackle ?? EMPTY_TACKLE_FIELDS)
+    setTackleOpen(hasTackleContent(record.tackle))
     lengthUnitRef.current = prefs.length
     weightUnitRef.current = prefs.weight
     setRecordedLocal(toDatetimeLocalValue(record.recordedAt))
@@ -195,6 +208,7 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
           fishSpecies: species,
           fishSizeCm: parsedSize,
           fishWeightG: parsedWeight,
+          tackle: normalizeTackleFields(tackleDraft),
           editedFields,
         },
         photoBlob,
@@ -265,6 +279,25 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
         disabled={saving}
         className="mb-4 w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-base text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
       />
+
+      <button
+        type="button"
+        onClick={() => setTackleOpen((open) => !open)}
+        disabled={saving}
+        className="mb-3 w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-left text-sm font-medium text-cyan-800 shadow-sm disabled:opacity-60"
+      >
+        {tackleOpen ? 'タックル入力を閉じる' : 'タックル入力'}
+      </button>
+      {tackleOpen && (
+        <div className="mb-4 rounded-xl border border-sky-100 bg-sky-50/50 px-3 py-3">
+          <TackleFieldsForm
+            value={tackleDraft}
+            onChange={setTackleDraft}
+            disabled={saving}
+            idPrefix="edit-tackle"
+          />
+        </div>
+      )}
 
       <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor={timeId}>
         記録日時
