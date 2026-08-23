@@ -1,7 +1,7 @@
 import { fetchPlaceName } from './place'
 import { getSunTimes } from './sun'
 import { fetchTideLevel } from './tide'
-import { fetchWeather, fetchWeatherAt } from './weather'
+import { fetchWeather } from './weather'
 
 export interface DerivedConditions {
   locationName: string | null
@@ -22,10 +22,15 @@ export interface DerivedConditions {
 
 export interface ConditionsResult {
   conditions: DerivedConditions
-  weatherStatus: 'ok' | 'error'
+  weatherStatus: 'ok' | 'error' | 'skipped'
   tideStatus: 'ok' | 'error'
   warnings: string[]
   errors: { weather?: string; tide?: string }
+}
+
+export interface FetchDerivedConditionsOptions {
+  /** false のとき天気は取得せず、記録済みの値を維持する */
+  includeWeather?: boolean
 }
 
 function errMessage(err: unknown, fallback: string) {
@@ -53,14 +58,15 @@ export function emptyConditions(): DerivedConditions {
 
 /**
  * 座標と時刻から場所名・天気・太陽・潮位を取得する。
- * weather: current = 記録時の現在天気、historical = 指定時刻の天気。
+ * 編集時は includeWeather: false で保存済み天気を維持する。
  */
 export async function fetchDerivedConditions(
   latitude: number,
   longitude: number,
   at: Date,
-  weatherMode: 'current' | 'historical' = 'current',
+  options: FetchDerivedConditionsOptions = {},
 ): Promise<ConditionsResult> {
+  const includeWeather = options.includeWeather !== false
   const conditions = emptyConditions()
   const warnings: string[] = []
   const errors: ConditionsResult['errors'] = {}
@@ -73,10 +79,9 @@ export async function fetchDerivedConditions(
     conditions.duskAt = sun.duskAt
   }
 
-  const weatherPromise =
-    weatherMode === 'historical'
-      ? fetchWeatherAt(latitude, longitude, at)
-      : fetchWeather(latitude, longitude)
+  const weatherPromise = includeWeather
+    ? fetchWeather(latitude, longitude)
+    : Promise.resolve(null)
 
   const [weatherSettled, tideSettled, placeSettled] = await Promise.allSettled([
     weatherPromise,
@@ -84,14 +89,18 @@ export async function fetchDerivedConditions(
     fetchPlaceName(latitude, longitude),
   ])
 
-  if (weatherSettled.status === 'fulfilled') {
-    conditions.temperature = weatherSettled.value.temperature
-    conditions.weatherCode = weatherSettled.value.weatherCode
-    conditions.windSpeedMs = weatherSettled.value.windSpeedMs
-  } else {
-    const message = errMessage(weatherSettled.reason, '天気の取得に失敗しました')
-    warnings.push(message)
-    errors.weather = message
+  if (includeWeather) {
+    if (weatherSettled.status === 'fulfilled' && weatherSettled.value) {
+      conditions.temperature = weatherSettled.value.temperature
+      conditions.weatherCode = weatherSettled.value.weatherCode
+      conditions.windSpeedMs = weatherSettled.value.windSpeedMs
+    } else {
+      const reason =
+        weatherSettled.status === 'rejected' ? weatherSettled.reason : null
+      const message = errMessage(reason, '天気の取得に失敗しました')
+      warnings.push(message)
+      errors.weather = message
+    }
   }
 
   if (placeSettled.status === 'fulfilled') {
@@ -113,7 +122,11 @@ export async function fetchDerivedConditions(
 
   return {
     conditions,
-    weatherStatus: weatherSettled.status === 'fulfilled' ? 'ok' : 'error',
+    weatherStatus: includeWeather
+      ? weatherSettled.status === 'fulfilled' && weatherSettled.value
+        ? 'ok'
+        : 'error'
+      : 'skipped',
     tideStatus: tideSettled.status === 'fulfilled' ? 'ok' : 'error',
     warnings,
     errors,

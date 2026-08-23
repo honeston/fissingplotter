@@ -22,7 +22,7 @@
   ├── components/RecordProgress.tsx
   ├── lib/storage.ts
   ├── lib/geolocation.ts
-  ├── lib/weather.ts      （Open-Meteo）
+  ├── lib/weather.ts      （OpenWeatherMap via API）
   └── lib/tide.ts         （tide736 + harbors.json）
 ```
 
@@ -55,7 +55,7 @@ interface FishingRecord {
 | 用途 | モジュール | 備考 |
 |------|------------|------|
 | 座標 | `geolocation.ts` | 必須。失敗で記録中止 |
-| 気温 | `weather.ts` | 任意。失敗時 null |
+| 気温 | `weather.ts` | OpenWeatherMap Current（Lambda プロキシ + キャッシュ） |
 | 潮位 | `tide.ts` | 任意。失敗時 null。712港マスタ |
 
 ## 5. 画面

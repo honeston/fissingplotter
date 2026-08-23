@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import type { LengthUnit, WeightUnit } from '../lib/units'
+import { WeatherAttribution } from '../components/WeatherAttribution'
 
 const LENGTH_OPTIONS: { value: LengthUnit; label: string }[] = [
   { value: 'cm', label: 'cm' },
@@ -149,6 +150,12 @@ export function MyPage() {
           </p>
         )}
       </section>
+
+      {cloudEnabled && (
+        <section className="mt-6">
+          <WeatherAttribution />
+        </section>
+      )}
     </main>
   )
 }

@@ -106,7 +106,6 @@ export function useRecord() {
           latitude,
           longitude,
           recordedAt,
-          'current',
         )
         locationName = derived.conditions.locationName
         temperature = derived.conditions.temperature

@@ -127,11 +127,24 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
         latitude,
         longitude,
         new Date(recordedAt),
-        'historical',
+        { includeWeather: false },
       )
         .then((result) => {
           if (gen !== fetchGen.current) return
-          setDraft((current) => ({ ...current, ...result.conditions }))
+          setDraft((current) => ({
+            ...current,
+            locationName: result.conditions.locationName ?? current.locationName,
+            dawnAt: result.conditions.dawnAt,
+            sunriseAt: result.conditions.sunriseAt,
+            sunsetAt: result.conditions.sunsetAt,
+            duskAt: result.conditions.duskAt,
+            tideLevel: result.conditions.tideLevel,
+            tideHarbor: result.conditions.tideHarbor,
+            tideCycle: result.conditions.tideCycle,
+            moonPhase: result.conditions.moonPhase,
+            moonAge: result.conditions.moonAge,
+            tideSlopeCmPerHour: result.conditions.tideSlopeCmPerHour,
+          }))
           setWarnings(result.warnings)
           setFetching(false)
         })

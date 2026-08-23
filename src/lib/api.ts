@@ -77,3 +77,26 @@ export async function checkApiHealth(): Promise<boolean> {
     return false
   }
 }
+
+export interface CurrentWeatherResult {
+  temperature: number
+  weatherCode: number
+  windSpeedMs: number | null
+  time: string
+}
+
+export async function fetchCurrentWeather(
+  latitude: number,
+  longitude: number,
+): Promise<CurrentWeatherResult> {
+  const qs = new URLSearchParams({
+    lat: String(latitude),
+    lng: String(longitude),
+  })
+  const res = await apiFetch(`/weather/current?${qs}`)
+  if (!res.ok) {
+    throw new Error(`天気の取得に失敗しました（HTTP ${res.status}）`)
+  }
+  const data = (await res.json()) as { weather: CurrentWeatherResult }
+  return data.weather
+}

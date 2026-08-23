@@ -18,6 +18,11 @@ Parameters:
     Type: String
     Default: ''
     Description: ACM certificate ARN in us-east-1 (required when DomainName is set)
+  OpenWeatherApiKey:
+    Type: String
+    Default: ''
+    NoEcho: true
+    Description: OpenWeatherMap API key for /weather/current (leave empty to disable)
 
 Conditions:
   HasCustomDomain: !And
@@ -185,6 +190,21 @@ Resources:
         - ALLOW_USER_PASSWORD_AUTH
       PreventUserExistenceErrors: ENABLED
 
+  WeatherCacheTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${AppName}-weather-cache'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: cacheKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: cacheKey
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+
   RecordsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -247,9 +267,13 @@ Resources:
         Variables:
           TABLE_NAME: !Ref RecordsTable
           MEDIA_BUCKET_NAME: !Ref MediaBucket
+          WEATHER_CACHE_TABLE: !Ref WeatherCacheTable
+          OPENWEATHER_API_KEY: !Ref OpenWeatherApiKey
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RecordsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WeatherCacheTable
         - S3CrudPolicy:
             BucketName: !Ref MediaBucket
       Events:
@@ -290,6 +314,12 @@ Resources:
           Properties:
             ApiId: !Ref HttpApi
             Path: /photos/{recordId}/url
+            Method: GET
+        GetCurrentWeather:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /weather/current
             Method: GET
     Metadata:
       BuildMethod: esbuild

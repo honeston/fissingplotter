@@ -3,6 +3,7 @@ import { presignPhotoUpload, presignPhotoView } from './photos.js'
 import { deleteRecord, listRecords, upsertRecord } from './records.js'
 import { jsonResponse, optionsResponse } from './response.js'
 import { getUserId } from './auth.js'
+import { getCurrentWeather } from './weather.js'
 
 /** HTTP API の stage 付き URL（/prod/health）でもルートパス（/health）に正規化 */
 function apiPath(event: APIGatewayProxyEventV2WithJWTAuthorizer): string {
@@ -77,6 +78,21 @@ export async function handler(
       const recordId = decodeURIComponent(photoViewMatch[1])
       const result = await presignPhotoView(userId, recordId)
       return jsonResponse(200, result)
+    }
+
+    if (path === '/weather/current' && method === 'GET') {
+      const latRaw = event.queryStringParameters?.lat
+      const lngRaw = event.queryStringParameters?.lng
+      if (latRaw == null || lngRaw == null) {
+        return jsonResponse(400, { error: 'Invalid lat/lng' })
+      }
+      const latitude = Number(latRaw)
+      const longitude = Number(lngRaw)
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        return jsonResponse(400, { error: 'Invalid lat/lng' })
+      }
+      const weather = await getCurrentWeather(latitude, longitude)
+      return jsonResponse(200, { weather })
     }
 
     return jsonResponse(404, { error: 'Not found' })

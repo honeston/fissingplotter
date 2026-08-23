@@ -1,4 +1,3 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import {
   DeleteCommand,
   DynamoDBDocumentClient,
@@ -6,10 +5,11 @@ import {
   QueryCommand,
 } from '@aws-sdk/lib-dynamodb'
 import { deletePhotoByKey } from './photos.js'
+import { createDynamoClient } from './awsClients.js'
 
 const TABLE_NAME = process.env.TABLE_NAME ?? ''
 
-const doc = DynamoDBDocumentClient.from(new DynamoDBClient({}))
+const doc = createDynamoClient()
 
 export interface FishingRecord {
   id: string
