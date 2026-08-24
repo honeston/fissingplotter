@@ -32,6 +32,7 @@ import {
   type TackleFields,
 } from '../types/tackle'
 import { FishSpeciesInput } from './FishSpeciesInput'
+import { JafAttribution } from './JafAttribution'
 import { LoadingSpinner } from './RecordCard'
 import { RecordValueList } from './RecordValueList'
 import { PhotoInput } from './PhotoInput'
@@ -398,6 +399,7 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
           {saving ? '保存中…' : fetching ? '更新中…' : '保存する'}
         </button>
       </div>
+      <JafAttribution className="mt-4" />
     </div>
   )
 }

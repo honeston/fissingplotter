@@ -103,7 +103,7 @@ export function FishEncyclopediaPage() {
         </ul>
       )}
 
-      <JafAttribution className="mt-6" />
+      <JafAttribution className="mt-auto pt-6" />
     </main>
   )
 }

@@ -6,7 +6,6 @@ import {
   searchFishSpecies,
   type FishSpeciesMatch,
 } from '../lib/fishSpecies'
-import { JafAttribution } from './JafAttribution'
 
 interface FishSpeciesInputProps {
   value: string
@@ -164,7 +163,6 @@ export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInput
           ))}
         </ul>
       )}
-      <JafAttribution className="mt-1.5" />
     </div>
   )
 }

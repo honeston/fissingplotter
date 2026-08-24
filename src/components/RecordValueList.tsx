@@ -8,8 +8,6 @@ import { weatherCodeLabel } from '../lib/weatherCode'
 import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import type { FishingRecord } from '../types/record'
 import { hasTackleContent } from '../types/tackle'
-import { WeatherAttribution } from './WeatherAttribution'
-import { TideAttribution } from './TideAttribution'
 
 export function EditedMark() {
   return <strong className="ml-1 font-bold">（編集済み）</strong>
@@ -45,11 +43,8 @@ export function RecordValueList({
   const coords = hasCoordinates(record)
   const locationEdited = hasEditedField(record, 'location')
   const { prefs } = useUnitPrefs()
-  const showWeatherCredit =
-    record.temperature != null || record.weatherCode != null || record.windSpeedMs != null
 
   return (
-    <>
     <dl className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-3 gap-y-2 text-sm">
       {!omitCatchFields && (
         <>
@@ -101,12 +96,5 @@ export function RecordValueList({
       <Row label="潮種">{formatTideCycleMoon(record)}</Row>
       <Row label="潮位変化">{formatTideSlope(record.tideSlopeCmPerHour)}</Row>
     </dl>
-    {showWeatherCredit && (
-      <div className="mt-2 space-y-1">
-        <WeatherAttribution />
-        <TideAttribution />
-      </div>
-    )}
-    </>
   )
 }

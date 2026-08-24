@@ -9,6 +9,7 @@ import { buildSpeciesStats, findSpeciesStat } from '../lib/fishEncyclopedia'
 import { formatFishSize, formatFishWeight } from '../lib/units'
 import { deleteRecord } from '../lib/sync'
 import type { FishingRecord } from '../types/record'
+import { JafAttribution } from '../components/JafAttribution'
 
 
 function formatBestCatchDay(dateKey: string | null, count: number): string {
@@ -262,6 +263,8 @@ export function FishEncyclopediaSpeciesPage() {
           </div>
         </>
       )}
+
+      <JafAttribution className="mt-auto pt-6" />
 
       {selectedRecord && (
         <RecordDetailSheet

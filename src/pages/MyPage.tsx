@@ -153,14 +153,14 @@ export function MyPage() {
         )}
       </section>
 
-      <section className="mt-6 space-y-1">
-        <JafAttribution />
+      <section className="mt-auto space-y-1 pt-6">
         {cloudEnabled && (
           <>
             <WeatherAttribution />
             <TideAttribution />
           </>
         )}
+        <JafAttribution />
       </section>
     </main>
   )

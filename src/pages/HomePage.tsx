@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FishSpeciesInput } from '../components/FishSpeciesInput'
+import { JafAttribution } from '../components/JafAttribution'
 import { PhotoInput } from '../components/PhotoInput'
 import { RecordProgress } from '../components/RecordProgress'
 import { SavedRecordSummary } from '../components/SavedRecordSummary'
 import { TackleFieldsForm } from '../components/TackleFieldsForm'
+import { TideAttribution } from '../components/TideAttribution'
+import { WeatherAttribution } from '../components/WeatherAttribution'
 import { useRecord } from '../hooks/useRecord'
 import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import { canonicalFishSpeciesName } from '../lib/fishSpecies'
@@ -366,6 +369,11 @@ export function HomePage() {
               </div>
             </div>
           )}
+        </div>
+        <div className="mt-6 space-y-1">
+          <WeatherAttribution />
+          <TideAttribution />
+          <JafAttribution />
         </div>
       </div>
     </main>
