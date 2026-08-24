@@ -3,7 +3,6 @@ import L from 'leaflet'
 import {
   MapContainer,
   Marker,
-  TileLayer,
   useMap,
   useMapEvents,
 } from 'react-leaflet'
@@ -16,6 +15,7 @@ import {
   type MappableRecord,
 } from '../lib/coordinates'
 import type { FishingRecord } from '../types/record'
+import { GsiTileLayer } from './GsiTileLayer'
 
 const defaultIcon = L.icon({
   iconUrl: markerIcon,
@@ -162,10 +162,7 @@ export function RecordsMap({ records, onSelectRecords }: RecordsMapProps) {
       className="z-0 rounded-xl"
       scrollWheelZoom
     >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      <GsiTileLayer />
       <ClusteredMarkers
         records={mappableRecords}
         onSelectRecords={onSelectRecords}
