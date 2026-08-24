@@ -11,6 +11,7 @@ import {
   type SortDirection,
 } from '../lib/fishEncyclopedia'
 import { formatFishSize, formatFishWeight } from '../lib/units'
+import { JafAttribution } from '../components/JafAttribution'
 
 const SORT_OPTIONS: { key: SpeciesSortKey; label: string }[] = [
   { key: 'count', label: '数' },
@@ -101,6 +102,8 @@ export function FishEncyclopediaPage() {
           ))}
         </ul>
       )}
+
+      <JafAttribution className="mt-6" />
     </main>
   )
 }

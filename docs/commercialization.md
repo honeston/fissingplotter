@@ -11,7 +11,7 @@
 
 | 優先度 | 残件数の目安 | 備考 |
 |--------|-------------|------|
-| P0 公開ブロッカー | 法務・削除・Nominatim・JAF・海しる Secret | OpenWeather・潮位・地理院タイルは完了。Secret 設定残り |
+| P0 公開ブロッカー | 法務・削除・Nominatim（様子見）・海しる Secret | OpenWeather・潮位・地理院タイル・JAF 出典は完了 |
 | P1 信頼性・セキュリティ | 認証・CORS・バックアップ等 | |
 | P2 プロダクト・運用 | 免責・同意 UX・監視等 | |
 | P3 その他 | OSS 表記・課金基盤など | 有料化するとき必須が増える |
@@ -83,16 +83,18 @@
 
 海外対応する場合は別プロバイダーが必要。
 
-#### 逆ジオコーディング（Nominatim 公式）
+#### 逆ジオコーディング（Nominatim 公式・様子見）
 
-現状: `nominatim.openstreetmap.org`（`place.ts`）。User-Agent 未設定・キャッシュなし。
+現状: Lambda `GET /place/current` が公式 Nominatim をプロキシ。ブラウザ直叩きはやめた。
 
-- [ ] 公式 Nominatim 直叩きをやめる（商用プロバイダー or 自前）
-- [ ] 適切な識別ヘッダ / レート制限 / キャッシュ
+- [x] アプリ名の User-Agent（Lambda から付与）
+- [x] 同じ座標の短時間キャッシュ（約 11m グリッド・30 分。端末メモリ + DynamoDB）
+- [x] 失敗しても記録は座標のみ保存
+- [ ] 公式 Nominatim から他社へ切り替え（利用状況を見て判断）
 
 **対応メモ:**
 
--
+ブラウザでは `User-Agent` を付けられないためプロキシ化した。他社切り替え時は `api/src/place.ts` の取得元だけ差し替えればよい。
 
 #### 潮位（海しる潮汐推算 — 案 A 採用）
 
@@ -114,15 +116,19 @@
 - 未採用: B 調和定数内製 / C 年次バッチ / D 潮種のみ
 #### 魚種マスタ（JAF リスト）
 
-現状: `scripts/build_fish_species.py` が鹿児島大学公開の JAF リストを取得し `fish-species.json` に同梱。
+現状: `scripts/build_fish_species.py` が鹿児島大学公開の JAF リストを取得し `fish-species.json` に同梱。別名は `fish-species-aliases.json`（独自）。
 
-- [ ] 商用再配布・アプリ同梱の許諾を権利者に確認
-- [ ] 不可の場合: 自社管理リスト / 別ライセンスデータへ切替
-- [ ] 出典・ライセンス表記（許諾された場合）
+2026-08-22 に [JAF ページ](https://www.museum.kagoshima-u.ac.jp/staff/motomura/jaf.html) と [解説 PDF](https://www.museum.kagoshima-u.ac.jp/staff/motomura/20200513JAF_explanatory_note.pdf) を確認済み。
+
+- [x] 公式条件を確認（「利用は自由」。商用禁止の記載なし）
+- [x] アプリ内に出典・引用を記載（`JafAttribution`。記録画面・図鑑・マイページ）
+- [ ] できれば本村氏へ一報（マストではない）
 
 **対応メモ:**
 
--
+- 標準和名: JAF（日本産魚類全種目録）。引用例: 本村浩之．2026．日本産魚類全種目録．Online ver. 41． https://www.museum.kagoshima-u.ac.jp/staff/motomura/jaf.html
+- 別名・地方名: このリポジトリ独自
+- 法的な最終判断ではない。詳細は解説 PDF
 
 ---
 
@@ -234,10 +240,10 @@
 
 1. プライバシーポリシー・利用規約 + アプリ内リンク・同意
 2. アカウント削除 + 全データ消去（+ できればエクスポート）
-3. Nominatim の商用プロバイダー化（地図タイルは地理院済み）
-4. JAF 魚種リストの許諾確認または置換
-5. 海しる `MSIL_SUBSCRIPTION_KEY` の本番 Secret 設定・個別キー申請（実装は完了）
-6. OpenWeather 枠監視（Secret・動作確認は完了）
+3. Nominatim の他社切り替え（UA・キャッシュ済み。様子見）
+4. 海しる `MSIL_SUBSCRIPTION_KEY` の本番 Secret 設定・個別キー申請（実装は完了）
+5. OpenWeather 枠監視（Secret・動作確認は完了）
+6. JAF 出典表記（完了。一報は任意）
 
 品質向上:
 
@@ -258,3 +264,6 @@
 | 2026-08-24 | OpenWeather Secret 動作確認済み。潮位の代替候補（海しる / 調和定数内製等）を追記 |
 | 2026-08-24 | 潮位を海しる潮汐推算 API（案 A）へ実装移行。tide736 / harbors.json 削除 |
 | 2026-08-24 | 地図タイルを OSM 公式から国土地理院（標準地図）へ差し替え。日本のみ |
+| 2026-08-24 | 場所名を Nominatim Lambda プロキシ化（User-Agent・30分キャッシュ）。他社切り替えは様子見 |
+| 2026-08-24 | JAF は 2026-08-22 確認どおり「利用自由」。出典記載は残件、事前一報は任意 |
+| 2026-08-24 | JAF 出典をアプリ内に表示（`JafAttribution`） |

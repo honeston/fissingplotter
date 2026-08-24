@@ -4,6 +4,7 @@ import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import type { LengthUnit, WeightUnit } from '../lib/units'
 import { WeatherAttribution } from '../components/WeatherAttribution'
 import { TideAttribution } from '../components/TideAttribution'
+import { JafAttribution } from '../components/JafAttribution'
 
 const LENGTH_OPTIONS: { value: LengthUnit; label: string }[] = [
   { value: 'cm', label: 'cm' },
@@ -152,12 +153,15 @@ export function MyPage() {
         )}
       </section>
 
-      {cloudEnabled && (
-        <section className="mt-6 space-y-1">
-          <WeatherAttribution />
-          <TideAttribution />
-        </section>
-      )}
+      <section className="mt-6 space-y-1">
+        <JafAttribution />
+        {cloudEnabled && (
+          <>
+            <WeatherAttribution />
+            <TideAttribution />
+          </>
+        )}
+      </section>
     </main>
   )
 }
