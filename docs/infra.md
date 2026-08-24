@@ -89,6 +89,7 @@ Phase 5 時点のホスティング。IndexedDB のみ（クラウド同期な�
 | POST | `/records` | JWT | 作成 / 更新 |
 | DELETE | `/records/{id}` | JWT | 削除 |
 | GET | `/weather/current` | JWT | 現在の天気（`?lat=&lng=`） |
+| GET | `/place/current` | JWT | 場所名（`?lat=&lng=`。Nominatim プロキシ） |
 | GET | `/tide/current` | JWT | 天文潮位（`?lat=&lng=&at=`。`at` は ISO8601・省略時は現在） |
 
 ### SAM Outputs → フロント `.env` 対応

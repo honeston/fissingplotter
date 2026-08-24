@@ -23,7 +23,8 @@
   ├── lib/storage.ts
   ├── lib/geolocation.ts
   ├── lib/weather.ts      （OpenWeatherMap via API）
-  └── lib/tide.ts         （海しる潮汐推算 via API）
+  ├── lib/tide.ts         （海しる潮汐推算 via API）
+  └── lib/place.ts        （Nominatim via API）
 ```
 
 ### 記録フロー（本番）
@@ -31,7 +32,7 @@
 1. 魚種入力（任意）
 2. 「記録する」押下
 3. GPS 取得（失敗時は保存中止）
-4. 気温・潮位を並列取得（失敗時は null で続行）
+4. 気温・潮位・場所名を並列取得（失敗時は null で続行。場所名失敗でも座標は保存）
 5. IndexedDB に保存
 6. 結果サマリー表示
 

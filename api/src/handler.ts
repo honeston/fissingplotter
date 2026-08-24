@@ -3,6 +3,7 @@ import { presignPhotoUpload, presignPhotoView } from './photos.js'
 import { deleteRecord, listRecords, upsertRecord } from './records.js'
 import { jsonResponse, optionsResponse } from './response.js'
 import { getUserId } from './auth.js'
+import { getPlaceName } from './place.js'
 import { getTideAt } from './tide.js'
 import { getCurrentWeather } from './weather.js'
 
@@ -94,6 +95,21 @@ export async function handler(
       }
       const weather = await getCurrentWeather(latitude, longitude)
       return jsonResponse(200, { weather })
+    }
+
+    if (path === '/place/current' && method === 'GET') {
+      const latRaw = event.queryStringParameters?.lat
+      const lngRaw = event.queryStringParameters?.lng
+      if (latRaw == null || lngRaw == null) {
+        return jsonResponse(400, { error: 'Invalid lat/lng' })
+      }
+      const latitude = Number(latRaw)
+      const longitude = Number(lngRaw)
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        return jsonResponse(400, { error: 'Invalid lat/lng' })
+      }
+      const placeName = await getPlaceName(latitude, longitude)
+      return jsonResponse(200, { placeName })
     }
 
     if (path === '/tide/current' && method === 'GET') {

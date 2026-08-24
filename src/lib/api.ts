@@ -101,6 +101,22 @@ export async function fetchCurrentWeather(
   return data.weather
 }
 
+export async function fetchCurrentPlace(
+  latitude: number,
+  longitude: number,
+): Promise<string> {
+  const qs = new URLSearchParams({
+    lat: String(latitude),
+    lng: String(longitude),
+  })
+  const res = await apiFetch(`/place/current?${qs}`)
+  if (!res.ok) {
+    throw new Error(`場所名の取得に失敗しました（HTTP ${res.status}）`)
+  }
+  const data = (await res.json()) as { placeName: string }
+  return data.placeName
+}
+
 export interface CurrentTideResult {
   levelCm: number
   time: string

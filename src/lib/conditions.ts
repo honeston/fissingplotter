@@ -105,6 +105,8 @@ export async function fetchDerivedConditions(
 
   if (placeSettled.status === 'fulfilled') {
     conditions.locationName = placeSettled.value
+  } else {
+    warnings.push('場所名の取得に失敗したため、座標のみ保存します')
   }
 
   if (tideSettled.status === 'fulfilled') {

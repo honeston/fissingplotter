@@ -10,8 +10,8 @@ Fissing Plotter の AWS リソースを CloudFormation SAM で管理します。
 | Route 53（任意） | カスタムドメイン |
 | Cognito User Pool | ユーザー認証 |
 | API Gateway HTTP API | REST API |
-| Lambda | 記録 CRUD・天気 / 潮位プロキシ |
-| DynamoDB | 記録保存・天気・潮位キャッシュ（オンデマンド） |
+| Lambda | 記録 CRUD・天気 / 場所名 / 潮位プロキシ |
+| DynamoDB | 記録保存・天気・場所名・潮位キャッシュ（オンデマンド） |
 
 ## デプロイ
 
@@ -36,6 +36,10 @@ Repository Secret `MSIL_SUBSCRIPTION_KEY` → SAM パラメータ `MsilSubscript
 - 推算点マスタ: `api/src/tideStations.json`（更新: `npm run build:tide-stations`）
 - 未設定の場合 `/tide/current` は 500
 - 試用キーは予告なく変更されうるため、本番は個別キー申請を推奨（https://portal.msil.go.jp/howtouse）
+
+## Nominatim（場所名）
+
+`GET /place/current` が公式 Nominatim をプロキシする。User-Agent にアプリ名を付け、約 11m グリッドで 30 分キャッシュする。ブラウザ直叩きはしない。
 
 ## カスタムドメイン（任意）
 

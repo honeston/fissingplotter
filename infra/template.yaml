@@ -327,6 +327,12 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /weather/current
             Method: GET
+        GetCurrentPlace:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /place/current
+            Method: GET
         GetCurrentTide:
           Type: HttpApi
           Properties:
