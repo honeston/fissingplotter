@@ -30,8 +30,9 @@ function ScrollToTop() {
 function HistoryMapRedirect() {
   const [searchParams] = useSearchParams()
   const next = new URLSearchParams(searchParams)
-  next.set('map', '1')
-  return <Navigate to={`/history?${next.toString()}`} replace />
+  next.delete('map')
+  const query = next.toString()
+  return <Navigate to={query ? `/history?${query}` : '/history'} replace />
 }
 
 function AppShell() {
