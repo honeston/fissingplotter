@@ -1,4 +1,5 @@
-import { BrowserRouter, NavLink, Navigate, Route, Routes, useSearchParams } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter, NavLink, Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
 import { RequireAuth } from './components/RequireAuth'
 import { SyncStatusBanner } from './components/SyncStatusBanner'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -11,6 +12,20 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { MyPage } from './pages/MyPage'
 import { MyTacklePage } from './pages/MyTacklePage'
+
+function scrollWindowToTop() {
+  window.scrollTo(0, 0)
+  document.documentElement.scrollTop = 0
+  document.body.scrollTop = 0
+}
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    scrollWindowToTop()
+  }, [pathname])
+  return null
+}
 
 function HistoryMapRedirect() {
   const [searchParams] = useSearchParams()
@@ -25,6 +40,7 @@ function AppShell() {
 
   return (
     <div className="flex min-h-dvh flex-col">
+      <ScrollToTop />
       <SyncStatusBanner />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -49,6 +65,7 @@ function AppShell() {
             <NavLink
               to="/"
               end
+              onClick={scrollWindowToTop}
               className={({ isActive }) =>
                 `flex min-h-12 flex-1 items-center justify-center text-sm font-medium ${
                   isActive ? 'text-cyan-800' : 'text-slate-400'
@@ -59,6 +76,7 @@ function AppShell() {
             </NavLink>
             <NavLink
               to="/history"
+              onClick={scrollWindowToTop}
               className={({ isActive }) =>
                 `flex min-h-12 flex-1 items-center justify-center text-sm font-medium ${
                   isActive ? 'text-cyan-800' : 'text-slate-400'
@@ -69,6 +87,7 @@ function AppShell() {
             </NavLink>
             <NavLink
               to="/mypage"
+              onClick={scrollWindowToTop}
               className={({ isActive }) =>
                 `flex min-h-12 flex-1 items-center justify-center text-sm font-medium ${
                   isActive ? 'text-cyan-800' : 'text-slate-400'
