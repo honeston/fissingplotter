@@ -89,6 +89,7 @@ Phase 5 時点のホスティング。IndexedDB のみ（クラウド同期な�
 | POST | `/records` | JWT | 作成 / 更新 |
 | DELETE | `/records/{id}` | JWT | 削除 |
 | GET | `/weather/current` | JWT | 現在の天気（`?lat=&lng=`） |
+| GET | `/tide/current` | JWT | 天文潮位（`?lat=&lng=&at=`。`at` は ISO8601・省略時は現在） |
 
 ### SAM Outputs → フロント `.env` 対応
 
@@ -114,6 +115,7 @@ Phase 5 時点のホスティング。IndexedDB のみ（クラウド同期な�
 | `VITE_API_URL` | ローカル SAM API（`http://127.0.0.1:3000`） |
 | `VITE_COGNITO_*` | ログイン（開発用 Pool 推奨） |
 | `OPENWEATHER_API_KEY` | ローカル Lambda → `infra/env.local.json` |
+| `MSIL_SUBSCRIPTION_KEY` | 海しる潮汐 → `infra/env.local.json` |
 
 手順: [`docs/local-dev.md`](local-dev.md)
 
@@ -121,7 +123,7 @@ Phase 5 時点のホスティング。IndexedDB のみ（クラウド同期な�
 
 | ファイル | 内容 |
 |---------|------|
-| `.env.development.local` | ローカルフロント + OpenWeather |
+| `.env.development.local` | ローカルフロント + OpenWeather + 海しる |
 | `infra/env.local.json` | SAM local の Lambda 環境変数 |
 
 ### GitHub Actions Secrets
@@ -129,7 +131,8 @@ Phase 5 時点のホスティング。IndexedDB のみ（クラウド同期な�
 | Secret | 値 | 設定済み |
 |--------|-----|---------|
 | `AWS_ROLE_ARN` | `arn:aws:iam::319640345981:role/github-actions-deploy-roll` | ✅ |
-| `OPENWEATHER_API_KEY` | OpenWeatherMap API キー → Lambda `OPENWEATHER_API_KEY` | 要設定 |
+| `OPENWEATHER_API_KEY` | OpenWeatherMap API キー → Lambda `OPENWEATHER_API_KEY` | ✅ 設定・動作確認済み |
+| `MSIL_SUBSCRIPTION_KEY` | 海しる API キー → Lambda `MSIL_SUBSCRIPTION_KEY` | 要設定 |
 
 ### IAM / OIDC（GitHub Actions 用）
 
@@ -165,7 +168,7 @@ OIDC 設定手順: [`docs/deploy-aws.md`](deploy-aws.md#github-actions-oidc)
 | サービス | 用途 | インフラ管理 |
 |---------|------|-------------|
 | OpenWeatherMap | 気温・風 | Lambda プロキシ（15分グリッドキャッシュ） |
-| tide736 | 潮位 | なし（クライアント直接） |
+| 海しる（海上保安庁） | 天文潮位 | Lambda プロキシ（推算点マスタ同梱・日次系列キャッシュ） |
 | GitHub | ソース・CI | リポジトリ |
 | Cloudflare | レガシー CDN | アカウント手動 |
 
@@ -239,7 +242,9 @@ OIDC 設定手順: [`docs/deploy-aws.md`](deploy-aws.md#github-actions-oidc)
 | 資料 | 内容 |
 |------|------|
 | [`docs/design.md`](design.md) | アプリ設計 |
+| [`docs/commercialization.md`](commercialization.md) | 商用化チェックリスト |
 | [`docs/deploy-aws.md`](deploy-aws.md) | AWS デプロイ手順 |
 | [`docs/deploy.md`](deploy.md) | Cloudflare デプロイ |
+| [`docs/local-dev.md`](local-dev.md) | ローカル API（SAM local） |
 | [`docs/phases.md`](phases.md) | 実装フェーズ |
 | [`infra/README.md`](../infra/README.md) | SAM クイックリファレンス |

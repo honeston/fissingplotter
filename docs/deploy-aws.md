@@ -21,8 +21,9 @@ GitHub リポジトリ → Settings → Secrets and variables → Actions:
 |------|-------|
 | `AWS_ROLE_ARN` | `arn:aws:iam::319640345981:role/github-actions-deploy-roll` |
 | `OPENWEATHER_API_KEY` | [OpenWeatherMap](https://openweathermap.org/) の API キー（Current Weather 用） |
+| `MSIL_SUBSCRIPTION_KEY` | [海しる API](https://portal.msil.go.jp/howtouse) のサブスクリプションキー（潮汐推算） |
 
-`OPENWEATHER_API_KEY` は SAM の `OpenWeatherApiKey` パラメータ経由で Lambda 環境変数に注入されます。GitHub ログには出力されません。Secret 未設定のデプロイでは既存のキーを上書きしません（スタック更新時は前回値を維持）。
+`OPENWEATHER_API_KEY` / `MSIL_SUBSCRIPTION_KEY` は SAM パラメータ経由で Lambda 環境変数に注入されます。GitHub ログには出力されません。Secret 未設定のデプロイでは当該パラメータを送らないため、スタック上の前回値を維持します。
 
 ### GitHub Actions OIDC（設定済み）
 

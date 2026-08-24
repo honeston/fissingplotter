@@ -6,7 +6,7 @@ Description: Fissing Plotter — local API only (Docker Lambda + LocalStack)
 Globals:
   Function:
     Runtime: nodejs20.x
-    Timeout: 10
+    Timeout: 15
     MemorySize: 128
 
 Resources:
@@ -34,11 +34,18 @@ Resources:
       Environment:
         Variables:
           LOCAL_DEV: 'true'
+          LOCAL_DEV_USER_ID: local-dev-user
           TABLE_NAME: fissingplotter-records
           WEATHER_CACHE_TABLE: fissingplotter-weather-cache
           MEDIA_BUCKET_NAME: fissingplotter-media-local
           AWS_ENDPOINT_URL: http://localstack:4566
+          AWS_ENDPOINT_URL_PUBLIC: http://127.0.0.1:4566
           AWS_REGION: ap-northeast-1
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          # 空文字プレースホルダ。sam local --env-vars はテンプレートに無い変数を無視する
+          OPENWEATHER_API_KEY: ''
+          MSIL_SUBSCRIPTION_KEY: ''
       Events:
         Health:
           Type: HttpApi
@@ -81,6 +88,12 @@ Resources:
           Properties:
             ApiId: !Ref HttpApi
             Path: /weather/current
+            Method: GET
+        GetCurrentTide:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /tide/current
             Method: GET
     Metadata:
       BuildMethod: esbuild

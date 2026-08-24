@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { fetchDerivedConditions } from '../lib/conditions'
-import { getCurrentPosition } from '../lib/geolocation'
+import { devGeoFallbackMessage, getCurrentPosition } from '../lib/geolocation'
 import { addRecord } from '../lib/sync'
 import type { FishingRecord, RecordFormInput } from '../types/record'
 
@@ -78,6 +78,9 @@ export function useRecord() {
         const pos = await getCurrentPosition()
         latitude = pos.latitude
         longitude = pos.longitude
+        if (pos.devFallback) {
+          warnings.push(devGeoFallbackMessage())
+        }
         setSteps((s) => ({ ...s, geo: 'ok', weather: 'pending', tide: 'pending' }))
       } catch (err) {
         const message = errMessage(err, '位置情報の取得に失敗しました')

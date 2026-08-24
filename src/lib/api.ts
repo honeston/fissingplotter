@@ -100,3 +100,33 @@ export async function fetchCurrentWeather(
   const data = (await res.json()) as { weather: CurrentWeatherResult }
   return data.weather
 }
+
+export interface CurrentTideResult {
+  levelCm: number
+  time: string
+  stationCode: string
+  stationName: string
+  distanceKm: number
+  tideCycle: string
+  moonPhase: string
+  moonAge: number
+  tideSlopeCmPerHour: number
+}
+
+export async function fetchCurrentTide(
+  latitude: number,
+  longitude: number,
+  at: Date = new Date(),
+): Promise<CurrentTideResult> {
+  const qs = new URLSearchParams({
+    lat: String(latitude),
+    lng: String(longitude),
+    at: at.toISOString(),
+  })
+  const res = await apiFetch(`/tide/current?${qs}`)
+  if (!res.ok) {
+    throw new Error(`潮位の取得に失敗しました（HTTP ${res.status}）`)
+  }
+  const data = (await res.json()) as { tide: CurrentTideResult }
+  return data.tide
+}

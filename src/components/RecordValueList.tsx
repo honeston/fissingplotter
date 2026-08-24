@@ -9,6 +9,7 @@ import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import type { FishingRecord } from '../types/record'
 import { hasTackleContent } from '../types/tackle'
 import { WeatherAttribution } from './WeatherAttribution'
+import { TideAttribution } from './TideAttribution'
 
 export function EditedMark() {
   return <strong className="ml-1 font-bold">（編集済み）</strong>
@@ -100,7 +101,12 @@ export function RecordValueList({
       <Row label="潮種">{formatTideCycleMoon(record)}</Row>
       <Row label="潮位変化">{formatTideSlope(record.tideSlopeCmPerHour)}</Row>
     </dl>
-    {showWeatherCredit && <WeatherAttribution className="mt-2" />}
+    {showWeatherCredit && (
+      <div className="mt-2 space-y-1">
+        <WeatherAttribution />
+        <TideAttribution />
+      </div>
+    )}
     </>
   )
 }

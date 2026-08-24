@@ -4,7 +4,7 @@
 |-------|------|------|
 | 1 | プロジェクト基盤（Vite / React / Tailwind / PWA）+ 最小シェル UI | **完了** |
 | 2 | IndexedDB ストレージ層 + 仮保存 / 履歴 / エクスポート | **完了** |
-| 3 | データ取得（Geolocation / Open-Meteo / tide736 + 港マスタ） | **完了** |
+| 3 | データ取得（Geolocation / OpenWeather / 海しる潮汐） | **完了** |
 | 4 | 記録フロー本実装（並列取得 → 保存、取得状況 UI） | **完了** |
 | 5 | デプロイ（Cloudflare Pages）+ 実機確認 | **デプロイ完了** |
 | 6 | AWS サーバー保存（Cognito + API + DynamoDB + S3/CloudFront） | **完了** |

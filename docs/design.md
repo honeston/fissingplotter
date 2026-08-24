@@ -23,7 +23,7 @@
   ├── lib/storage.ts
   ├── lib/geolocation.ts
   ├── lib/weather.ts      （OpenWeatherMap via API）
-  └── lib/tide.ts         （tide736 + harbors.json）
+  └── lib/tide.ts         （海しる潮汐推算 via API）
 ```
 
 ### 記録フロー（本番）
@@ -56,7 +56,7 @@ interface FishingRecord {
 |------|------------|------|
 | 座標 | `geolocation.ts` | 必須。失敗で記録中止 |
 | 気温 | `weather.ts` | OpenWeatherMap Current（Lambda プロキシ + キャッシュ） |
-| 潮位 | `tide.ts` | 任意。失敗時 null。712港マスタ |
+| 潮位 | `tide.ts` | 海しる潮汐推算（Lambda プロキシ + 日次キャッシュ）。月齢・潮種は内製 |
 
 ## 5. 画面
 
@@ -74,7 +74,7 @@ interface FishingRecord {
 
 - Geolocation は HTTPS 必須（localhost 除く）
 - データは端末内とクラウド同期
-- 潮位は天文潮位（予測値）、最寄港ベース
+- 潮位は天文潮位（予測値）、最寄の海しる推算点ベース（免責表示あり）
 
 ## 7. ホスティング
 

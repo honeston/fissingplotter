@@ -5,6 +5,7 @@
 - リポジトリ: https://github.com/honeston/fissingplotter
 - 設計: [`docs/design.md`](docs/design.md)
 - **インフラ資料**: [`docs/infra.md`](docs/infra.md)（構成・チェックリスト）
+- **商用化チェックリスト**: [`docs/commercialization.md`](docs/commercialization.md)
 - フェーズ: [`docs/phases.md`](docs/phases.md)
 - AWS デプロイ: [`docs/deploy-aws.md`](docs/deploy-aws.md)
 - Cloudflare デプロイ: [`docs/deploy.md`](docs/deploy.md)

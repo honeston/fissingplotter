@@ -39,6 +39,8 @@ npm run dev
 
 `.env.development.local` の `VITE_API_URL=http://127.0.0.1:3000` により、本番 API には接続しません。
 
+**PC で GPS が使えない場合:** 開発ビルド（`npm run dev`）では GPS 取得に失敗すると、自動的に横浜新港付近の固定座標（35.45, 139.65）にフォールバックします。変更する場合は `.env.development.local` に `VITE_DEV_LAT` / `VITE_DEV_LNG` を設定してください。
+
 ## 構成
 
 ```
@@ -54,6 +56,7 @@ npm run dev:api      → SAM local (Lambda in Docker) :3000
 | S3（写真） | LocalStack | AWS S3 |
 | デプロイ | なし | GitHub Actions |
 | OpenWeather キー | `.env.development.local` | GitHub Secret |
+| 海しるキー | `.env.development.local` (`MSIL_SUBSCRIPTION_KEY`) | GitHub Secret |
 
 ## 認証
 

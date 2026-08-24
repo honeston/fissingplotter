@@ -23,6 +23,11 @@ Parameters:
     Default: ''
     NoEcho: true
     Description: OpenWeatherMap API key for /weather/current (leave empty to disable)
+  MsilSubscriptionKey:
+    Type: String
+    Default: ''
+    NoEcho: true
+    Description: 海しる API subscription key for /tide/current (leave empty to disable)
 
 Conditions:
   HasCustomDomain: !And
@@ -33,7 +38,7 @@ Conditions:
 Globals:
   Function:
     Runtime: nodejs20.x
-    Timeout: 10
+    Timeout: 15
     MemorySize: 128
     Environment:
       Variables:
@@ -269,6 +274,7 @@ Resources:
           MEDIA_BUCKET_NAME: !Ref MediaBucket
           WEATHER_CACHE_TABLE: !Ref WeatherCacheTable
           OPENWEATHER_API_KEY: !Ref OpenWeatherApiKey
+          MSIL_SUBSCRIPTION_KEY: !Ref MsilSubscriptionKey
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RecordsTable
@@ -320,6 +326,12 @@ Resources:
           Properties:
             ApiId: !Ref HttpApi
             Path: /weather/current
+            Method: GET
+        GetCurrentTide:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /tide/current
             Method: GET
     Metadata:
       BuildMethod: esbuild

@@ -7,7 +7,12 @@ import {
   DynamoDBClient,
   ResourceInUseException,
 } from '@aws-sdk/client-dynamodb'
-import { CreateBucketCommand, HeadBucketCommand, S3Client } from '@aws-sdk/client-s3'
+import {
+  CreateBucketCommand,
+  HeadBucketCommand,
+  PutBucketCorsCommand,
+  S3Client,
+} from '@aws-sdk/client-s3'
 
 const ENDPOINT = process.env.AWS_ENDPOINT_URL ?? 'http://127.0.0.1:4566'
 const REGION = process.env.AWS_REGION ?? 'ap-northeast-1'
@@ -89,6 +94,24 @@ async function ensureMediaBucket() {
     await s3.send(new CreateBucketCommand({ Bucket: MEDIA_BUCKET }))
     console.log(`Created S3 bucket: ${MEDIA_BUCKET}`)
   }
+
+  await s3.send(
+    new PutBucketCorsCommand({
+      Bucket: MEDIA_BUCKET,
+      CORSConfiguration: {
+        CORSRules: [
+          {
+            AllowedHeaders: ['*'],
+            AllowedMethods: ['GET', 'PUT', 'HEAD'],
+            AllowedOrigins: ['*'],
+            ExposeHeaders: ['ETag', 'x-amz-request-id'],
+            MaxAgeSeconds: 3000,
+          },
+        ],
+      },
+    }),
+  )
+  console.log(`S3 CORS configured: ${MEDIA_BUCKET}`)
 }
 
 async function waitForLocalStack() {

@@ -15,6 +15,7 @@
     "deploy": "npm run build && wrangler pages deploy dist --project-name=fissingplotter",
     "check:infra": "node scripts/check-infra.mjs",
     "build:fish-species": "python3 scripts/build_fish_species.py",
+    "build:tide-stations": "node scripts/build_tide_stations.mjs",
     "prepare": "husky"
   },
   "dependencies": {
