@@ -45,7 +45,7 @@ export function LoginPage() {
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
       <header className="mb-8">
-        <p className="text-sm font-medium tracking-wide text-cyan-700">Fissing Plotter</p>
+        <p className="text-sm font-medium tracking-wide text-cyan-700">cast mark</p>
         <h1 className="mt-1 text-2xl font-semibold text-sky-950">
           {mode === 'login' ? 'ログイン' : mode === 'signup' ? '新規登録' : '確認コード'}
         </h1>

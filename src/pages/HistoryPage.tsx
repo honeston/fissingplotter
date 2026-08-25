@@ -114,7 +114,7 @@ export function HistoryPage() {
       <header className="mb-6 flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-medium tracking-wide text-cyan-700">
-            Fissing Plotter
+            cast mark
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-sky-950">履歴</h1>
         </div>

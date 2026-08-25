@@ -3,7 +3,7 @@ import { createDynamoClient } from './awsClients.js'
 
 const CACHE_TABLE = process.env.WEATHER_CACHE_TABLE ?? ''
 const CACHE_TTL_SEC = 30 * 60
-const USER_AGENT = 'FissingPlotter/1.0 (https://github.com/honeston/fissingplotter)'
+const USER_AGENT = 'cast-mark/1.0 (https://github.com/honeston/fissingplotter)'
 const MIN_INTERVAL_MS = 1100
 
 const doc = createDynamoClient()

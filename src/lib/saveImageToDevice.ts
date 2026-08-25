@@ -1,5 +1,5 @@
 function defaultFilename(): string {
-  return `fissing-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.jpg`
+  return `cast-mark-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.jpg`
 }
 
 /** 共有シートまたはダウンロードで端末に画像を残す */

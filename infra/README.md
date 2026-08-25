@@ -1,6 +1,6 @@
 # AWS インフラ（SAM）
 
-Fissing Plotter の AWS リソースを CloudFormation SAM で管理します。
+cast mark の AWS リソースを CloudFormation SAM で管理します。
 
 ## 含まれるリソース
 

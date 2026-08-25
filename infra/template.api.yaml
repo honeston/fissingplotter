@@ -1,7 +1,7 @@
 # ローカル SAM（sam local start-api）専用。本番デプロイには template.yaml を使う。
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Fissing Plotter — local API only (Docker Lambda + LocalStack)
+Description: cast mark — local API only (Docker Lambda + LocalStack)
 
 Globals:
   Function:

@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Fissing Plotter — S3/CloudFront static hosting + Cognito + API + DynamoDB
+Description: cast mark — S3/CloudFront static hosting + Cognito + API + DynamoDB
 
 Parameters:
   AppName:

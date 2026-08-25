@@ -1,6 +1,6 @@
 # インフラ資料
 
-Fissing Plotter のインフラ構成・運用・不足項目の一覧。更新時は `npm run check:infra` でコードベースとの整合を確認する。
+cast mark のインフラ構成・運用・不足項目の一覧。更新時は `npm run check:infra` でコードベースとの整合を確認する。
 
 ## 目次
 
