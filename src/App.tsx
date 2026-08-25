@@ -5,6 +5,7 @@ import { SyncStatusBanner } from './components/SyncStatusBanner'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ChangeEmailPage } from './pages/ChangeEmailPage'
 import { ChangePasswordPage } from './pages/ChangePasswordPage'
+import { DeleteAccountPage } from './pages/DeleteAccountPage'
 import { FishEncyclopediaPage } from './pages/FishEncyclopediaPage'
 import { FishEncyclopediaSpeciesPage } from './pages/FishEncyclopediaSpeciesPage'
 import { HistoryPage } from './pages/HistoryPage'
@@ -53,6 +54,7 @@ function AppShell() {
           <Route path="/mypage/tackle" element={<MyTacklePage />} />
           <Route path="/mypage/email" element={<ChangeEmailPage />} />
           <Route path="/mypage/password" element={<ChangePasswordPage />} />
+          <Route path="/mypage/delete-account" element={<DeleteAccountPage />} />
           <Route path="/mypage/encyclopedia" element={<FishEncyclopediaPage />} />
           <Route
             path="/mypage/encyclopedia/:species"

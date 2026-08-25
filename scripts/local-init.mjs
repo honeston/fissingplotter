@@ -18,6 +18,8 @@ const ENDPOINT = process.env.AWS_ENDPOINT_URL ?? 'http://127.0.0.1:4566'
 const REGION = process.env.AWS_REGION ?? 'ap-northeast-1'
 const RECORDS_TABLE = process.env.LOCAL_RECORDS_TABLE ?? 'fissingplotter-records'
 const WEATHER_TABLE = process.env.LOCAL_WEATHER_TABLE ?? 'fissingplotter-weather-cache'
+const ACCOUNT_DELETIONS_TABLE =
+  process.env.LOCAL_ACCOUNT_DELETIONS_TABLE ?? 'fissingplotter-account-deletions'
 const MEDIA_BUCKET = process.env.LOCAL_MEDIA_BUCKET ?? 'fissingplotter-media-local'
 
 const clientConfig = {
@@ -86,6 +88,26 @@ async function ensureWeatherTable() {
   }
 }
 
+async function ensureAccountDeletionsTable() {
+  try {
+    await ddb.send(
+      new CreateTableCommand({
+        TableName: ACCOUNT_DELETIONS_TABLE,
+        BillingMode: 'PAY_PER_REQUEST',
+        AttributeDefinitions: [{ AttributeName: 'userId', AttributeType: 'S' }],
+        KeySchema: [{ AttributeName: 'userId', KeyType: 'HASH' }],
+      }),
+    )
+    console.log(`Created DynamoDB table: ${ACCOUNT_DELETIONS_TABLE}`)
+  } catch (err) {
+    if (err instanceof ResourceInUseException) {
+      console.log(`DynamoDB table exists: ${ACCOUNT_DELETIONS_TABLE}`)
+      return
+    }
+    throw err
+  }
+}
+
 async function ensureMediaBucket() {
   try {
     await s3.send(new HeadBucketCommand({ Bucket: MEDIA_BUCKET }))
@@ -130,5 +152,6 @@ async function waitForLocalStack() {
 await waitForLocalStack()
 await ensureRecordsTable()
 await ensureWeatherTable()
+await ensureAccountDeletionsTable()
 await ensureMediaBucket()
 console.log('LocalStack init complete')

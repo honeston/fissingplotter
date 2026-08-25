@@ -34,6 +34,7 @@ function loadDotenv(path) {
 function ensureEnvLocalJson() {
   const apiKeys = ['OPENWEATHER_API_KEY', 'MSIL_SUBSCRIPTION_KEY']
   let data
+  let created = false
 
   if (existsSync(ENV_LOCAL)) {
     data = JSON.parse(readFileSync(ENV_LOCAL, 'utf8'))
@@ -42,11 +43,11 @@ function ensureEnvLocalJson() {
       throw new Error(`Missing ${ENV_LOCAL_EXAMPLE}`)
     }
     data = JSON.parse(readFileSync(ENV_LOCAL_EXAMPLE, 'utf8'))
-    console.log(`Created ${ENV_LOCAL} from example`)
+    created = true
   }
 
   const fn = data.ApiFunction ?? data
-  let changed = false
+  let changed = created
   for (const key of apiKeys) {
     const val = process.env[key]
     if (val && fn[key] !== val) {
@@ -57,12 +58,20 @@ function ensureEnvLocalJson() {
 
   if (changed) {
     writeFileSync(ENV_LOCAL, `${JSON.stringify(data, null, 2)}\n`)
-    console.log(`Synced API keys in ${ENV_LOCAL}`)
+    console.log(created ? `Created ${ENV_LOCAL} from example` : `Synced API keys in ${ENV_LOCAL}`)
   }
 }
 
 function run(cmd, args, opts = {}) {
-  const result = spawnSync(cmd, args, { stdio: 'inherit', ...opts })
+  const result = spawnSync(cmd, args, {
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+    ...opts,
+  })
+  if (result.error) {
+    console.error(result.error)
+    process.exit(1)
+  }
   if (result.status !== 0) process.exit(result.status ?? 1)
 }
 

@@ -237,6 +237,18 @@ Resources:
           Projection:
             ProjectionType: ALL
 
+  AccountDeletionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${AppName}-account-deletions'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+
   HttpApi:
     Type: AWS::Serverless::HttpApi
     Properties:
@@ -273,6 +285,8 @@ Resources:
           TABLE_NAME: !Ref RecordsTable
           MEDIA_BUCKET_NAME: !Ref MediaBucket
           WEATHER_CACHE_TABLE: !Ref WeatherCacheTable
+          ACCOUNT_DELETIONS_TABLE: !Ref AccountDeletionsTable
+          USER_POOL_ID: !Ref UserPool
           OPENWEATHER_API_KEY: !Ref OpenWeatherApiKey
           MSIL_SUBSCRIPTION_KEY: !Ref MsilSubscriptionKey
       Policies:
@@ -280,8 +294,15 @@ Resources:
             TableName: !Ref RecordsTable
         - DynamoDBCrudPolicy:
             TableName: !Ref WeatherCacheTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AccountDeletionsTable
         - S3CrudPolicy:
             BucketName: !Ref MediaBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminDeleteUser
+              Resource: !GetAtt UserPool.Arn
       Events:
         Health:
           Type: HttpApi
@@ -291,6 +312,12 @@ Resources:
             Method: GET
             Auth:
               Authorizer: NONE
+        DeleteAccount:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /account
+            Method: DELETE
         GetRecords:
           Type: HttpApi
           Properties:
@@ -348,6 +375,47 @@ Resources:
         Target: es2022
         Sourcemap: true
 
+  AccountPurgeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AppName}-account-purge'
+      Handler: purgeAccounts.handler
+      CodeUri: ../api/
+      Timeout: 60
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref RecordsTable
+          MEDIA_BUCKET_NAME: !Ref MediaBucket
+          ACCOUNT_DELETIONS_TABLE: !Ref AccountDeletionsTable
+          USER_POOL_ID: !Ref UserPool
+          RETENTION_DAYS: '7'
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RecordsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AccountDeletionsTable
+        - S3CrudPolicy:
+            BucketName: !Ref MediaBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminDeleteUser
+              Resource: !GetAtt UserPool.Arn
+      Events:
+        DailyPurge:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 day)
+            Description: Purge soft-deleted accounts after retention period
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/purgeAccounts.ts
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+
 Outputs:
   StaticBucketName:
     Value: !Ref StaticBucket
@@ -370,5 +438,7 @@ Outputs:
     Value: !Ref UserPoolClient
   RecordsTableName:
     Value: !Ref RecordsTable
+  AccountDeletionsTableName:
+    Value: !Ref AccountDeletionsTable
   CognitoIssuer:
     Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}'

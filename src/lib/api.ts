@@ -47,6 +47,13 @@ export async function deleteRemoteRecord(id: string): Promise<void> {
   }
 }
 
+export async function deleteAccount(): Promise<void> {
+  const res = await apiFetch('/account', { method: 'DELETE' })
+  if (!res.ok && res.status !== 204) {
+    throw new Error(`退会処理に失敗しました (${res.status})`)
+  }
+}
+
 export async function presignPhotoUpload(
   recordId: string,
 ): Promise<{ uploadUrl: string; photoKey: string; expiresIn: number }> {

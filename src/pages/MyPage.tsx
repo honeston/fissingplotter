@@ -144,6 +144,12 @@ export function MyPage() {
               >
                 パスワードを変更
               </Link>
+              <Link
+                to="/mypage/delete-account"
+                className="rounded-lg border border-red-200 bg-red-50/50 px-3 py-2 text-sm font-medium text-red-800"
+              >
+                退会する
+              </Link>
             </div>
           </>
         ) : (

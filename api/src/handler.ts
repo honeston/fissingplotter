@@ -1,9 +1,10 @@
 import type { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyResultV2 } from 'aws-lambda'
+import { isAccountDeleted, markAccountDeleted } from './account.js'
+import { getCognitoUsername, getUserId } from './auth.js'
+import { getPlaceName } from './place.js'
 import { presignPhotoUpload, presignPhotoView } from './photos.js'
 import { deleteRecord, listRecords, upsertRecord } from './records.js'
 import { jsonResponse, optionsResponse } from './response.js'
-import { getUserId } from './auth.js'
-import { getPlaceName } from './place.js'
 import { getTideAt } from './tide.js'
 import { getCurrentWeather } from './weather.js'
 
@@ -41,6 +42,16 @@ export async function handler(
   }
 
   try {
+    if (path === '/account' && method === 'DELETE') {
+      const username = getCognitoUsername(event)
+      await markAccountDeleted(userId, username)
+      return jsonResponse(204, null)
+    }
+
+    if (await isAccountDeleted(userId)) {
+      return jsonResponse(403, { error: 'Account deleted' })
+    }
+
     if (path === '/records' && method === 'GET') {
       const since = event.queryStringParameters?.since
       const records = await listRecords(userId, since)

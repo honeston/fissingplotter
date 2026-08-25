@@ -1,3 +1,4 @@
+import { CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-provider'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb'
 import { S3Client, type S3ClientConfig } from '@aws-sdk/client-s3'
@@ -26,6 +27,11 @@ export function createS3Client(): S3Client {
   const local = localEndpointConfig()
   const config: S3ClientConfig = local ? { ...local, forcePathStyle: true } : {}
   return new S3Client(config)
+}
+
+export function createCognitoClient(): CognitoIdentityProviderClient {
+  const local = localEndpointConfig()
+  return new CognitoIdentityProviderClient(local ?? {})
 }
 
 export function isLocalDev(): boolean {

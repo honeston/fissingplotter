@@ -35,7 +35,10 @@ Resources:
         Variables:
           LOCAL_DEV: 'true'
           LOCAL_DEV_USER_ID: local-dev-user
+          LOCAL_DEV_USERNAME: local-dev@example.com
           TABLE_NAME: fissingplotter-records
+          ACCOUNT_DELETIONS_TABLE: fissingplotter-account-deletions
+          USER_POOL_ID: ''
           WEATHER_CACHE_TABLE: fissingplotter-weather-cache
           MEDIA_BUCKET_NAME: fissingplotter-media-local
           AWS_ENDPOINT_URL: http://localstack:4566
@@ -53,6 +56,12 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /health
             Method: GET
+        DeleteAccount:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /account
+            Method: DELETE
         GetRecords:
           Type: HttpApi
           Properties:

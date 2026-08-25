@@ -237,3 +237,40 @@ export async function deleteMyTackle(id: string): Promise<void> {
   const db = await getDb()
   await db.delete(TACKLE_STORE, id)
 }
+
+/** 退会時: IndexedDB と端末側のアカウント関連 localStorage をクリア */
+export async function clearLocalUserData(): Promise<void> {
+  if (dbPromise) {
+    try {
+      const db = await dbPromise
+      db.close()
+    } catch {
+      // ignore
+    }
+    dbPromise = null
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const req = indexedDB.deleteDatabase(DB_NAME)
+    req.onsuccess = () => resolve()
+    req.onerror = () => reject(req.error ?? new Error('Failed to delete IndexedDB'))
+    req.onblocked = () => resolve()
+  })
+
+  const keysToRemove = [
+    'fp.unitPrefs',
+    'fp.keepTackle',
+    'fp.tackleDraft',
+    'fissingplotter-recent-species',
+    'fissingplotter-last-sync',
+  ]
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key?.startsWith('fissingplotter-migrated-')) {
+      keysToRemove.push(key)
+    }
+  }
+  for (const key of keysToRemove) {
+    localStorage.removeItem(key)
+  }
+}

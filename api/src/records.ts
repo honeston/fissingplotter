@@ -267,6 +267,35 @@ export async function deleteRecord(userId: string, id: string): Promise<void> {
   )
 }
 
+/** アカウント物理削除用: 当該ユーザーの記録を全件削除（写真はプレフィックス削除側でまとめて消す） */
+export async function deleteAllRecordsForUser(userId: string): Promise<void> {
+  let exclusiveStartKey: Record<string, unknown> | undefined
+
+  do {
+    const page = await doc.send(
+      new QueryCommand({
+        TableName: TABLE_NAME,
+        KeyConditionExpression: 'userId = :userId',
+        ExpressionAttributeValues: { ':userId': userId },
+        ProjectionExpression: 'userId, sortKey',
+        ExclusiveStartKey: exclusiveStartKey,
+      }),
+    )
+
+    for (const item of page.Items ?? []) {
+      if (typeof item.sortKey !== 'string') continue
+      await doc.send(
+        new DeleteCommand({
+          TableName: TABLE_NAME,
+          Key: { userId, sortKey: item.sortKey },
+        }),
+      )
+    }
+
+    exclusiveStartKey = page.LastEvaluatedKey as Record<string, unknown> | undefined
+  } while (exclusiveStartKey)
+}
+
 function storedToRecord(item: Record<string, unknown>): FishingRecord {
   return {
     id: String(item.id),

@@ -1,4 +1,10 @@
-import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
+import {
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  GetObjectCommand,
+  ListObjectsV2Command,
+  PutObjectCommand,
+} from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { createS3Client } from './awsClients.js'
 
@@ -50,4 +56,42 @@ export async function deletePhoto(userId: string, recordId: string): Promise<voi
 
 export async function deletePhotoByKey(key: string): Promise<void> {
   await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }))
+}
+
+/** ユーザー配下プレフィックス `{userId}/` のオブジェクトを全削除 */
+export async function deleteAllPhotosForUser(userId: string): Promise<void> {
+  if (!BUCKET) return
+
+  const prefix = `${userId}/`
+  let continuationToken: string | undefined
+
+  do {
+    const listed = await s3.send(
+      new ListObjectsV2Command({
+        Bucket: BUCKET,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+      }),
+    )
+
+    const keys = (listed.Contents ?? [])
+      .map((obj) => obj.Key)
+      .filter((key): key is string => Boolean(key))
+
+    for (let i = 0; i < keys.length; i += 1000) {
+      const chunk = keys.slice(i, i + 1000)
+      if (chunk.length === 0) continue
+      await s3.send(
+        new DeleteObjectsCommand({
+          Bucket: BUCKET,
+          Delete: {
+            Objects: chunk.map((Key) => ({ Key })),
+            Quiet: true,
+          },
+        }),
+      )
+    }
+
+    continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined
+  } while (continuationToken)
 }
