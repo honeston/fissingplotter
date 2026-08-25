@@ -254,7 +254,7 @@ export function HomePage() {
           disabled={busy}
           className="w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-left text-sm font-medium text-cyan-800 shadow-sm disabled:opacity-60"
         >
-          {tackleOpen ? 'タックル入力を閉じる' : 'タックル入力'}
+          {tackleOpen ? 'タックル入力を閉じる' : 'タックル入力を開く'}
           {hasTackleContent(tackle) && !tackleOpen ? (
             <span className="mt-0.5 block text-xs font-normal text-slate-500">
               {tackle.name || '入力あり'}
