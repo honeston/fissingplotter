@@ -14,6 +14,13 @@ import { canonicalFishSpeciesName } from '../lib/fishSpecies'
 import { listMyTackles, saveMyTackle } from '../lib/myTackle'
 import { getAllRecords } from '../lib/sync'
 import {
+  clearTackleDraft,
+  readKeepTackle,
+  readTackleDraft,
+  writeKeepTackle,
+  writeTackleDraft,
+} from '../lib/tackleDraft'
+import {
   lengthUnitLabel,
   parseSizeToCm,
   parseWeightToG,
@@ -47,6 +54,7 @@ export function HomePage() {
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
   const [tackleOpen, setTackleOpen] = useState(false)
   const [tackle, setTackle] = useState<TackleFields>(EMPTY_TACKLE_FIELDS)
+  const [keepTackle, setKeepTackle] = useState(() => readKeepTackle())
   const [myTackles, setMyTackles] = useState<MyTackle[]>([])
   const [showTacklePicker, setShowTacklePicker] = useState(false)
   const [tackleMessage, setTackleMessage] = useState('')
@@ -109,15 +117,43 @@ export function HomePage() {
   }, [tackleOpen])
 
   useEffect(() => {
+    if (!readKeepTackle()) return
+    const draft = readTackleDraft()
+    if (draft) {
+      setTackle(draft)
+      return
+    }
     void getAllRecords().then((records) => {
       const last = records[0]
       if (!last?.tackle) return
-      setTackle(tackleFieldsOrEmpty(last.tackle))
+      const fields = tackleFieldsOrEmpty(last.tackle)
+      setTackle(fields)
+      writeTackleDraft(fields)
     })
   }, [])
 
+  function applyTackle(next: TackleFields) {
+    setTackle(next)
+    if (keepTackle) writeTackleDraft(next)
+    else clearTackleDraft()
+  }
+
+  function handleKeepTackleChange(next: boolean) {
+    setKeepTackle(next)
+    writeKeepTackle(next)
+    if (next) writeTackleDraft(tackle)
+    else clearTackleDraft()
+  }
+
+  function handleClearTackle() {
+    applyTackle(EMPTY_TACKLE_FIELDS)
+    setShowTacklePicker(false)
+    setTackleMessage('')
+    clearTackleDraft()
+  }
+
   async function handleUseMyTackle(item: MyTackle) {
-    setTackle(tackleFromMyTackle(item))
+    applyTackle(tackleFromMyTackle(item))
     setShowTacklePicker(false)
     setTackleMessage(`「${item.name || '無題'}」を適用しました`)
   }
@@ -169,7 +205,12 @@ export function HomePage() {
       setFishSpecies('')
       setFishSizeInput('')
       setFishWeightInput('')
-      // タックル入力は記録に埋め込み済み。次回も同じ内容を引き継ぐ
+      if (keepTackle) {
+        writeTackleDraft(tackle)
+      } else {
+        setTackle(EMPTY_TACKLE_FIELDS)
+        clearTackleDraft()
+      }
       setTackleOpen(false)
       setShowTacklePicker(false)
       setTackleMessage('')
@@ -281,6 +322,14 @@ export function HomePage() {
               >
                 マイタックルに保存
               </button>
+              <button
+                type="button"
+                onClick={handleClearTackle}
+                disabled={busy || !hasTackleContent(tackle)}
+                className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm disabled:opacity-60"
+              >
+                入力をクリア
+              </button>
             </div>
 
             {showTacklePicker && (
@@ -316,10 +365,25 @@ export function HomePage() {
 
             <TackleFieldsForm
               value={tackle}
-              onChange={setTackle}
+              onChange={applyTackle}
               disabled={busy}
               idPrefix="home-tackle"
             />
+            <label className="mt-3 flex items-start gap-2 text-sm text-sky-900">
+              <input
+                type="checkbox"
+                checked={keepTackle}
+                onChange={(e) => handleKeepTackleChange(e.target.checked)}
+                disabled={busy}
+                className="mt-0.5 size-4 accent-cyan-700"
+              />
+              <span>
+                次回もこのタックルを使う
+                <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                  記録後も入力を残し、次から入力を省略できます
+                </span>
+              </span>
+            </label>
             {tackleMessage && (
               <p className="mt-2 text-sm text-cyan-800" role="status">
                 {tackleMessage}
