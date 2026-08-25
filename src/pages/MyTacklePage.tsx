@@ -21,6 +21,7 @@ export function MyTacklePage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState<TackleFields>(EMPTY_TACKLE_FIELDS)
   const [creating, setCreating] = useState(false)
+  const [copying, setCopying] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -42,20 +43,38 @@ export function MyTacklePage() {
 
   function startCreate() {
     setCreating(true)
+    setCopying(false)
     setEditingId(null)
     setDraft(EMPTY_TACKLE_FIELDS)
     setError('')
+    window.scrollTo(0, 0)
+  }
+
+  function startCopy(tackle: MyTackle) {
+    const fields = tackleFromMyTackle(tackle)
+    setCreating(true)
+    setCopying(true)
+    setEditingId(null)
+    setDraft({
+      ...fields,
+      name: fields.name ? `${fields.name}のコピー` : '',
+    })
+    setError('')
+    window.scrollTo(0, 0)
   }
 
   function startEdit(tackle: MyTackle) {
     setCreating(false)
+    setCopying(false)
     setEditingId(tackle.id)
     setDraft(tackleFromMyTackle(tackle))
     setError('')
+    window.scrollTo(0, 0)
   }
 
   function cancelForm() {
     setCreating(false)
+    setCopying(false)
     setEditingId(null)
     setDraft(EMPTY_TACKLE_FIELDS)
     setError('')
@@ -121,8 +140,13 @@ export function MyTacklePage() {
       {showForm && (
         <section className="mb-6 rounded-xl border border-sky-200 bg-white px-4 py-3 shadow-sm">
           <h2 className="mb-3 text-sm font-medium text-sky-900">
-            {editingId ? 'タックルを編集' : 'タックルを追加'}
+            {editingId ? 'タックルを編集' : copying ? 'コピーして追加' : 'タックルを追加'}
           </h2>
+          {copying && (
+            <p className="mb-3 text-xs text-slate-500">
+              内容を変えて保存すると、元のタックルとは別に残ります。
+            </p>
+          )}
           <TackleFieldsForm
             value={draft}
             onChange={setDraft}
@@ -163,7 +187,7 @@ export function MyTacklePage() {
         </p>
       )}
 
-      {!loading && tackles.length > 0 && (
+      {!loading && tackles.length > 0 && !creating && (
         <ul className="flex flex-col gap-3">
           {tackles.map((tackle) => (
             <li
@@ -172,7 +196,7 @@ export function MyTacklePage() {
             >
               <p className="font-medium text-sky-950">{tackle.name || '（無題）'}</p>
               <p className="mt-1 text-sm text-slate-500">{summaryLine(tackle)}</p>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => startEdit(tackle)}
@@ -180,6 +204,14 @@ export function MyTacklePage() {
                   className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm font-medium text-cyan-800 disabled:opacity-60"
                 >
                   編集
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startCopy(tackle)}
+                  disabled={busy}
+                  className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm font-medium text-cyan-800 disabled:opacity-60"
+                >
+                  コピー
                 </button>
                 <button
                   type="button"
