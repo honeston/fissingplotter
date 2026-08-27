@@ -74,7 +74,7 @@ Phase 5 時点のホスティング。IndexedDB のみ（クラウド同期な�
 | S3 バケット | `StaticBucket` | `{AppName}-static-{AccountId}` |
 | CloudFront 配信 | `CloudFrontDistribution` | OAC で S3 限定公開、SPA 403/404→index.html |
 | Route 53 レコード | `DnsRecord` | カスタムドメイン時のみ |
-| Cognito User Pool | `UserPool` | メールログイン |
+| Cognito User Pool | `UserPool` | メールログイン・パスワード再設定（verified_email） |
 | Cognito App Client | `UserPoolClient` | シークレットなし Web クライアント |
 | DynamoDB テーブル | `RecordsTable` | `{AppName}-records`、PAY_PER_REQUEST |
 | HTTP API | `HttpApi` | stage: `prod`、Cognito JWT 認可 |

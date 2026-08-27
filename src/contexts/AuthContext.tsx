@@ -21,6 +21,8 @@ interface AuthState {
   signUp: (email: string, password: string) => Promise<void>
   confirmSignUp: (email: string, code: string) => Promise<void>
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>
+  forgotPassword: (email: string) => Promise<void>
+  confirmForgotPassword: (email: string, code: string, newPassword: string) => Promise<void>
   requestEmailChange: (newEmail: string) => Promise<void>
   confirmEmailChange: (code: string) => Promise<void>
   signOut: () => void
@@ -110,6 +112,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await cognito.changePassword(currentPassword, newPassword)
   }, [])
 
+  const forgotPassword = useCallback(async (email: string) => {
+    await cognito.forgotPassword(email)
+  }, [])
+
+  const confirmForgotPassword = useCallback(
+    async (email: string, code: string, newPassword: string) => {
+      await cognito.confirmForgotPassword(email, code, newPassword)
+    },
+    [],
+  )
+
   const requestEmailChange = useCallback(async (newEmail: string) => {
     await cognito.requestEmailChange(newEmail)
   }, [])
@@ -137,6 +150,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       confirmSignUp,
       changePassword,
+      forgotPassword,
+      confirmForgotPassword,
       requestEmailChange,
       confirmEmailChange,
       signOut,
@@ -152,6 +167,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       confirmSignUp,
       changePassword,
+      forgotPassword,
+      confirmForgotPassword,
       requestEmailChange,
       confirmEmailChange,
       signOut,

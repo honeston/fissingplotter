@@ -197,9 +197,18 @@ export function LoginPage() {
 
         <div className="mt-6 space-y-2 text-sm text-cyan-800">
           {mode === 'login' && (
-            <button type="button" onClick={() => switchMode('signup')} className="underline">
-              アカウントを作成
-            </button>
+            <>
+              <p>
+                <Link to="/forgot-password" state={{ email: email.trim() }} className="underline">
+                  パスワードを忘れた
+                </Link>
+              </p>
+              <p>
+                <button type="button" onClick={() => switchMode('signup')} className="underline">
+                  アカウントを作成
+                </button>
+              </p>
+            </>
           )}
           {mode === 'signup' && (
             <button type="button" onClick={() => switchMode('login')} className="underline">

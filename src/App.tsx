@@ -9,6 +9,7 @@ import { ChangePasswordPage } from './pages/ChangePasswordPage'
 import { DeleteAccountPage } from './pages/DeleteAccountPage'
 import { FishEncyclopediaPage } from './pages/FishEncyclopediaPage'
 import { FishEncyclopediaSpeciesPage } from './pages/FishEncyclopediaSpeciesPage'
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { GuidePage } from './pages/GuidePage'
 import { HistoryPage } from './pages/HistoryPage'
 import { HomePage } from './pages/HomePage'
@@ -76,6 +77,7 @@ function AppShell() {
       <Routes>
         <Route path="/" element={<RootPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/guide" element={<GuidePage />} />
         <Route path="/privacy" element={<LegalPage kind="privacy" />} />
         <Route path="/terms" element={<LegalPage kind="terms" />} />

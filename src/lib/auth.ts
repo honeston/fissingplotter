@@ -174,3 +174,62 @@ export function confirmEmailChange(code: string): Promise<void> {
     })
   })
 }
+
+function cognitoErrorCode(err: unknown): string {
+  if (err && typeof err === 'object' && 'code' in err && typeof err.code === 'string') {
+    return err.code
+  }
+  if (err instanceof Error) return err.name
+  return ''
+}
+
+export function forgotPasswordErrorMessage(err: unknown, fallback: string): string {
+  const code = cognitoErrorCode(err)
+  const message = err instanceof Error ? err.message : ''
+  if (code === 'CodeMismatchException') return '確認コードが正しくありません'
+  if (code === 'ExpiredCodeException') {
+    return '確認コードの有効期限が切れています。再送信してください'
+  }
+  if (code === 'LimitExceededException' || code === 'TooManyRequestsException') {
+    return '試行回数が多すぎます。しばらく待ってから再度お試しください'
+  }
+  if (code === 'InvalidPasswordException') {
+    return 'パスワードは8文字以上で、英小文字と数字を含めてください'
+  }
+  if (message.includes('no registered/verified email')) {
+    return 'このメールアドレスではパスワードをリセットできません。未確認のアカウントの場合は、先に登録の確認を完了してください'
+  }
+  return message || fallback
+}
+
+/** パスワードリセット用の確認コードをメール送信する */
+export function forgotPassword(email: string): Promise<void> {
+  const user = new CognitoUser({ Username: email, Pool: getUserPool() })
+  return new Promise((resolve, reject) => {
+    user.forgotPassword({
+      onSuccess: () => resolve(),
+      onFailure: (err) => {
+        if (cognitoErrorCode(err) === 'UserNotFoundException') {
+          resolve()
+          return
+        }
+        reject(err)
+      },
+    })
+  })
+}
+
+/** 確認コードと新しいパスワードでリセットを確定する */
+export function confirmForgotPassword(
+  email: string,
+  code: string,
+  newPassword: string,
+): Promise<void> {
+  const user = new CognitoUser({ Username: email, Pool: getUserPool() })
+  return new Promise((resolve, reject) => {
+    user.confirmPassword(code, newPassword, {
+      onSuccess: () => resolve(),
+      onFailure: (err) => reject(err),
+    })
+  })
+}

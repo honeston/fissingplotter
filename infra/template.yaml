@@ -171,6 +171,16 @@ Resources:
       UserPoolName: !Sub '${AppName}-users'
       UsernameAttributes: [email]
       AutoVerifiedAttributes: [email]
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      EmailVerificationSubject: 'cast mark の確認コード'
+      EmailVerificationMessage: '確認コードは {####} です。アプリに入力してください。'
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_CODE
+        EmailSubject: 'cast mark の確認コード'
+        EmailMessage: '確認コードは {####} です。アプリに入力してください。'
       Policies:
         PasswordPolicy:
           MinimumLength: 8
