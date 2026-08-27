@@ -82,8 +82,9 @@ function PrivacyPolicyBody() {
           <li>地図上での記録の表示</li>
           <li>アカウントの登録、認証、変更、退会</li>
           <li>不正利用の防止、障害対応、サービスの維持・改善</li>
+          <li>サービスの運営費用を賄うための広告配信</li>
         </ul>
-        <p>広告配信、プロファイリング、個人情報の販売には利用しません。</p>
+        <p>運営者は、個人情報を販売しません。</p>
       </Section>
 
       <Section title="4. 位置情報">
@@ -150,6 +151,14 @@ function PrivacyPolicyBody() {
           <li>
             国土地理院: 地図表示のため、ブラウザが地図タイルを取得します
           </li>
+          <li>
+            Google（AdSense）: 広告配信のため、Cookie
+            や広告識別子を利用します。詳細は{' '}
+            <ExternalLink href="https://policies.google.com/technologies/ads">
+              Google の広告に関するポリシー
+            </ExternalLink>
+            をご覧ください
+          </li>
         </ul>
         <p>運営者は、個人情報を第三者に販売しません。</p>
       </Section>
@@ -177,9 +186,24 @@ function PrivacyPolicyBody() {
 
       <Section title="12. Cookie 等">
         <p>
-          本サービスは、広告やアクセス解析のための Cookie
-          は使用しません。ログイン状態の維持、記録のオフライン保存、単位設定などの動作に必要な情報を、端末の
+          ログイン状態の維持、記録のオフライン保存、単位設定などの動作に必要な情報を、端末の
           IndexedDB および localStorage に保存します。
+        </p>
+        <p>
+          本サービスは、Google AdSense
+          による広告配信のため、Google およびそのパートナーが Cookie
+          や広告識別子を使用することがあります。これにより、本サイトや他のサイトへの過去のアクセス情報に基づく広告が表示される場合があります。
+        </p>
+        <p>
+          パーソナライズ広告を無効にする場合は、
+          <ExternalLink href="https://www.google.com/settings/ads">
+            Google の広告設定
+          </ExternalLink>
+          からオプトアウトできます。広告に関する Google の取扱いは{' '}
+          <ExternalLink href="https://policies.google.com/technologies/ads">
+            広告について
+          </ExternalLink>
+          も参照してください。
         </p>
       </Section>
 

@@ -1,0 +1,344 @@
+import { useEffect, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
+import { LegalLinks } from '../components/LegalLinks'
+import { useAuth } from '../contexts/AuthContext'
+import { SERVICE_NAME } from '../legal/meta'
+
+function useGuideBackTo(): string {
+  const { authenticated, cloudEnabled } = useAuth()
+  if (!cloudEnabled || authenticated) return '/mypage'
+  return '/login'
+}
+
+function Section({
+  id,
+  title,
+  children,
+}: {
+  id: string
+  title: string
+  children: ReactNode
+}) {
+  return (
+    <section id={id} className="scroll-mt-4">
+      <h2 className="mb-2 text-base font-semibold text-sky-950">{title}</h2>
+      <div className="space-y-2 text-sm leading-relaxed text-slate-700">{children}</div>
+    </section>
+  )
+}
+
+function PhoneFrame({
+  title,
+  children,
+}: {
+  title: string
+  children: ReactNode
+}) {
+  return (
+    <figure className="my-4">
+      <div className="mx-auto w-[min(100%,16.5rem)] overflow-hidden rounded-2xl border border-sky-200 bg-white shadow-sm">
+        <div className="border-b border-sky-100 bg-sky-50 px-3 py-2">
+          <p className="text-[10px] font-medium tracking-wide text-cyan-700">{SERVICE_NAME}</p>
+          <p className="text-sm font-semibold text-sky-950">{title}</p>
+        </div>
+        <div className="bg-[#f0f9ff] px-3 py-3" aria-hidden>
+          {children}
+        </div>
+      </div>
+      <figcaption className="mt-2 text-center text-xs text-slate-500">
+        画面イメージ（{title}）
+      </figcaption>
+    </figure>
+  )
+}
+
+function RecordScreenMock() {
+  return (
+    <PhoneFrame title="記録">
+      <div className="mb-2 flex h-16 items-center justify-center rounded-lg border border-dashed border-sky-200 bg-white text-[11px] text-slate-400">
+        写真を追加
+      </div>
+      <div className="mb-2 rounded-lg border border-sky-200 bg-white px-2 py-1.5 text-[11px] text-slate-400">
+        魚種（任意）
+      </div>
+      <div className="mb-2 grid grid-cols-2 gap-1.5">
+        <div className="rounded-lg border border-sky-200 bg-white px-2 py-1.5 text-[11px] text-slate-400">
+          体長
+        </div>
+        <div className="rounded-lg border border-sky-200 bg-white px-2 py-1.5 text-[11px] text-slate-400">
+          重さ
+        </div>
+      </div>
+      <div className="mb-2 rounded-lg border border-sky-200 bg-white px-2 py-1.5 text-[11px] text-cyan-800">
+        タックル入力を開く
+      </div>
+      <div className="rounded-lg bg-cyan-700 px-2 py-2 text-center text-[11px] font-semibold text-white">
+        記録する
+      </div>
+    </PhoneFrame>
+  )
+}
+
+function HistoryScreenMock() {
+  return (
+    <PhoneFrame title="履歴">
+      <div className="mb-2 grid grid-cols-7 gap-0.5 text-center text-[9px] text-slate-400">
+        {['日', '月', '火', '水', '木', '金', '土'].map((day) => (
+          <span key={day}>{day}</span>
+        ))}
+        {Array.from({ length: 14 }, (_, i) => (
+          <span
+            key={i}
+            className={`rounded py-1 ${i === 9 ? 'bg-cyan-700 font-semibold text-white' : 'text-sky-900'}`}
+          >
+            {i + 1}
+          </span>
+        ))}
+      </div>
+      <div className="mb-2 h-16 rounded-lg border border-sky-100 bg-gradient-to-br from-sky-100 to-cyan-50" />
+      <div className="rounded-lg border border-sky-100 bg-white px-2 py-2">
+        <p className="text-[11px] font-medium text-sky-950">シーバス · 42 cm</p>
+        <p className="mt-0.5 text-[10px] text-slate-500">気温 18℃ · 潮位 124 cm</p>
+      </div>
+    </PhoneFrame>
+  )
+}
+
+function EncyclopediaScreenMock() {
+  return (
+    <PhoneFrame title="マイ魚種図鑑">
+      <div className="mb-2 flex gap-1">
+        {['数', '魚種', '最大サイズ'].map((label, i) => (
+          <span
+            key={label}
+            className={`rounded-md border px-1.5 py-0.5 text-[10px] ${
+              i === 0
+                ? 'border-cyan-600 bg-cyan-50 text-cyan-900'
+                : 'border-sky-200 bg-white text-slate-500'
+            }`}
+          >
+            {label}
+          </span>
+        ))}
+      </div>
+      <div className="space-y-1.5">
+        {[
+          ['シーバス', '8尾'],
+          ['アジ', '5尾'],
+          ['クロダイ', '3尾'],
+        ].map(([name, count]) => (
+          <div
+            key={name}
+            className="flex items-center justify-between rounded-lg border border-sky-100 bg-white px-2 py-1.5"
+          >
+            <span className="text-[11px] font-medium text-sky-950">{name}</span>
+            <span className="text-[10px] text-slate-500">{count}</span>
+          </div>
+        ))}
+      </div>
+    </PhoneFrame>
+  )
+}
+
+const TOC = [
+  { href: '#about', label: 'cast mark とは' },
+  { href: '#features', label: 'できること' },
+  { href: '#start', label: 'はじめ方' },
+  { href: '#record', label: '記録のしかた' },
+  { href: '#history', label: '履歴と地図' },
+  { href: '#mypage', label: 'マイページ' },
+  { href: '#notes', label: '天気・潮位について' },
+  { href: '#faq', label: 'よくある質問' },
+] as const
+
+export function GuidePage() {
+  const backTo = useGuideBackTo()
+  const { authenticated, cloudEnabled } = useAuth()
+  const startHref = !cloudEnabled || authenticated ? '/' : '/login'
+
+  useEffect(() => {
+    const previous = document.title
+    document.title = `使い方 | ${SERVICE_NAME}`
+    return () => {
+      document.title = previous
+    }
+  }, [])
+
+  return (
+    <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
+      <header className="mb-6 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium tracking-wide text-cyan-700">{SERVICE_NAME}</p>
+          <h1 className="mt-1 text-2xl font-semibold text-sky-950">使い方</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            釣行の条件と釣果を、その場で残すための手順です。
+          </p>
+        </div>
+        <Link
+          to={backTo}
+          className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
+        >
+          戻る
+        </Link>
+      </header>
+
+      <nav aria-label="目次" className="mb-8 rounded-xl border border-sky-200 bg-white px-4 py-3 shadow-sm">
+        <p className="mb-2 text-sm font-medium text-sky-900">目次</p>
+        <ol className="list-decimal space-y-1 pl-5 text-sm text-cyan-800">
+          {TOC.map((item) => (
+            <li key={item.href}>
+              <a href={item.href} className="underline decoration-slate-300 underline-offset-2">
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+
+      <article className="space-y-8">
+        <Section id="about" title="cast mark とは">
+          <p>
+            {SERVICE_NAME}
+            は、釣り場で「いま」の条件と釣果をワンタップで残す記録アプリです。スマホのブラウザで開き、ホーム画面に追加して使えます。ノートや地図アプリを行き来せず、釣れた瞬間の位置・天気・潮位を同じ記録にまとめることを目的にしています。
+          </p>
+          <p>
+            記録の本体はご自身の釣行ログです。公開の釣り場データベースや、他の利用者のポイントを共有するサービスではありません。残した座標や写真は、アカウントに紐づいて保存され、本人以外は見られません。
+          </p>
+        </Section>
+
+        <Section id="features" title="できること">
+          <p>主な機能は次のとおりです。</p>
+          <ul className="list-disc space-y-2 pl-5">
+            <li>
+              <strong className="font-medium text-sky-950">ワンタップ記録:</strong>{' '}
+              「記録する」を押すと、現在地、気温・天気、潮位を取得して保存します。魚種、体長、重さ、写真、タックルは任意です。
+            </li>
+            <li>
+              <strong className="font-medium text-sky-950">履歴:</strong>{' '}
+              日付カレンダー、地図、一覧で過去の釣果を振り返れます。記録を開いて編集・削除できます。
+            </li>
+            <li>
+              <strong className="font-medium text-sky-950">マイ魚種図鑑:</strong>{' '}
+              釣った魚種ごとの尾数や最大サイズを、記録から自動で集計します。
+            </li>
+            <li>
+              <strong className="font-medium text-sky-950">マイタックル:</strong>{' '}
+              ロッド、リール、ライン、ルアー／エサ、仕掛けをセットとして保存し、記録時に呼び出せます。
+            </li>
+            <li>
+              <strong className="font-medium text-sky-950">端末とクラウド:</strong>{' '}
+              記録は端末内にも保存されます。通信できないときも端末へ残り、復帰後に同期します。
+            </li>
+          </ul>
+        </Section>
+
+        <Section id="start" title="はじめ方">
+          <p>
+            クラウド同期を使う場合は、メールアドレスとパスワードでアカウントを作成します。新規登録時には利用規約とプライバシーポリシーへの同意が必要です。確認コードがメールに届いたら入力して、ログインしてください。
+          </p>
+          <p>
+            記録では位置情報を使います。ブラウザまたは OS から位置情報の許可を求められるので、許可すると現在地・天気・潮位が記録に付きます。拒否した場合でも、座標なしの記録として保存できます。
+          </p>
+          <p>
+            スマートフォンのブラウザで「ホーム画面に追加」すると、アプリのように全画面で開けます。通信は HTTPS です。
+          </p>
+          <p>
+            <Link to={startHref} className="font-medium text-cyan-800 underline underline-offset-2">
+              {authenticated || !cloudEnabled ? '記録画面を開く' : 'ログイン / 新規登録へ'}
+            </Link>
+          </p>
+        </Section>
+
+        <Section id="record" title="記録のしかた">
+          <p>
+            画面下の「記録」タブが、釣行中のメイン画面です。入力はすべて任意なので、何も書かずにボタンだけ押しても残せます。釣れた直後に押して、魚種やサイズはあとから履歴で足す使い方もできます。
+          </p>
+          <RecordScreenMock />
+          <ol className="list-decimal space-y-2 pl-5">
+            <li>写真を撮るか、端末のアルバムから選びます。保存時に再エンコードし、撮影位置などの EXIF は取り除きます。</li>
+            <li>魚種を入力します。日本語の標準和名を候補から選べます。別名で入れても、できる範囲で標準和名に揃えます。</li>
+            <li>体長と重さを入れます。単位はマイページで cm / inch、g / kg / oz を切り替えられます。保存値は変わりません。</li>
+            <li>
+              必要なら「タックル入力を開く」から、セット名、ロッド、リール、ライン、ルアー／エサ、仕掛けを記入します。よく使う組み合わせはマイタックルに保存し、次回呼び出してください。「次回もこのタックルを使う」をオンにすると、記録後も入力が残ります。
+            </li>
+            <li>
+              「記録する」を押します。現在地の取得、天気・気温、潮位の取得、保存、写真のアップロードが順に進みます。位置が取れないときや、天気・潮位が失敗したときも、取れた項目だけで保存します。オフラインのときは端末のみに残り、通信復帰後にクラウドへ同期します。
+            </li>
+          </ol>
+          <p>
+            保存が終わると、その場のサマリーが表示されます。「続けて記録」で同じ場所の次の一尾へ進めます。
+          </p>
+        </Section>
+
+        <Section id="history" title="履歴と地図">
+          <p>
+            「履歴」タブでは、保存した記録を日付と場所で振り返ります。カレンダーで開始日と終了日をタップすると期間を絞り込めます。期間の下には地図があり、記録した地点が並びます。地図のピンをタップすると、その場所の記録が開きます。
+          </p>
+          <HistoryScreenMock />
+          <p>
+            一覧のカードを開くと、写真、魚種、サイズ、天気、潮位、タックル、座標を確認できます。位置や魚種の打ち間違いがあればここで直し、不要な記録は削除できます。地図タイルは国土地理院の標準地図です。日本国内の記録を想定しています。
+          </p>
+        </Section>
+
+        <Section id="mypage" title="マイページ">
+          <p>
+            「マイページ」から、タックル帳、魚種図鑑、単位、アカウント設定を開きます。マイ魚種図鑑は、これまでに残した記録を魚種ごとに集計した画面です。尾数や最大サイズで並べ替えられます。魚種を選ぶと、その魚の記録だけを時系列で見られます。
+          </p>
+          <EncyclopediaScreenMock />
+          <p>
+            アカウントではメールアドレスの変更、パスワードの変更、退会ができます。退会するとクラウド上の釣り記録と写真は所定の期間内に削除されます。くわしくはプライバシーポリシーを確認してください。
+          </p>
+        </Section>
+
+        <Section id="notes" title="天気・潮位について">
+          <p>
+            気温と天気は OpenWeatherMap の現在値です。潮位は海上保安庁「海しる」の天文潮位（予測値）で、最寄りの推算点を使います。実測の潮位表や、航海用の資料ではありません。月齢や潮種はアプリ側で算出しています。
+          </p>
+          <p>
+            場所名は、座標から逆ジオコーディングした結果です。取れないときは座標だけが残ります。これらの情報は釣行判断の参考であり、安全確認の根拠にはしないでください。
+          </p>
+        </Section>
+
+        <Section id="faq" title="よくある質問">
+          <p>
+            <strong className="font-medium text-sky-950">無料で使えますか。</strong>
+            現時点では無償で提供しています。有料プランはありません。
+          </p>
+          <p>
+            <strong className="font-medium text-sky-950">アカウントは必要ですか。</strong>
+            クラウドへ同期して複数の端末で見る場合は必要です。記録そのものは端末内にも保存されます。
+          </p>
+          <p>
+            <strong className="font-medium text-sky-950">位置情報をオフにしても使えますか。</strong>
+            使えます。座標・天気・潮位は付きませんが、魚種や写真などの入力は保存できます。
+          </p>
+          <p>
+            <strong className="font-medium text-sky-950">他の人に釣り場は見えますか。</strong>
+            見えません。記録はログインした本人のアカウントにだけ紐づきます。
+          </p>
+          <p>
+            <strong className="font-medium text-sky-950">問い合わせ先は。</strong>
+            GitHub Issues から連絡できます。公開での連絡が難しい場合は、その旨を書いてください。
+          </p>
+        </Section>
+      </article>
+
+      <div className="mt-8 rounded-xl border border-sky-200 bg-white px-4 py-4 shadow-sm">
+        <p className="text-sm font-medium text-sky-950">使ってみる</p>
+        <p className="mt-1 text-sm text-slate-500">
+          アカウントを作ると、記録の同期と履歴の振り返りが使えます。
+        </p>
+        <Link
+          to={startHref}
+          className="mt-3 flex min-h-11 items-center justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white shadow-sm"
+        >
+          {authenticated || !cloudEnabled ? '記録をはじめる' : 'ログイン / 新規登録'}
+        </Link>
+      </div>
+
+      <div className="mt-8 border-t border-sky-100 pt-4">
+        <LegalLinks />
+      </div>
+    </main>
+  )
+}

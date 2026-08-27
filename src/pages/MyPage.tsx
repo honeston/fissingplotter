@@ -161,7 +161,7 @@ export function MyPage() {
       </section>
 
       <section className="mt-6 rounded-xl border border-sky-200 bg-white px-4 py-3 shadow-sm">
-        <h2 className="text-sm font-medium text-sky-900">規約・ポリシー</h2>
+        <h2 className="text-sm font-medium text-sky-900">使い方・規約</h2>
         <LegalLinks className="mt-2" />
       </section>
 

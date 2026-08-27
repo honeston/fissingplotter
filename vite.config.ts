@@ -13,7 +13,10 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.svg', 'ads.txt'],
+      workbox: {
+        navigateFallbackDenylist: [/^\/ads\.txt$/],
+      },
       manifest: {
         name: 'cast mark',
         short_name: 'cast mark',

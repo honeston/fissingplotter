@@ -84,6 +84,12 @@ export function LoginPage() {
             </p>
           </li>
         </ul>
+        <Link
+          to="/guide"
+          className="mt-4 inline-block text-sm font-medium text-cyan-800 underline decoration-slate-300 underline-offset-2"
+        >
+          使い方を見る
+        </Link>
       </section>
 
       <section>

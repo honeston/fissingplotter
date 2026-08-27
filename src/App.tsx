@@ -3,11 +3,13 @@ import { BrowserRouter, NavLink, Navigate, Route, Routes, useLocation, useSearch
 import { RequireAuth } from './components/RequireAuth'
 import { SyncStatusBanner } from './components/SyncStatusBanner'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { isPublicContentPath } from './legal/meta'
 import { ChangeEmailPage } from './pages/ChangeEmailPage'
 import { ChangePasswordPage } from './pages/ChangePasswordPage'
 import { DeleteAccountPage } from './pages/DeleteAccountPage'
 import { FishEncyclopediaPage } from './pages/FishEncyclopediaPage'
 import { FishEncyclopediaSpeciesPage } from './pages/FishEncyclopediaSpeciesPage'
+import { GuidePage } from './pages/GuidePage'
 import { HistoryPage } from './pages/HistoryPage'
 import { HomePage } from './pages/HomePage'
 import { LegalPage } from './pages/LegalPage'
@@ -40,8 +42,8 @@ function HistoryMapRedirect() {
 function AppShell() {
   const { authenticated, loading } = useAuth()
   const { pathname } = useLocation()
-  const isLegal = pathname === '/privacy' || pathname === '/terms'
-  const showNav = !loading && authenticated && !isLegal
+  const isPublicContent = isPublicContentPath(pathname)
+  const showNav = !loading && authenticated && !isPublicContent
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -49,6 +51,7 @@ function AppShell() {
       <SyncStatusBanner />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/guide" element={<GuidePage />} />
         <Route path="/privacy" element={<LegalPage kind="privacy" />} />
         <Route path="/terms" element={<LegalPage kind="terms" />} />
         <Route element={<RequireAuth />}>

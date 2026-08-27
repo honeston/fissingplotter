@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { isPublicContentPath } from '../legal/meta'
 
 export function SyncStatusBanner() {
   const { cloudEnabled, authenticated, userEmail, signOut } = useAuth()
@@ -7,8 +8,7 @@ export function SyncStatusBanner() {
 
   if (
     pathname === '/login' ||
-    pathname === '/privacy' ||
-    pathname === '/terms' ||
+    isPublicContentPath(pathname) ||
     !cloudEnabled ||
     !authenticated
   ) {
