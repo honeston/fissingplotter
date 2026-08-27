@@ -40,8 +40,8 @@ const requiredDocs = [
   `${archiveDocs}/infra.md`,
   `${archiveDocs}/deploy-aws.md`,
   `${archiveDocs}/design.md`,
-  'docs/screens/design.md',
-  'docs/api/design.md',
+  'docs/screens/design/README.md',
+  'docs/api/design/README.md',
   'infra/README.md',
   'infra/template.yaml',
   '.env.example',
@@ -56,10 +56,11 @@ for (const doc of requiredDocs) {
 
 // README → 現行 docs / 旧 infra
 const readme = fileExists('README.md') ? read('README.md') : ''
-if (readme.includes('docs/screens/design.md')) pass('ドキュメント', 'README → 画面設計', 'リンクあり')
-else fail('ドキュメント', 'README → 画面設計', 'リンクを追加してください')
-if (readme.includes('docs/api/design.md')) pass('ドキュメント', 'README → API 設計', 'リンクあり')
-else fail('ドキュメント', 'README → API 設計', 'リンクを追加してください')
+const docsIndex = fileExists('docs/README.md') ? read('docs/README.md') : ''
+if (docsIndex.includes('screens/design')) pass('ドキュメント', 'docs/README → 画面設計', 'リンクあり')
+else fail('ドキュメント', 'docs/README → 画面設計', 'リンクを追加してください')
+if (docsIndex.includes('api/design')) pass('ドキュメント', 'docs/README → API 設計', 'リンクあり')
+else fail('ドキュメント', 'docs/README → API 設計', 'リンクを追加してください')
 if (readme.includes(`${archiveDocs}/infra.md`) || readme.includes(`${archiveDocs}/`)) {
   pass('ドキュメント', 'README → 旧 infra 資料', 'アーカイブへのリンクあり')
 } else {

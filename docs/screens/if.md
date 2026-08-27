@@ -1,6 +1,6 @@
 # 画面 IF
 
-現行コード（`src/App.tsx` と各ページ）に基づく画面インターフェース定義。全体像は [画面概要](overview.md)。構成・遷移は [画面設計](design.md)。HTTP API は [API 概要](../api/overview.md) / [API IF](../api/if.md) / [API 設計](../api/design.md)。
+現行コード（`src/App.tsx` と各ページ）に基づく画面インターフェース定義。全体像は [画面概要](overview.md)。構成・遷移は [画面設計](design/README.md)。HTTP API は [API 概要](../api/overview.md) / [API IF](../api/if.md) / [API 設計](../api/design/README.md)。
 
 ---
 
