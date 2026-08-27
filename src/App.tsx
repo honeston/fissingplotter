@@ -12,6 +12,7 @@ import { FishEncyclopediaSpeciesPage } from './pages/FishEncyclopediaSpeciesPage
 import { GuidePage } from './pages/GuidePage'
 import { HistoryPage } from './pages/HistoryPage'
 import { HomePage } from './pages/HomePage'
+import { LandingPage } from './pages/LandingPage'
 import { LegalPage } from './pages/LegalPage'
 import { LoginPage } from './pages/LoginPage'
 import { MyPage } from './pages/MyPage'
@@ -39,6 +40,29 @@ function HistoryMapRedirect() {
   return <Navigate to={query ? `/history?${query}` : '/history'} replace />
 }
 
+function AuthLoading() {
+  return (
+    <div className="flex min-h-dvh items-center justify-center text-sm text-slate-500">
+      読み込み中…
+    </div>
+  )
+}
+
+function RootPage() {
+  const { loading, authenticated, cloudEnabled } = useAuth()
+
+  if (!cloudEnabled) {
+    return <HomePage />
+  }
+  if (loading) {
+    return <AuthLoading />
+  }
+  if (!authenticated) {
+    return <LandingPage />
+  }
+  return <HomePage />
+}
+
 function AppShell() {
   const { authenticated, loading } = useAuth()
   const { pathname } = useLocation()
@@ -50,12 +74,12 @@ function AppShell() {
       <ScrollToTop />
       <SyncStatusBanner />
       <Routes>
+        <Route path="/" element={<RootPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/guide" element={<GuidePage />} />
         <Route path="/privacy" element={<LegalPage kind="privacy" />} />
         <Route path="/terms" element={<LegalPage kind="terms" />} />
         <Route element={<RequireAuth />}>
-          <Route path="/" element={<HomePage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/history/map" element={<HistoryMapRedirect />} />
           <Route path="/mypage" element={<MyPage />} />

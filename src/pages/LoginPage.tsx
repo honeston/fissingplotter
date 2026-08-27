@@ -1,13 +1,18 @@
 import { useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { LegalLinks } from '../components/LegalLinks'
 import { useAuth } from '../contexts/AuthContext'
 
 type Mode = 'login' | 'signup' | 'confirm'
 
+function modeFromSearch(params: URLSearchParams): Mode {
+  return params.get('mode') === 'signup' ? 'signup' : 'login'
+}
+
 export function LoginPage() {
   const { signIn, signUp, confirmSignUp, authenticated } = useAuth()
-  const [mode, setMode] = useState<Mode>('login')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [mode, setMode] = useState<Mode>(() => modeFromSearch(searchParams))
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
@@ -40,6 +45,7 @@ export function LoginPage() {
         await confirmSignUp(email.trim(), code.trim())
         setInfo('登録が完了しました。ログインしてください')
         setMode('login')
+        setSearchParams({}, { replace: true })
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'エラーが発生しました')
@@ -51,53 +57,37 @@ export function LoginPage() {
   const formTitle =
     mode === 'login' ? 'ログイン' : mode === 'signup' ? '新規登録' : '確認コード'
 
+  function switchMode(next: 'login' | 'signup') {
+    setMode(next)
+    setAgreed(false)
+    setError('')
+    setInfo('')
+    setSearchParams(next === 'signup' ? { mode: 'signup' } : {}, { replace: true })
+  }
+
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
-      <header className="mb-6">
-        <p className="text-sm font-medium tracking-wide text-cyan-700">cast mark</p>
-        <h1 className="mt-1 text-2xl font-semibold text-sky-950">
-          気温・潮位・座標をワンタップで残す
-        </h1>
-        <p className="mt-2 text-sm text-slate-500">
-          釣り場の条件と釣果を、その場で記録するアプリです。
-        </p>
+      <header className="mb-6 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium tracking-wide text-cyan-700">cast mark</p>
+          <h1 className="mt-1 text-2xl font-semibold text-sky-950">{formTitle}</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            {mode === 'confirm'
+              ? 'メールに届いた確認コードを入力してください。'
+              : mode === 'signup'
+                ? 'メールアドレスでアカウントを作成します。記録時は位置情報を使います。'
+                : 'クラウド同期にはアカウントが必要です。記録時は位置情報を使います。'}
+          </p>
+        </div>
+        <Link
+          to="/"
+          className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
+        >
+          戻る
+        </Link>
       </header>
 
-      <section className="mb-8 rounded-xl border border-sky-200 bg-white px-4 py-4 shadow-sm">
-        <ul className="space-y-3">
-          <li>
-            <p className="text-sm font-medium text-sky-950">ワンタップ記録</p>
-            <p className="mt-0.5 text-sm text-slate-500">
-              GPS・気温・潮位を自動で保存。魚種・サイズ・写真・タックルも残せます。
-            </p>
-          </li>
-          <li>
-            <p className="text-sm font-medium text-sky-950">履歴と地図</p>
-            <p className="mt-0.5 text-sm text-slate-500">
-              いつ・どこで釣れたかを、あとから一覧や地図で振り返れます。
-            </p>
-          </li>
-          <li>
-            <p className="text-sm font-medium text-sky-950">端末とクラウド</p>
-            <p className="mt-0.5 text-sm text-slate-500">
-              記録は端末に保存し、アカウントでほかの端末とも同期します。
-            </p>
-          </li>
-        </ul>
-        <Link
-          to="/guide"
-          className="mt-4 inline-block text-sm font-medium text-cyan-800 underline decoration-slate-300 underline-offset-2"
-        >
-          使い方を見る
-        </Link>
-      </section>
-
       <section>
-        <h2 className="text-lg font-semibold text-sky-950">{formTitle}</h2>
-        <p className="mt-1 mb-4 text-sm text-slate-500">
-          クラウド同期にはアカウントが必要です。記録時は位置情報を使います。
-        </p>
-
         <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
           <label className="block">
             <span className="mb-1 block text-sm font-medium text-sky-900">メールアドレス</span>
@@ -207,44 +197,17 @@ export function LoginPage() {
 
         <div className="mt-6 space-y-2 text-sm text-cyan-800">
           {mode === 'login' && (
-            <button
-              type="button"
-              onClick={() => {
-                setMode('signup')
-                setAgreed(false)
-                setError('')
-                setInfo('')
-              }}
-              className="underline"
-            >
+            <button type="button" onClick={() => switchMode('signup')} className="underline">
               アカウントを作成
             </button>
           )}
           {mode === 'signup' && (
-            <button
-              type="button"
-              onClick={() => {
-                setMode('login')
-                setAgreed(false)
-                setError('')
-                setInfo('')
-              }}
-              className="underline"
-            >
+            <button type="button" onClick={() => switchMode('login')} className="underline">
               ログインに戻る
             </button>
           )}
           {mode === 'confirm' && (
-            <button
-              type="button"
-              onClick={() => {
-                setMode('login')
-                setAgreed(false)
-                setError('')
-                setInfo('')
-              }}
-              className="underline"
-            >
+            <button type="button" onClick={() => switchMode('login')} className="underline">
               ログインに戻る
             </button>
           )}

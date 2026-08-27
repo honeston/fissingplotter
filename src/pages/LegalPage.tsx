@@ -14,7 +14,7 @@ const TITLES: Record<LegalKind, string> = {
 function useLegalBackTo(): string {
   const { authenticated, cloudEnabled } = useAuth()
   if (!cloudEnabled || authenticated) return '/mypage'
-  return '/login'
+  return '/'
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
