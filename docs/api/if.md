@@ -1,6 +1,6 @@
 # API IF
 
-現行コード（`api/src/handler.ts`、`infra/template.yaml`、クライアント `src/lib/api.ts`）に基づく HTTP API 定義。パスと処理の流れは [API 設計](design.md)。画面側の項目は [画面 IF](../screens/if.md)。
+現行コード（`api/src/handler.ts`、`infra/template.yaml`、クライアント `src/lib/api.ts`）に基づく HTTP API 定義。全体像は [API 概要](overview.md)。パスと処理の流れは [API 設計](design.md)。画面側の項目は [画面 IF](../screens/if.md)。
 
 ベース URL は `VITE_API_URL`（本番は SAM Output `ApiUrl`）。パスはステージプレフィックスなし（`/health`）。API Gateway の `/prod/...` は Lambda 内で正規化する。
 

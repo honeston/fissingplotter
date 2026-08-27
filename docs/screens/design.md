@@ -2,7 +2,7 @@
 
 現行コード（`src/App.tsx` と各ページ）に基づく画面構成と遷移。ルート以外のオーバーレイも書く。
 
-実装ファイルは `実装` 列に、ルートは `src/App.tsx` の定義どおり。画面のつながりはフローチャート、画面間のやり取りはシーケンス図。項目・操作は [画面 IF](if.md)。画面が叩く HTTP API は [API IF](../api/if.md) / [API 設計](../api/design.md)。
+全体像は [画面概要](overview.md)。実装ファイルは `実装` 列に、ルートは `src/App.tsx` の定義どおり。画面のつながりはフローチャート、画面間のやり取りはシーケンス図。項目・操作は [画面 IF](if.md)。画面が叩く HTTP API は [API 概要](../api/overview.md) / [API IF](../api/if.md) / [API 設計](../api/design.md)。
 
 ---
 

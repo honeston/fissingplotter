@@ -2,7 +2,7 @@
 
 現行コード（`api/src/handler.ts` と `infra/template.yaml`）に基づく HTTP API。クライアントは `src/lib/api.ts`。
 
-ベース URL は `VITE_API_URL`（本番は SAM Output `ApiUrl`）。入出力の定義は [API IF](if.md)。画面側の導線は [画面設計](../screens/design.md)、項目は [画面 IF](../screens/if.md)。
+全体像は [API 概要](overview.md)。ベース URL は `VITE_API_URL`（本番は SAM Output `ApiUrl`）。入出力の定義は [API IF](if.md)。画面側の導線は [画面概要](../screens/overview.md) / [画面設計](../screens/design.md)、項目は [画面 IF](../screens/if.md)。
 
 ---
 
