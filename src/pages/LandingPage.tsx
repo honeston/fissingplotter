@@ -26,10 +26,10 @@ export function LandingPage() {
       <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
         <header className="mb-8 flex items-start justify-between gap-3">
           <div>
-            <p className="text-sm font-medium tracking-wide text-cyan-700">{SERVICE_NAME}</p>
-            <h1 className="mt-1 text-2xl font-semibold text-sky-950">
+            <h1 className="text-2xl font-semibold text-sky-950">{SERVICE_NAME}</h1>
+            <p className="mt-2 text-sm text-slate-500">
               釣れた瞬間の条件を、そのまま残す
-            </h1>
+            </p>
           </div>
           <Link
             to="/login"
@@ -40,7 +40,7 @@ export function LandingPage() {
         </header>
 
         <p className="mb-6 text-sm leading-relaxed text-slate-600">
-          気温・天気・潮位・現在地をワンタップで記録する、釣り専用のログアプリです。ノートや地図アプリを行き来せず、その場の条件と釣果を一つの記録にまとめます。
+          気温・天気・潮位・現在地をワンタップで記録する、釣り専用のログアプリです。
         </p>
 
         <SignupButton>無料ではじめる</SignupButton>
