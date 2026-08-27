@@ -62,6 +62,16 @@ export function DeleteAccountPage() {
             <li>クラウド上の釣り記録・写真は退会後 7 日以内に削除されます</li>
             <li>この端末に保存された記録・写真・タックルも削除されます</li>
           </ul>
+          <p className="mt-3 text-slate-600">
+            データの取扱いの詳細は
+            <Link
+              to="/privacy"
+              className="underline decoration-slate-300 underline-offset-2 hover:text-cyan-800"
+            >
+              プライバシーポリシー
+            </Link>
+            をご覧ください。
+          </p>
         </div>
 
         <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-sky-200 bg-white px-4 py-3">

@@ -5,7 +5,15 @@ export function SyncStatusBanner() {
   const { cloudEnabled, authenticated, userEmail, signOut } = useAuth()
   const { pathname } = useLocation()
 
-  if (pathname === '/login' || !cloudEnabled || !authenticated) return null
+  if (
+    pathname === '/login' ||
+    pathname === '/privacy' ||
+    pathname === '/terms' ||
+    !cloudEnabled ||
+    !authenticated
+  ) {
+    return null
+  }
 
   return (
     <div className="border-b border-sky-100 bg-sky-50/80 px-4 py-2 text-xs text-sky-900">

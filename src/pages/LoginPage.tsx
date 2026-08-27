@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
+import { LegalLinks } from '../components/LegalLinks'
 import { useAuth } from '../contexts/AuthContext'
 
 type Mode = 'login' | 'signup' | 'confirm'
@@ -13,6 +14,7 @@ export function LoginPage() {
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
+  const [agreed, setAgreed] = useState(false)
 
   if (authenticated) {
     return <Navigate to="/" replace />
@@ -22,6 +24,10 @@ export function LoginPage() {
     e.preventDefault()
     setError('')
     setInfo('')
+    if (mode === 'signup' && !agreed) {
+      setError('利用規約とプライバシーポリシーへの同意が必要です')
+      return
+    }
     setBusy(true)
     try {
       if (mode === 'login') {
@@ -132,6 +138,41 @@ export function LoginPage() {
             </label>
           )}
 
+          {mode === 'signup' && (
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-sky-200 bg-white px-4 py-3">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                disabled={busy}
+                required
+                className="mt-1 size-4 shrink-0 accent-cyan-700"
+              />
+              <span className="text-sm text-sky-950">
+                <Link
+                  to="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="underline decoration-slate-300 underline-offset-2 hover:text-cyan-800"
+                >
+                  利用規約
+                </Link>
+                および
+                <Link
+                  to="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="underline decoration-slate-300 underline-offset-2 hover:text-cyan-800"
+                >
+                  プライバシーポリシー
+                </Link>
+                に同意します
+              </span>
+            </label>
+          )}
+
           {error && (
             <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
               {error}
@@ -145,7 +186,7 @@ export function LoginPage() {
 
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || (mode === 'signup' && !agreed)}
             className="min-h-12 rounded-xl bg-cyan-700 px-4 py-3 text-base font-semibold text-white shadow-md disabled:opacity-60"
           >
             {busy
@@ -160,21 +201,49 @@ export function LoginPage() {
 
         <div className="mt-6 space-y-2 text-sm text-cyan-800">
           {mode === 'login' && (
-            <button type="button" onClick={() => setMode('signup')} className="underline">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('signup')
+                setAgreed(false)
+                setError('')
+                setInfo('')
+              }}
+              className="underline"
+            >
               アカウントを作成
             </button>
           )}
           {mode === 'signup' && (
-            <button type="button" onClick={() => setMode('login')} className="underline">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('login')
+                setAgreed(false)
+                setError('')
+                setInfo('')
+              }}
+              className="underline"
+            >
               ログインに戻る
             </button>
           )}
           {mode === 'confirm' && (
-            <button type="button" onClick={() => setMode('login')} className="underline">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('login')
+                setAgreed(false)
+                setError('')
+                setInfo('')
+              }}
+              className="underline"
+            >
               ログインに戻る
             </button>
           )}
         </div>
+        <LegalLinks className="mt-6" newTab />
       </section>
     </main>
   )

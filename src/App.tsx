@@ -10,6 +10,7 @@ import { FishEncyclopediaPage } from './pages/FishEncyclopediaPage'
 import { FishEncyclopediaSpeciesPage } from './pages/FishEncyclopediaSpeciesPage'
 import { HistoryPage } from './pages/HistoryPage'
 import { HomePage } from './pages/HomePage'
+import { LegalPage } from './pages/LegalPage'
 import { LoginPage } from './pages/LoginPage'
 import { MyPage } from './pages/MyPage'
 import { MyTacklePage } from './pages/MyTacklePage'
@@ -38,7 +39,9 @@ function HistoryMapRedirect() {
 
 function AppShell() {
   const { authenticated, loading } = useAuth()
-  const showNav = !loading && authenticated
+  const { pathname } = useLocation()
+  const isLegal = pathname === '/privacy' || pathname === '/terms'
+  const showNav = !loading && authenticated && !isLegal
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -46,6 +49,8 @@ function AppShell() {
       <SyncStatusBanner />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/privacy" element={<LegalPage kind="privacy" />} />
+        <Route path="/terms" element={<LegalPage kind="terms" />} />
         <Route element={<RequireAuth />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/history" element={<HistoryPage />} />

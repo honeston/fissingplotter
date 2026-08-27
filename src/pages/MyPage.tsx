@@ -5,6 +5,7 @@ import type { LengthUnit, WeightUnit } from '../lib/units'
 import { WeatherAttribution } from '../components/WeatherAttribution'
 import { TideAttribution } from '../components/TideAttribution'
 import { JafAttribution } from '../components/JafAttribution'
+import { LegalLinks } from '../components/LegalLinks'
 
 const LENGTH_OPTIONS: { value: LengthUnit; label: string }[] = [
   { value: 'cm', label: 'cm' },
@@ -157,6 +158,11 @@ export function MyPage() {
             この端末に記録を保存しています。クラウド同期は未設定です。
           </p>
         )}
+      </section>
+
+      <section className="mt-6 rounded-xl border border-sky-200 bg-white px-4 py-3 shadow-sm">
+        <h2 className="text-sm font-medium text-sky-900">規約・ポリシー</h2>
+        <LegalLinks className="mt-2" />
       </section>
 
       <section className="mt-auto space-y-1 pt-6">
