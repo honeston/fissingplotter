@@ -20,7 +20,7 @@ cast mark の AWS リソースを CloudFormation SAM で管理します。
 - トリガー: `main` push / `workflow_dispatch`
 - Secret: `AWS_ROLE_ARN`、`OPENWEATHER_API_KEY`（天気）、`MSIL_SUBSCRIPTION_KEY`（潮位）
 
-詳細は [`docs/deploy-aws.md`](../docs/deploy-aws.md)。リソース一覧・不足チェックは [`docs/infra.md`](../docs/infra.md)。
+詳細は [`docs/_archive/2026-08-28/deploy-aws.md`](../docs/_archive/2026-08-28/deploy-aws.md)。リソース一覧・不足チェックは [`docs/_archive/2026-08-28/infra.md`](../docs/_archive/2026-08-28/infra.md)。
 
 ## OpenWeatherMap（天気）
 

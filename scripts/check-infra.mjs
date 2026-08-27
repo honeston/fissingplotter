@@ -35,11 +35,14 @@ function fileExists(path) {
 }
 
 // --- ドキュメント ---
+const archiveDocs = 'docs/_archive/2026-08-28'
 const requiredDocs = [
-  'docs/infra.md',
-  'docs/deploy-aws.md',
-  'docs/deploy.md',
-  'docs/design.md',
+  `${archiveDocs}/infra.md`,
+  `${archiveDocs}/deploy-aws.md`,
+  `${archiveDocs}/deploy.md`,
+  `${archiveDocs}/design.md`,
+  'docs/screens/design.md',
+  'docs/api/design.md',
   'infra/README.md',
   'infra/template.yaml',
   '.env.example',
@@ -52,16 +55,23 @@ for (const doc of requiredDocs) {
   else fail('ドキュメント', doc, '見つかりません')
 }
 
-// README → infra リンク
+// README → 現行 docs / 旧 infra
 const readme = fileExists('README.md') ? read('README.md') : ''
-if (readme.includes('docs/infra.md')) pass('ドキュメント', 'README → infra.md', 'リンクあり')
-else fail('ドキュメント', 'README → infra.md', 'リンクを追加してください')
+if (readme.includes('docs/screens/design.md')) pass('ドキュメント', 'README → 画面設計', 'リンクあり')
+else fail('ドキュメント', 'README → 画面設計', 'リンクを追加してください')
+if (readme.includes('docs/api/design.md')) pass('ドキュメント', 'README → API 設計', 'リンクあり')
+else fail('ドキュメント', 'README → API 設計', 'リンクを追加してください')
+if (readme.includes(`${archiveDocs}/infra.md`) || readme.includes(`${archiveDocs}/`)) {
+  pass('ドキュメント', 'README → 旧 infra 資料', 'アーカイブへのリンクあり')
+} else {
+  fail('ドキュメント', 'README → 旧 infra 資料', 'アーカイブへのリンクを追加してください')
+}
 
 // deploy-aws.md 参照の解決
-for (const ref of ['README.md', 'docs/design.md', 'docs/phases.md', 'infra/README.md']) {
+for (const ref of ['README.md', `${archiveDocs}/design.md`, `${archiveDocs}/phases.md`, 'infra/README.md']) {
   if (!fileExists(ref)) continue
   const content = read(ref)
-  if (content.includes('deploy-aws.md') && !fileExists('docs/deploy-aws.md')) {
+  if (content.includes('deploy-aws.md') && !fileExists(`${archiveDocs}/deploy-aws.md`)) {
     fail('ドキュメント', `${ref} → deploy-aws.md`, '参照先が未作成')
   }
 }
@@ -237,8 +247,8 @@ if (jsonOut) {
   }
 
   console.log(`✅ OK: ${passed.length} 件`)
-  if (failed.length) console.log(`\n要対応 ${failed.length} 件 — 詳細は docs/infra.md のチェックリストを更新してください`)
-  else if (warnings.length) console.log(`\n警告 ${warnings.length} 件 — 必要に応じて docs/infra.md を更新してください`)
+  if (failed.length) console.log(`\n要対応 ${failed.length} 件 — 詳細は ${archiveDocs}/infra.md のチェックリストを更新してください`)
+  else if (warnings.length) console.log(`\n警告 ${warnings.length} 件 — 必要に応じて ${archiveDocs}/infra.md を更新してください`)
   else console.log('\n自動チェック項目はすべて OK です')
 }
 
