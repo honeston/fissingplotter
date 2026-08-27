@@ -9,7 +9,7 @@
 | 認証 | Cognito User Pool（AWS 本番） / 未設定時はローカルのみ |
 | サーバー | API Gateway + Lambda + DynamoDB（AWS 本番） |
 | 保存先 | IndexedDB（オフラインキャッシュ）+ DynamoDB（クラウド） |
-| ホスティング | AWS S3 + CloudFront（本番） / Cloudflare Pages（レガシー） |
+| ホスティング | AWS S3 + CloudFront |
 
 ## 2. アーキテクチャ
 
@@ -79,19 +79,12 @@ interface FishingRecord {
 
 ## 7. ホスティング
 
-### AWS（本番推奨）
+### AWS
 
 S3 + CloudFront + Cognito + API Gateway + Lambda + DynamoDB。手順は [`docs/deploy-aws.md`](deploy-aws.md)。
 
 - インフラ: [`infra/template.yaml`](../infra/template.yaml)（SAM）
 - 同期: [`src/lib/sync.ts`](../src/lib/sync.ts)
-
-### Cloudflare Pages（レガシー）
-
-手順は [`docs/deploy.md`](deploy.md)。
-
-- GitHub: https://github.com/honeston/fissingplotter
-- 公開コマンド: `npx wrangler login` → `npm run deploy`
 
 ## 8. クラウド同期
 

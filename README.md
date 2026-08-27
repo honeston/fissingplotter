@@ -39,10 +39,3 @@ npm run preview
 ### AWS（本番）
 
 GitHub Actions（`main` push / `workflow_dispatch`）のみ。手順は [`docs/_archive/2026-08-28/deploy-aws.md`](docs/_archive/2026-08-28/deploy-aws.md)。
-
-### Cloudflare（レガシー）
-
-```bash
-npx wrangler login
-npm run deploy
-```

@@ -17,7 +17,7 @@ cast mark のインフラ構成・運用・不足項目の一覧。更新時は 
 
 ## アーキテクチャ
 
-### AWS（本番推奨）
+### AWS
 
 ```
 [ブラウザ PWA]
@@ -36,13 +36,6 @@ cast mark のインフラ構成・運用・不足項目の一覧。更新時は 
 - API 実装: [`api/`](../api/)
 - フロント同期: [`src/lib/sync.ts`](../src/lib/sync.ts)
 
-### Cloudflare Pages（レガシー）
-
-Phase 5 時点のホスティング。IndexedDB のみ（クラウド同期なし）。
-
-- 設定: [`wrangler.toml`](../wrangler.toml)
-- 手順: [`docs/deploy.md`](deploy.md)
-
 ---
 
 ## 環境一覧
@@ -50,8 +43,7 @@ Phase 5 時点のホスティング。IndexedDB のみ（クラウド同期な�
 | 環境 | ホスティング | 認証・同期 | 用途 |
 |------|-------------|-----------|------|
 | ローカル dev | `npm run dev` | なし（IndexedDB のみ） | 開発 |
-| AWS 本番 | S3 + CloudFront | Cognito + DynamoDB | 本番推奨 |
-| Cloudflare | Pages | なし | レガシー公開 URL |
+| AWS 本番 | S3 + CloudFront | Cognito + DynamoDB | 本番 |
 
 | 項目 | 値 |
 |------|-----|
@@ -63,7 +55,6 @@ Phase 5 時点のホスティング。IndexedDB のみ（クラウド同期な�
 | Cognito User Pool ID | `ap-northeast-1_dZiwGsXrm` |
 | Cognito Client ID | `jcajn9r0kbm2mct7g4kmsd6l9` |
 | カスタムドメイン | 未設定 |
-| Cloudflare 本番 URL | https://fissingplotter.pages.dev |
 
 ---
 
@@ -158,9 +149,8 @@ OIDC 設定手順: [`docs/deploy-aws.md`](deploy-aws.md#github-actions-oidc)
 | 経路 | トリガー | 対象 |
 |------|---------|------|
 | GitHub Actions | `main` push / `workflow_dispatch` | SAM + フロント（S3 / CloudFront） |
-| Cloudflare | （レガシー） | Pages |
 
-詳細: [`docs/deploy-aws.md`](deploy-aws.md)、[`docs/deploy.md`](deploy.md)
+詳細: [`docs/deploy-aws.md`](deploy-aws.md)
 
 ---
 
@@ -171,7 +161,6 @@ OIDC 設定手順: [`docs/deploy-aws.md`](deploy-aws.md#github-actions-oidc)
 | OpenWeatherMap | 気温・風 | Lambda プロキシ（15分グリッドキャッシュ） |
 | 海しる（海上保安庁） | 天文潮位 | Lambda プロキシ（推算点マスタ同梱・日次系列キャッシュ） |
 | GitHub | ソース・CI | リポジトリ |
-| Cloudflare | レガシー CDN | アカウント手動 |
 
 ---
 
@@ -234,7 +223,6 @@ OIDC 設定手順: [`docs/deploy-aws.md`](deploy-aws.md#github-actions-oidc)
 | CloudWatch アラーム | 中 | 未設定 |
 | WAF | 低 | 未設定 |
 | API CORS `AllowOrigins: '*'` 制限 | 中 | 本番ドメインに絞る余地 |
-| Cloudflare 本番から AWS への移行完了 | 中 | 両方ドキュメント化済み |
 
 ---
 
@@ -245,7 +233,6 @@ OIDC 設定手順: [`docs/deploy-aws.md`](deploy-aws.md#github-actions-oidc)
 | [`docs/design.md`](design.md) | アプリ設計 |
 | [`docs/commercialization.md`](commercialization.md) | 商用化チェックリスト |
 | [`docs/deploy-aws.md`](deploy-aws.md) | AWS デプロイ手順 |
-| [`docs/deploy.md`](deploy.md) | Cloudflare デプロイ |
 | [`docs/local-dev.md`](local-dev.md) | ローカル API（SAM local） |
 | [`docs/phases.md`](phases.md) | 実装フェーズ |
 | [`infra/README.md`](../infra/README.md) | SAM クイックリファレンス |

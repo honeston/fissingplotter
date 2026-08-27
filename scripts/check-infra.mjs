@@ -39,7 +39,6 @@ const archiveDocs = 'docs/_archive/2026-08-28'
 const requiredDocs = [
   `${archiveDocs}/infra.md`,
   `${archiveDocs}/deploy-aws.md`,
-  `${archiveDocs}/deploy.md`,
   `${archiveDocs}/design.md`,
   'docs/screens/design.md',
   'docs/api/design.md',
