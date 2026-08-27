@@ -332,7 +332,7 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
 
       <p className="mb-2 text-sm font-medium text-sky-900">場所</p>
       <p className="mb-2 text-xs text-slate-500">
-        地図をタップ、またはピンをドラッグして位置を指定します。天気・日出没・潮位は座標と時刻から自動で更新されます。
+        ドラッグで地図を移動、2本指で拡大縮小、タップで位置を指定します。天気・日出没・潮位は座標と時刻から自動で更新されます。
       </p>
       <div className="relative mb-2 h-52 overflow-hidden rounded-xl border border-sky-100">
         <Suspense

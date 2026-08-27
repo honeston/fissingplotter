@@ -91,6 +91,11 @@ html.detail-sheet-open .detail-sheet-overlay .leaflet-container {
   touch-action: manipulation;
 }
 
+.coordinate-picker-map,
+html.detail-sheet-open .detail-sheet-overlay .leaflet-container.coordinate-picker-map {
+  touch-action: none;
+}
+
 .detail-sheet-overlay {
   overscroll-behavior: none;
 }

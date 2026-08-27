@@ -431,10 +431,15 @@ export function RecordDetailSheet({
     const overlay = overlayRef.current
     if (!overlay) return
 
+    const isMapTarget = (target: EventTarget | null) =>
+      target instanceof Element && Boolean(target.closest('.leaflet-container'))
+
     const blockBehind = (event: Event) => {
+      if (isMapTarget(event.target)) return
       event.stopPropagation()
     }
     const preventWhenDragging = (event: TouchEvent) => {
+      if (isMapTarget(event.target)) return
       event.stopPropagation()
       if (gestureRef.current.axis) event.preventDefault()
     }
