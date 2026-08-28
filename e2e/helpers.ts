@@ -47,6 +47,8 @@ export const test = base.extend<Fixtures>({
   freshPage: async ({ browser }, use) => {
     const { context, page } = await newIsolatedPage(browser)
     await page.goto('/')
+    // Playwright の fixture コールバック。React の use ではない
+    // oxlint-disable-next-line react/rules-of-hooks
     await use(page)
     await context.close()
   },
