@@ -1,5 +1,12 @@
 import type { ReactNode } from 'react'
 import { SERVICE_NAME } from '../legal/meta'
+import { GSI_STD_TILE_URL } from '../lib/gsiTiles'
+
+/** 横浜・山下公園付近。履歴地図と同じ地理院タイルを、画面イメージ用に1枚固定する */
+const HISTORY_MOCK_TILE_URL = GSI_STD_TILE_URL
+  .replace('{z}', '15')
+  .replace('{x}', '29095')
+  .replace('{y}', '12929')
 
 function PhoneFrame({
   title,
@@ -53,6 +60,51 @@ export function RecordScreenMock() {
   )
 }
 
+function HistoryMapPin({ x, y }: { x: number; y: number }) {
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <ellipse cx="0" cy="1.2" rx="3.4" ry="1.4" fill="#0c4a6e" opacity="0.28" />
+      <g transform="translate(-10 -33) scale(0.8)">
+        <path
+          d="M12.5 0C5.6 0 0 5.6 0 12.5c0 9.4 12.5 28.1 12.5 28.1S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0z"
+          fill="#2A81CB"
+        />
+        <circle cx="12.5" cy="12.5" r="5.2" fill="#fff" />
+      </g>
+    </g>
+  )
+}
+
+function HistoryMapMock() {
+  return (
+    <div className="relative mb-2 h-36 overflow-hidden rounded-lg border border-sky-100 bg-[#c5dff0]">
+      <img
+        src={HISTORY_MOCK_TILE_URL}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover object-[35%_40%]"
+        draggable={false}
+      />
+      <svg viewBox="0 0 240 148" className="absolute inset-0 h-full w-full">
+        <HistoryMapPin x={86} y={90} />
+        <HistoryMapPin x={158} y={112} />
+        <g transform="translate(58 58)">
+          <circle r="11" fill="#0e7490" stroke="#fff" strokeWidth="2" />
+          <text
+            textAnchor="middle"
+            y="4"
+            fill="#fff"
+            fontSize="11"
+            fontWeight="600"
+            fontFamily="system-ui, sans-serif"
+          >
+            3
+          </text>
+        </g>
+      </svg>
+    </div>
+  )
+}
+
 export function HistoryScreenMock() {
   return (
     <PhoneFrame title="履歴">
@@ -69,7 +121,7 @@ export function HistoryScreenMock() {
           </span>
         ))}
       </div>
-      <div className="mb-2 h-16 rounded-lg border border-sky-100 bg-gradient-to-br from-sky-100 to-cyan-50" />
+      <HistoryMapMock />
       <div className="rounded-lg border border-sky-100 bg-white px-2 py-2">
         <p className="text-[11px] font-medium text-sky-950">シーバス · 42 cm</p>
         <p className="mt-0.5 text-[10px] text-slate-500">気温 18℃ · 潮位 124 cm</p>
