@@ -1,9 +1,15 @@
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb'
 import { createDynamoClient } from './awsClients.js'
 
-const CACHE_TABLE = process.env.WEATHER_CACHE_TABLE ?? ''
-const API_KEY = process.env.OPENWEATHER_API_KEY ?? ''
 const CACHE_TTL_SEC = 15 * 60
+
+function cacheTable(): string {
+  return process.env.WEATHER_CACHE_TABLE ?? ''
+}
+
+function openWeatherApiKey(): string {
+  return process.env.OPENWEATHER_API_KEY ?? ''
+}
 
 const doc = createDynamoClient()
 
@@ -52,11 +58,12 @@ export function owmIdToWmo(id: number): number {
 }
 
 async function readCache(cacheKey: string): Promise<WeatherPayload | null> {
-  if (!CACHE_TABLE) return null
+  const table = cacheTable()
+  if (!table) return null
 
   const result = await doc.send(
     new GetCommand({
-      TableName: CACHE_TABLE,
+      TableName: table,
       Key: { cacheKey },
     }),
   )
@@ -87,12 +94,13 @@ async function readCache(cacheKey: string): Promise<WeatherPayload | null> {
 }
 
 async function writeCache(cacheKey: string, weather: WeatherPayload): Promise<void> {
-  if (!CACHE_TABLE) return
+  const table = cacheTable()
+  if (!table) return
 
   const expiresAt = Math.floor(Date.now() / 1000) + CACHE_TTL_SEC
   await doc.send(
     new PutCommand({
-      TableName: CACHE_TABLE,
+      TableName: table,
       Item: {
         cacheKey,
         temperature: weather.temperature,
@@ -106,14 +114,15 @@ async function writeCache(cacheKey: string, weather: WeatherPayload): Promise<vo
 }
 
 async function fetchFromOpenWeather(latitude: number, longitude: number): Promise<WeatherPayload> {
-  if (!API_KEY) {
+  const apiKey = openWeatherApiKey()
+  if (!apiKey) {
     throw new Error('Weather API is not configured')
   }
 
   const url = new URL('https://api.openweathermap.org/data/2.5/weather')
   url.searchParams.set('lat', String(latitude))
   url.searchParams.set('lon', String(longitude))
-  url.searchParams.set('appid', API_KEY)
+  url.searchParams.set('appid', apiKey)
   url.searchParams.set('units', 'metric')
 
   const res = await fetch(url)

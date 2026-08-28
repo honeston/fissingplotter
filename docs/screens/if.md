@@ -12,7 +12,7 @@
 |------|------|
 | 対象 | スマホ向け PWA（縦画面・幅 `max-w-md`） |
 | 認証 | Cognito User Pool。未設定時はローカルのみ（クラウド無効） |
-| 記録の保存 | IndexedDB 必須。オンラインかつログイン時はクラウド同期 |
+| 記録の保存 | IndexedDB 必須。オンラインかつログイン時はクラウド同期（[1.5](#15-同期)） |
 | 単位 | 体長 `cm` / `inch`、重さ `g` / `kg` / `oz`。保存値は cm / g。端末 `localStorage` |
 
 ### 1.2 シェル
@@ -28,11 +28,13 @@
 
 ### 1.3 認証ゲート
 
+クラウド有効時、未ログインでは記録できない（ゲスト記録なし）。
+
 | 条件 | 動作 |
 |------|------|
 | クラウド無効 | 要ログイン画面も通す。`/` は記録 |
 | クラウド有効・セッション確認中 | 「読み込み中…」 |
-| 未ログインで `/` | ランディング |
+| 未ログインで `/` | ランディング（記録画面は出ない） |
 | 未ログインで `/history` または `/mypage` 配下 | `/login` |
 | ログイン済みで `/login` `/forgot-password` | `/` |
 | クラウド無効でメール変更・パスワード変更・退会 | `/mypage` |
@@ -62,6 +64,33 @@
 | SCR-19 | 利用規約 | `/terms` | `LegalPage` |
 
 旧 URL `/history/map` は `/history` へリダイレクト（クエリ `map` は除去）。
+
+### 1.5 同期
+
+クラウド有効かつログイン中。未ログインでは同期しない（記録もしない）。記録の正は端末（IndexedDB）。クラウドは同期先。`GET /records` に無いことは削除理由にしない。
+
+未送信の生存件は、ログイン済みでオフライン中に付けたもの（および同期に失敗したもの）。未ログインで記録が付くことはない。
+
+| 項目 | 内容 |
+|------|------|
+| 取り込み | ログイン直後、履歴を開いたとき、オンライン復帰時に `GET /records`（前回同期時刻があれば `?since=`） |
+| 新端末 | IndexedDB が空。生存件を取り込み、削除ログの ID は無視してよい（無いものは消さない） |
+| ユーザー削除 | いつでも可（オフライン含む）。端末からすぐ消し、消した ID を端末の削除ログに残す。オンラインならすぐ `DELETE /records/{id}` |
+| 他端末の削除 | 同期中だけ適用する。根拠は応答の `deleted`（クラウドの削除ログ）だけ |
+| 衝突 | 削除が編集に勝つ。同じ `id` を二台で編集したときは、未送信の端末変更は GET で上書きしない。両方未送信なら後に成功した POST がクラウドの正 |
+
+同期の順:
+
+1. 端末の未送信削除を `DELETE /records/{id}`
+2. `GET /records`（`deleted` 込み）
+3. `deleted` の ID を端末から消す（未送信の編集があっても消す。POST しない）
+4. 生存件を取り込む。端末に無くクラウドにある ID は追加。両方にある ID は、端末が未送信なら端末を残す。未送信でなければクラウドで更新
+5. 未送信の生存件を `POST /records`（削除ログにある ID は送らない）
+6. 成功した GET の端末時刻を次回の `since` にする（重複適用は冪等）
+
+`GET` に載らないローカル件は消さない（未送信の新規を含む）。
+
+詳細は [API IF API-02〜04](../api/if.md#api-02-get-records) / [API 設計 記録](../api/design/records.md)。
 
 ---
 
@@ -154,7 +183,7 @@
 
 | 操作 | 結果 |
 |------|------|
-| ログイン | Cognito signIn → `/`（SCR-06）。初回は端末記録をクラウドへ移行 |
+| ログイン | Cognito signIn → `/`（SCR-06）。続けて [1.5 同期](#15-同期) |
 | パスワードを忘れた | SCR-05（state にメール） |
 | アカウントを作成 | SCR-03 |
 | 戻る | `/` |
@@ -274,7 +303,7 @@ GPS 失敗でも保存する。天気・場所名・潮位の失敗は null（�
 
 保存サマリー表示: 日時、魚種・サイズ、写真、`RecordValueList`、警告リスト。
 
-呼び出す API（クラウド有効時）: `GET /weather/current` `GET /place/current` `GET /tide/current` `POST /photos/presign` `POST /records`。同期時は `GET /records`。
+呼び出す API（クラウド有効時）: `GET /weather/current` `GET /place/current` `GET /tide/current` `POST /photos/presign` `POST /records`。同期は [1.5](#15-同期)（`GET /records` と未送信の POST / DELETE）。
 
 ### SCR-07 履歴
 
@@ -313,7 +342,7 @@ GPS 失敗でも保存する。天気・場所名・潮位の失敗は null（�
 
 表示: 日付・時刻、写真（大）、`RecordValueList`（場所・天気・気温・風速・太陽・潮位・潮種・潮位変化、および魚種・サイズ・タックル）。`recordedAt` / `location` を手動変更した項目は「（編集済み）」。場所は地図リンク。
 
-削除はローカル + `DELETE /records/{id}`。
+削除は端末からすぐ消す。オンラインなら `DELETE /records/{id}`。失敗・オフラインなら端末の削除ログに残し、次回同期で送る（[1.5](#15-同期)）。
 
 ### SCR-09 記録編集
 
@@ -481,13 +510,13 @@ Cognito は HTTP API ではない。マイタックル・単位は端末のみ�
 
 | 画面 | Cognito | HTTP API |
 |------|---------|----------|
-| SCR-02 ログイン | signIn | 初回同期 `GET/POST /records` |
+| SCR-02 ログイン | signIn | 同期 `GET/POST/DELETE /records`（[1.5](#15-同期)） |
 | SCR-03 登録 | signUp | — |
 | SCR-04 確認 | confirmSignUp | — |
 | SCR-05 再設定 | ForgotPassword / ConfirmForgotPassword / signIn | — |
 | SCR-06 記録 | JWT | weather / place / tide / photos/presign / POST records |
-| SCR-07 履歴 | JWT | GET records、写真 viewUrl |
-| SCR-08 削除 | JWT | DELETE records/{id} |
+| SCR-07 履歴 | JWT | 同期 `GET /records`、写真 viewUrl |
+| SCR-08 削除 | JWT | DELETE records/{id}（オフライン時は端末の削除ログ） |
 | SCR-09 編集 | JWT | place / tide / photos/presign / POST records |
 | SCR-14 メール | UpdateUserAttributes | — |
 | SCR-15 パスワード | changePassword | — |

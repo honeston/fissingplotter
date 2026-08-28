@@ -3,8 +3,13 @@ import { createDynamoClient } from './awsClients.js'
 import { moonAgeDays, moonPhaseFromAge, tideCycleFromMoonAge } from './moon.js'
 import stationsData from './tideStations.json'
 
-const CACHE_TABLE = process.env.WEATHER_CACHE_TABLE ?? ''
-const MSIL_KEY = process.env.MSIL_SUBSCRIPTION_KEY ?? ''
+function cacheTable(): string {
+  return process.env.WEATHER_CACHE_TABLE ?? ''
+}
+
+function msilKey(): string {
+  return process.env.MSIL_SUBSCRIPTION_KEY ?? ''
+}
 const MSIL_BASE = 'https://api.msil.go.jp/tide-prediction/v3'
 const EARTH_RADIUS_KM = 6371
 
@@ -79,9 +84,10 @@ interface DaySeries {
 }
 
 async function readSeriesCache(cacheKey: string): Promise<DaySeries | null> {
-  if (!CACHE_TABLE) return null
+  const table = cacheTable()
+  if (!table) return null
   const result = await doc.send(
-    new GetCommand({ TableName: CACHE_TABLE, Key: { cacheKey } }),
+    new GetCommand({ TableName: table, Key: { cacheKey } }),
   )
   const item = result.Item
   if (!item) return null
@@ -102,14 +108,15 @@ async function readSeriesCache(cacheKey: string): Promise<DaySeries | null> {
 }
 
 async function writeSeriesCache(cacheKey: string, series: DaySeries, dateKey: string): Promise<void> {
-  if (!CACHE_TABLE) return
+  const table = cacheTable()
+  if (!table) return
   const nowSec = Math.floor(Date.now() / 1000)
   const todayKey = jstDateKey(new Date())
   // 当日は短め、過去日は長め（推算値は変わらない）
   const ttlSec = dateKey === todayKey ? 6 * 3600 : 30 * 24 * 3600
   await doc.send(
     new PutCommand({
-      TableName: CACHE_TABLE,
+      TableName: table,
       Item: {
         cacheKey,
         startTime: new Date(series.startMs).toISOString(),
@@ -122,7 +129,8 @@ async function writeSeriesCache(cacheKey: string, series: DaySeries, dateKey: st
 }
 
 async function fetchDaySeries(stationCode: string, dateKey: string): Promise<DaySeries> {
-  if (!MSIL_KEY) {
+  const key = msilKey()
+  if (!key) {
     throw new Error('Tide API is not configured')
   }
 
@@ -131,7 +139,7 @@ async function fetchDaySeries(stationCode: string, dateKey: string): Promise<Day
   url.searchParams.set('date', dateKey)
 
   const res = await fetch(url, {
-    headers: { 'Ocp-Apim-Subscription-Key': MSIL_KEY },
+    headers: { 'Ocp-Apim-Subscription-Key': key },
   })
   if (!res.ok) {
     throw new Error(`MSIL tide request failed (${res.status})`)

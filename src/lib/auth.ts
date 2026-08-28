@@ -37,7 +37,62 @@ function sessionToTokens(session: CognitoUserSession) {
 
 export type AuthTokens = ReturnType<typeof sessionToTokens>
 
+function readIdTokenPayload(idToken: string): Record<string, unknown> | null {
+  try {
+    const payload = idToken.split('.')[1]
+    if (!payload) return null
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+    return JSON.parse(json) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+/** Playwright クラウド有効 E2E: Cognito の署名検証をせず JWT をセッションにする */
+function isE2eCloudAuth(): boolean {
+  return import.meta.env.MODE === 'e2e-cloud'
+}
+
+function readE2eSession(): AuthTokens | null {
+  if (!isE2eCloudAuth() || typeof localStorage === 'undefined') return null
+  const clientId = awsConfig.clientId
+  if (!clientId) return null
+  const prefix = `CognitoIdentityServiceProvider.${clientId}`
+  const username = localStorage.getItem(`${prefix}.LastAuthUser`)
+  if (!username) return null
+  const idToken = localStorage.getItem(`${prefix}.${username}.idToken`)
+  const accessToken = localStorage.getItem(`${prefix}.${username}.accessToken`)
+  if (!idToken || !accessToken) return null
+  const payload = readIdTokenPayload(idToken)
+  const exp = typeof payload?.exp === 'number' ? payload.exp : 0
+  if (exp * 1000 <= Date.now()) return null
+  return {
+    accessToken,
+    idToken,
+    refreshToken: localStorage.getItem(`${prefix}.${username}.refreshToken`) ?? '',
+    expiresAt: exp * 1000,
+  }
+}
+
+function clearE2eSession(): void {
+  if (!isE2eCloudAuth() || typeof localStorage === 'undefined') return
+  const clientId = awsConfig.clientId
+  if (!clientId) return
+  const prefix = `CognitoIdentityServiceProvider.${clientId}`
+  const username = localStorage.getItem(`${prefix}.LastAuthUser`)
+  if (username) {
+    localStorage.removeItem(`${prefix}.${username}.idToken`)
+    localStorage.removeItem(`${prefix}.${username}.accessToken`)
+    localStorage.removeItem(`${prefix}.${username}.refreshToken`)
+    localStorage.removeItem(`${prefix}.${username}.clockDrift`)
+  }
+  localStorage.removeItem(`${prefix}.LastAuthUser`)
+}
+
 export async function getSession(): Promise<AuthTokens | null> {
+  const e2e = readE2eSession()
+  if (e2e) return e2e
+
   const user = getCurrentCognitoUser()
   if (!user) return null
 
@@ -103,17 +158,11 @@ export function confirmSignUp(email: string, code: string): Promise<void> {
 }
 
 export function signOut(): void {
-  getCurrentCognitoUser()?.signOut()
-}
-
-function readIdTokenPayload(idToken: string): Record<string, unknown> | null {
+  clearE2eSession()
   try {
-    const payload = idToken.split('.')[1]
-    if (!payload) return null
-    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
-    return JSON.parse(json) as Record<string, unknown>
+    getCurrentCognitoUser()?.signOut()
   } catch {
-    return null
+    // e2e-cloud では User Pool が実在しない
   }
 }
 

@@ -8,7 +8,7 @@
 2. Cognito `AdminDeleteUser`（メールを Username として使う）
 3. 204
 
-残っているトークンでは以降 403。記録・写真の物理削除は日次バッチ（既定 7 日後）。
+残っているトークンでは以降 403。記録・写真・削除ログの物理削除は日次バッチ（既定 7 日後）。
 
 ```mermaid
 sequenceDiagram
@@ -24,5 +24,5 @@ sequenceDiagram
   API-->>App: 204
   Note over App: 端末データ消去・ログアウトはクライアント側
   Batch->>Q: 7 日超をスキャン
-  Batch->>Batch: 記録・写真を物理削除
+  Batch->>Batch: 記録・削除ログ・写真を物理削除
 ```

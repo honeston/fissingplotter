@@ -12,18 +12,28 @@ import { createCognitoClient, createDynamoClient } from './awsClients.js'
 import { deleteAllPhotosForUser } from './photos.js'
 import { deleteAllRecordsForUser } from './records.js'
 
-const ACCOUNT_DELETIONS_TABLE = process.env.ACCOUNT_DELETIONS_TABLE ?? ''
-const USER_POOL_ID = process.env.USER_POOL_ID ?? ''
-const RETENTION_DAYS = Number(process.env.RETENTION_DAYS ?? '7')
+function deletionsTable(): string {
+  return process.env.ACCOUNT_DELETIONS_TABLE ?? ''
+}
+
+function userPoolId(): string {
+  return process.env.USER_POOL_ID ?? ''
+}
+
+function retentionDays(): number {
+  const n = Number(process.env.RETENTION_DAYS ?? '7')
+  return Number.isFinite(n) ? n : 7
+}
 
 const doc = createDynamoClient()
 const cognito = createCognitoClient()
 
 export async function isAccountDeleted(userId: string): Promise<boolean> {
-  if (!ACCOUNT_DELETIONS_TABLE) return false
+  const table = deletionsTable()
+  if (!table) return false
   const result = await doc.send(
     new GetCommand({
-      TableName: ACCOUNT_DELETIONS_TABLE,
+      TableName: table,
       Key: { userId },
     }),
   )
@@ -31,11 +41,12 @@ export async function isAccountDeleted(userId: string): Promise<boolean> {
 }
 
 async function adminDeleteCognitoUser(username: string): Promise<void> {
-  if (!USER_POOL_ID || !username) return
+  const poolId = userPoolId()
+  if (!poolId || !username) return
   try {
     await cognito.send(
       new AdminDeleteUserCommand({
-        UserPoolId: USER_POOL_ID,
+        UserPoolId: poolId,
         Username: username,
       }),
     )
@@ -49,7 +60,8 @@ async function adminDeleteCognitoUser(username: string): Promise<void> {
 
 /** 論理削除キュー登録 → Cognito ユーザー削除 */
 export async function markAccountDeleted(userId: string, username: string): Promise<void> {
-  if (!ACCOUNT_DELETIONS_TABLE) {
+  const table = deletionsTable()
+  if (!table) {
     throw new Error('ACCOUNT_DELETIONS_TABLE is not configured')
   }
   if (!username) {
@@ -59,7 +71,7 @@ export async function markAccountDeleted(userId: string, username: string): Prom
   const deletedAt = new Date().toISOString()
   await doc.send(
     new PutCommand({
-      TableName: ACCOUNT_DELETIONS_TABLE,
+      TableName: table,
       Item: {
         userId,
         deletedAt,
@@ -72,11 +84,12 @@ export async function markAccountDeleted(userId: string, username: string): Prom
 }
 
 export async function purgeExpiredAccounts(): Promise<{ purged: number }> {
-  if (!ACCOUNT_DELETIONS_TABLE) {
+  const table = deletionsTable()
+  if (!table) {
     throw new Error('ACCOUNT_DELETIONS_TABLE is not configured')
   }
 
-  const retentionMs = (Number.isFinite(RETENTION_DAYS) ? RETENTION_DAYS : 7) * 24 * 60 * 60 * 1000
+  const retentionMs = retentionDays() * 24 * 60 * 60 * 1000
   const cutoff = new Date(Date.now() - retentionMs).toISOString()
 
   let purged = 0
@@ -85,7 +98,7 @@ export async function purgeExpiredAccounts(): Promise<{ purged: number }> {
   do {
     const page = await doc.send(
       new ScanCommand({
-        TableName: ACCOUNT_DELETIONS_TABLE,
+        TableName: table,
         ExclusiveStartKey: exclusiveStartKey,
       }),
     )
@@ -109,7 +122,7 @@ export async function purgeExpiredAccounts(): Promise<{ purged: number }> {
 
       await doc.send(
         new DeleteCommand({
-          TableName: ACCOUNT_DELETIONS_TABLE,
+          TableName: table,
           Key: { userId },
         }),
       )

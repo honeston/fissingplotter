@@ -20,12 +20,14 @@ cast mark（スマホ向け釣り記録 PWA）の現行資料。概要から入�
 
 ## テスト
 
-ローカル（本番 AWS と分離）。いま自動テストは未導入。設計が先。
+ローカル（本番 AWS と分離）。記録 CRUD の API 結合は `npm run test:api`。UNIT / E2E は未導入。
 
 | 資料 | 粒度 | 内容 |
 |------|------|------|
 | [テスト概要](tests/overview.md) | 荒い | 層・環境・全体の見取り図 |
 | [テスト設計](tests/design/README.md) | 中 | 方針・環境・[単体](tests/design/unit.md) / [API](tests/design/api.md) / [画面](tests/design/screens.md) |
 | [テスト IF](tests/if.md) | 細かい | ケース ID・前提・期待結果 |
+
+仕様の穴・層の食い違いは [仕様の理論チェックリスト](spec-checklist.md)（実装は見ず、ドキュメントだけ突き合わせたもの。修正用）。
 
 旧資料は [`_archive/`](_archive/README.md) に退避してある。インフラ・デプロイ手順などは順次こちらへ書き直す。

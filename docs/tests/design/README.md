@@ -11,7 +11,7 @@
 | [API](api.md) | handler + LocalStack |
 | [画面](screens.md) | E2E と手動 |
 
-実装（Vitest / Playwright の導入、npm scripts）は本資料のあと。いまコード上のテストは `api/test-events/health.json` のみ。
+INT-01〜10 は `npm run test:api`（Vitest が handler をプロセス内で呼び、LocalStack を使う）。UNIT は `npm test`。クラウド無効 E2E は `npm run test:e2e`（Playwright）。クラウド有効 E2E は `npm run test:e2e:cloud`（Vite + handler HTTP + LocalStack）。`api/test-events/` は SAM local 用のイベント例。
 
 ---
 
@@ -20,7 +20,7 @@
 1. **仕様書が正。** 期待値は [画面 IF](../../screens/if.md) と [API IF](../../api/if.md) から取る。実装の都合で仕様を変えない。
 2. **本番と分離。** 自動テストは本番 DynamoDB / S3 / Cognito / API Gateway を叩かない。
 3. **決定的にする。** 自動テストは OpenWeather・Nominatim・海しるをモックする。時刻・座標はフィクスチャ固定。
-4. **記録は端末が正。** クラウド失敗・オフラインでも IndexedDB に残ることを E2E で見る。API 側は自分の `sub` だけ見えることを INT で見る。
+4. **記録は端末が正。** クラウド失敗・オフラインでも IndexedDB に残ることを E2E で見る。`GET` に無いことは消さない。削除ログの ID だけ消す。API 側は自分の `sub` だけ見えることを INT で見る。
 5. **SAM local は主経路にしない。** 自動 API テストは `api/src/handler.ts` をプロセス内で呼ぶ。SAM local は手動と、必要なら E2E の HTTP 先。
 
 対象外（当面）:
@@ -97,13 +97,12 @@ flowchart TD
   kind -->|"Cognito 画面・カメラ・実天気・PWA"| m["MAN"]
 ```
 
-導入後の想定コマンド（実装時に `package.json` へ足す）:
-
-| コマンド（案） | 層 | 前提 |
-|----------------|-----|------|
+| コマンド | 層 | 前提 |
+|----------|-----|------|
 | `npm test` | UNIT | Docker 不要 |
-| `npm run test:api` | INT | LocalStack up + `local:init` |
-| `npm run test:e2e` | E2E | Vite。クラウド有効ケースは API も |
+| `npm run test:api` | INT | Docker Compose の LocalStack。テーブルは `local:init` |
+| `npm run test:e2e` | E2E（クラウド無効） | Vite |
+| `npm run test:e2e:cloud` | E2E（クラウド有効） | Vite + handler HTTP + LocalStack |
 | `npm run dev` / `dev:api` | MAN | 既存の開発起動 |
 
 合格の目安:

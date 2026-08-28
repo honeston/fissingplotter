@@ -302,6 +302,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
 /** 開発環境: サンプル記録を上書き投入し、日出没の表示パターンを確認できるようにする */
 export async function seedDevRecordsIfEmpty(): Promise<number> {
   if (!import.meta.env.DEV) return 0
+  if (import.meta.env.MODE === 'e2e' || import.meta.env.MODE === 'e2e-cloud') return 0
 
   for (const record of DEV_SEED_RECORDS) {
     await putRecord(record)

@@ -45,6 +45,7 @@ Authorization: Bearer <idToken>
 | 401 | JWT なし / 不正 |
 | 403 | 退会済み |
 | 404 | 不明なパス |
+| 409 | 削除ログにある `id` を POST した（復活させない） |
 | 500 | その他（外部 API 失敗、キー未設定など） |
 
 不明パス: `{ "error": "Not found" }`。
@@ -54,7 +55,7 @@ Authorization: Bearer <idToken>
 | ID | メソッド | パス | 認証 | 用途 |
 |----|----------|------|------|------|
 | API-01 | GET | `/health` | なし | 疎通 |
-| API-02 | GET | `/records` | JWT | 一覧 |
+| API-02 | GET | `/records` | JWT | 一覧 + 削除ログ |
 | API-03 | POST | `/records` | JWT | 作成 / 更新 |
 | API-04 | DELETE | `/records/{id}` | JWT | 削除 |
 | API-05 | POST | `/photos/presign` | JWT | アップロード URL |
@@ -115,7 +116,18 @@ DynamoDB および `POST /records` 本文。クライアント生成 `id`。`upd
 
 文字列以外は空文字。全項目 trim 後空なら `tackle` は null。
 
-### 2.3 例
+### 2.3 RecordDeletion
+
+削除ログ 1 件。記録本体とは別。`GET /records` の `deleted` に入る。
+
+| フィールド | 型 | 必須 | 内容 |
+|-----------|-----|------|------|
+| id | string | はい | 消した記録の ID |
+| deletedAt | string | はい | サーバ付与 ISO8601 |
+
+アカウントが生きている間は残す。退会バッチ（BATCH-01）で記録と一緒に消す。
+
+### 2.4 例
 
 ```json
 {
@@ -172,17 +184,22 @@ DynamoDB および `POST /records` 本文。クライアント生成 `id`。`upd
 
 ### API-02 GET `/records`
 
-自分の記録を新しい順（`recordedAt#id` 降順）。
+自分の生存記録を新しい順（`recordedAt#id` 降順）。削除ログも返す。クライアントは `records` に無いことを削除理由にしない（[画面 IF 1.5](../screens/if.md#15-同期)）。
 
 | クエリ | 必須 | 型 | 内容 |
 |--------|------|-----|------|
-| since | いいえ | string | ISO8601。`updatedAt`（なければ `recordedAt`）がこれより新しい件だけ |
+| since | いいえ | string | ISO8601。生存件は `updatedAt`（なければ `recordedAt`）、削除ログは `deletedAt` がこれより新しい件だけ。省略時は全件 |
 
 **応答 200**
 
 ```json
-{ "records": [ { "...FishingRecord" } ] }
+{
+  "records": [ { "...FishingRecord" } ],
+  "deleted": [ { "id": "...", "deletedAt": "..." } ]
+}
 ```
+
+`deleted` は常に配列（空可）。新しい順（`deletedAt` 降順）。
 
 ---
 
@@ -196,7 +213,8 @@ DynamoDB および `POST /records` 本文。クライアント生成 `id`。`upd
 - Body: FishingRecord（`updatedAt` は無視）
 
 本文なし → 400 `{ "error": "Missing body" }`。  
-JSON 不正や必須欠落 → 400 `{ "error": "Invalid ..." }`。
+JSON 不正や必須欠落 → 400 `{ "error": "Invalid ..." }`。  
+削除ログにある `id` → **409** `{ "error": "Record deleted" }`（上書きしない。復活させない）。
 
 **応答 201**
 
@@ -212,7 +230,7 @@ JSON 不正や必須欠落 → 400 `{ "error": "Invalid ..." }`。
 |------|------|------|
 | id | はい | 記録 ID（URL エンコード） |
 
-対象なしでも成功（何もしない）。`photoKey` があれば S3 も消す（S3 失敗でも記録削除は続ける）。
+生存件があれば消す。`photoKey` があれば S3 も消す（S3 失敗でも記録削除は続ける）。削除ログへ `id` と `deletedAt` を書く（生存件が無くても書く。同じ `id` の再 DELETE は 204 のまま、`deletedAt` は変えない）。
 
 **応答 204** 本文なし。
 
@@ -363,7 +381,7 @@ Nominatim reverse のプロキシ。約 11m グリッド（小数 4 桁）・30 
 2. Cognito `AdminDeleteUser`（Username はメール）  
 3. 204  
 
-残トークンは以降 403。記録・写真の物理削除は BATCH-01。Cognito ユーザーが既に無い場合は続行。テーブル未設定は 500。
+残トークンは以降 403。記録・写真・削除ログの物理削除は BATCH-01。Cognito ユーザーが既に無い場合は続行。テーブル未設定は 500。
 
 **応答 204** 本文なし。
 
@@ -376,8 +394,9 @@ Nominatim reverse のプロキシ。約 11m グリッド（小数 4 桁）・30 
 HTTP に出ない。`AccountPurgeFunction`（`purgeAccounts.ts`）。日次。`RETENTION_DAYS`（既定 7）を超えた退会ユーザーについて:
 
 1. 当該 `userId` の記録を全削除  
-2. S3 `{userId}/` 配下の写真を全削除  
-3. 退会キュー行を削除  
+2. 当該 `userId` の削除ログを全削除  
+3. S3 `{userId}/` 配下の写真を全削除  
+4. 退会キュー行を削除  
 
 ---
 
@@ -404,6 +423,7 @@ API-05 の `uploadUrl` に対するクライアント操作。Lambda は介さ�
 |-------|-----------|------|
 | Unauthorized | 401 | JWT なし |
 | Account deleted | 403 | 退会済み |
+| Record deleted | 409 | 削除ログにある id を POST |
 | Not found | 404 | 不明パス |
 | Missing body | 400 | POST 本文なし |
 | Invalid record body | 400 | 本文がオブジェクトでない |

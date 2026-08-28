@@ -18,14 +18,29 @@ async function apiFetch(path: string, init: RequestInit = {}): Promise<Response>
   return res
 }
 
-export async function fetchRecords(since?: string): Promise<FishingRecord[]> {
+export class RecordDeletedApiError extends Error {
+  constructor() {
+    super('この記録は削除されています')
+    this.name = 'RecordDeletedApiError'
+  }
+}
+
+export async function fetchRecords(
+  since?: string,
+): Promise<{ records: FishingRecord[]; deleted: { id: string; deletedAt: string }[] }> {
   const qs = since ? `?since=${encodeURIComponent(since)}` : ''
   const res = await apiFetch(`/records${qs}`)
   if (!res.ok) {
     throw new Error(`サーバーからの取得に失敗しました (${res.status})`)
   }
-  const data = (await res.json()) as { records: FishingRecord[] }
-  return data.records
+  const data = (await res.json()) as {
+    records?: FishingRecord[]
+    deleted?: { id: string; deletedAt: string }[]
+  }
+  return {
+    records: Array.isArray(data.records) ? data.records : [],
+    deleted: Array.isArray(data.deleted) ? data.deleted : [],
+  }
 }
 
 export async function postRecord(record: FishingRecord): Promise<FishingRecord> {
@@ -33,6 +48,9 @@ export async function postRecord(record: FishingRecord): Promise<FishingRecord> 
     method: 'POST',
     body: JSON.stringify(record),
   })
+  if (res.status === 409) {
+    throw new RecordDeletedApiError()
+  }
   if (!res.ok) {
     throw new Error(`サーバーへの保存に失敗しました (${res.status})`)
   }

@@ -1,0 +1,45 @@
+import { expect, saveRecord, test, waitForRecordHome } from '../helpers'
+
+test.describe('E2E-05 履歴', () => {
+  test('E2E-05a 記録ゼロで /history', async ({ freshPage: page }) => {
+    await page.goto('/history')
+    await expect(page.getByRole('heading', { name: '履歴' })).toBeVisible()
+    await expect(page.getByText('まだ記録がありません')).toBeVisible()
+  })
+
+  test('E2E-05b 1 件保存 → カード → 詳細 → 削除 → 空に戻る', async ({ freshPage: page }) => {
+    await waitForRecordHome(page)
+    await saveRecord(page)
+    await page.goto('/history')
+    await page.getByText('（魚種なし）').first().click()
+    await expect(page.getByRole('heading', { name: /釣果詳細|月/ })).toBeVisible()
+    await page.getByRole('button', { name: '削除' }).click()
+    await expect(page.getByText('この記録を削除しますか？')).toBeVisible()
+    await page.getByRole('button', { name: '削除する' }).click()
+    await expect(page.getByText('削除しました')).toBeVisible()
+    await expect(page.getByText('まだ記録がありません')).toBeVisible()
+  })
+
+  test('E2E-05c 詳細で編集して魚種変更 → 保存', async ({ freshPage: page }) => {
+    await waitForRecordHome(page)
+    await page.getByLabel('魚種（任意）').fill('アジ')
+    await page.keyboard.press('Escape')
+    await saveRecord(page)
+    await page.goto('/history')
+    await page.getByText('アジ').first().click()
+    await page.getByRole('button', { name: '編集' }).click()
+    await expect(page.getByRole('heading', { name: '記録を編集' })).toBeVisible()
+    const species = page.getByLabel('魚種（任意）')
+    await species.fill('サバ')
+    await page.keyboard.press('Escape')
+    await page.getByRole('button', { name: '保存する' }).click()
+    await expect(page.getByText('サバ').first()).toBeVisible()
+  })
+
+  test('E2E-05d 記録ありで記録の無い期間', async ({ freshPage: page }) => {
+    await waitForRecordHome(page)
+    await saveRecord(page)
+    await page.goto('/history?from=1999-01-01&to=1999-01-02')
+    await expect(page.getByText('この期間の記録はありません')).toBeVisible()
+  })
+})

@@ -9,7 +9,7 @@ import {
 } from 'react'
 import * as cognito from '../lib/auth'
 import { isCloudSyncEnabled } from '../lib/config'
-import { initialSync, uploadPendingPhotos } from '../lib/sync'
+import { initialSync, syncWithServer } from '../lib/sync'
 
 interface AuthState {
   loading: boolean
@@ -39,11 +39,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [syncMessage, setSyncMessage] = useState('')
 
   const runInitialSync = useCallback(async () => {
-    const userId = await cognito.getUserId()
-    if (!userId) return
     setSyncMessage('同期中…')
     try {
-      const { migrated } = await initialSync(userId)
+      const { migrated } = await initialSync()
       setSyncMessage(migrated > 0 ? `${migrated} 件をクラウドへ移行しました` : '')
     } catch {
       setSyncMessage('同期に失敗しました。オンライン時に再度お試しください')
@@ -83,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!cloudEnabled || !authenticated) return
 
     function onOnline() {
-      void uploadPendingPhotos()
+      void syncWithServer()
     }
 
     window.addEventListener('online', onOnline)

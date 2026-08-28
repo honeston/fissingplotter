@@ -3,7 +3,7 @@ import { isAccountDeleted, markAccountDeleted } from './account.js'
 import { getCognitoUsername, getUserId } from './auth.js'
 import { getPlaceName } from './place.js'
 import { presignPhotoUpload, presignPhotoView } from './photos.js'
-import { deleteRecord, listRecords, upsertRecord } from './records.js'
+import { deleteRecord, listRecords, RecordDeletedError, upsertRecord } from './records.js'
 import { jsonResponse, optionsResponse } from './response.js'
 import { getTideAt } from './tide.js'
 import { getCurrentWeather } from './weather.js'
@@ -54,8 +54,8 @@ export async function handler(
 
     if (path === '/records' && method === 'GET') {
       const since = event.queryStringParameters?.since
-      const records = await listRecords(userId, since)
-      return jsonResponse(200, { records })
+      const { records, deleted } = await listRecords(userId, since)
+      return jsonResponse(200, { records, deleted })
     }
 
     if (path === '/records' && method === 'POST') {
@@ -149,6 +149,9 @@ export async function handler(
 
     return jsonResponse(404, { error: 'Not found' })
   } catch (err) {
+    if (err instanceof RecordDeletedError) {
+      return jsonResponse(409, { error: 'Record deleted' })
+    }
     const message = err instanceof Error ? err.message : 'Internal error'
     const status = message.startsWith('Invalid') ? 400 : 500
     return jsonResponse(status, { error: message })

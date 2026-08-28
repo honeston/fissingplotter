@@ -2,19 +2,21 @@
 
 [API 設計](README.md) / [API 概要](../overview.md) / [API IF API-02〜04](../if.md#api-02-get-records)
 
-自分の記録だけ見える（DynamoDB のパーティションキーは Cognito `sub`）。
+自分の記録だけ見える（DynamoDB のパーティションキーは Cognito `sub`）。同期の正と手順は [画面 IF 1.5](../../screens/if.md#15-同期)。
 
 ### GET `/records`
 
+生存件と削除ログを返す。クライアントは `records` に無い ID を消さない。
+
 | クエリ | 必須 | 内容 |
 |--------|------|------|
-| `since` | いいえ | ISO8601。`updatedAt`（なければ `recordedAt`）がこれより新しい件だけ返す |
+| `since` | いいえ | ISO8601。生存件は `updatedAt`（なければ `recordedAt`）、削除ログは `deletedAt` がこれより新しい件だけ。省略時は全件 |
 
-応答: `{ "records": FishingRecord[] }`。新しい順。
+応答: `{ "records": FishingRecord[], "deleted": RecordDeletion[] }`。生存件は新しい順。`deleted` は常に配列。
 
 ### POST `/records`
 
-本文は記録 1 件。同じ `id` なら上書き。`recordedAt` を変えるとソートキーも付け替える。
+本文は記録 1 件。同じ `id` なら上書き。`recordedAt` を変えるとソートキーも付け替える。削除ログにある `id` は 409 `Record deleted`（復活させない）。
 
 応答: `201 { "record": FishingRecord }`（`updatedAt` をサーバが付与）。
 
@@ -44,7 +46,7 @@
 
 ### DELETE `/records/{id}`
 
-対象がなければ何もしない。`photoKey` があれば S3 も消す（失敗しても記録削除は続ける）。応答 204。
+生存件があれば消す。`photoKey` があれば S3 も消す（失敗しても記録削除は続ける）。削除ログへ `id` と `deletedAt` を書く（生存件が無くても書く。再 DELETE は 204、`deletedAt` は変えない）。応答 204。削除ログはアカウント存続中残し、退会バッチで消す。
 
 ```mermaid
 sequenceDiagram
@@ -53,20 +55,25 @@ sequenceDiagram
   participant DB as DynamoDB
   participant S3 as S3
 
-  alt 同期（一覧）
+  alt 同期（一覧 + 削除ログ）
     App->>API: GET /records?since=
-    API->>DB: Query userId
-    API-->>App: { records }
+    API->>DB: Query 生存件と削除ログ
+    API-->>App: { records, deleted }
   else 保存
     App->>API: POST /records
-    API->>DB: Put（id 既存なら更新）
-    API-->>App: 201 { record }
+    alt 削除ログに id あり
+      API-->>App: 409 Record deleted
+    else
+      API->>DB: Put（id 既存なら更新）
+      API-->>App: 201 { record }
+    end
   else 削除
     App->>API: DELETE /records/{id}
     opt photoKey あり
       API->>S3: DeleteObject
     end
-    API->>DB: Delete
+    API->>DB: 生存件を Delete
+    API->>DB: 削除ログを Put
     API-->>App: 204
   end
 ```

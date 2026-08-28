@@ -62,9 +62,9 @@ sequenceDiagram
 | メソッド | パス | 認証 | 実装 | 用途 | 設計 |
 |---------|------|------|------|------|------|
 | GET | `/health` | なし | `handler.ts` | ヘルスチェック | [ヘルス](#ヘルスチェック) |
-| GET | `/records` | JWT | `records.ts` | 一覧（`?since=` で差分） | [記録](records.md) |
+| GET | `/records` | JWT | `records.ts` | 一覧 + 削除ログ（`?since=` で差分） | [記録](records.md) |
 | POST | `/records` | JWT | `records.ts` | 作成 / 更新 | [記録](records.md) |
-| DELETE | `/records/{id}` | JWT | `records.ts` | 削除（写真があれば S3 も） | [記録](records.md) |
+| DELETE | `/records/{id}` | JWT | `records.ts` | 削除（写真があれば S3 も。削除ログへ残す） | [記録](records.md) |
 | POST | `/photos/presign` | JWT | `photos.ts` | アップロード用 presigned URL | [写真](photos.md) |
 | GET | `/photos/{recordId}/url` | JWT | `photos.ts` | 閲覧用 presigned URL | [写真](photos.md) |
 | GET | `/weather/current` | JWT | `weather.ts` | 気温・天気・風（`?lat=&lng=`） | [天気](weather.md) |
@@ -72,7 +72,7 @@ sequenceDiagram
 | GET | `/tide/current` | JWT | `tide.ts` | 天文潮位（`?lat=&lng=&at=`） | [天気](weather.md) |
 | DELETE | `/account` | JWT | `account.ts` | 退会キュー登録 + Cognito 削除 | [退会](account.md) |
 
-HTTP に出ないバッチ: `AccountPurgeFunction`（`purgeAccounts.ts`）。退会から 7 日超の記録・写真を物理削除する。詳細は [退会](account.md)。
+HTTP に出ないバッチ: `AccountPurgeFunction`（`purgeAccounts.ts`）。退会から 7 日超の記録・削除ログ・写真を物理削除する。詳細は [退会](account.md)。
 
 ---
 

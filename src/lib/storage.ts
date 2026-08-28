@@ -20,13 +20,23 @@ interface FissingDB extends DBSchema {
     value: MyTackle
     indexes: { 'by-updatedAt': string }
   }
+  pendingDeletes: {
+    key: string
+    value: { id: string }
+  }
+  pendingUpserts: {
+    key: string
+    value: { id: string }
+  }
 }
 
 const DB_NAME = 'fissingplotter'
-const DB_VERSION = 3
+const DB_VERSION = 4
 const STORE = 'records'
 const PHOTO_STORE = 'photoBlobs'
 const TACKLE_STORE = 'tackles'
+const PENDING_DELETES_STORE = 'pendingDeletes'
+const PENDING_UPSERTS_STORE = 'pendingUpserts'
 
 let dbPromise: Promise<IDBPDatabase<FissingDB>> | null = null
 
@@ -44,6 +54,10 @@ function getDb() {
         if (oldVersion < 3) {
           const tackles = db.createObjectStore(TACKLE_STORE, { keyPath: 'id' })
           tackles.createIndex('by-updatedAt', 'updatedAt')
+        }
+        if (oldVersion < 4) {
+          db.createObjectStore(PENDING_DELETES_STORE, { keyPath: 'id' })
+          db.createObjectStore(PENDING_UPSERTS_STORE, { keyPath: 'id' })
         }
       },
     })
@@ -180,6 +194,40 @@ export async function deleteRecord(id: string): Promise<void> {
   const db = await getDb()
   await db.delete(STORE, id)
   await db.delete(PHOTO_STORE, id)
+}
+
+export async function markDirty(id: string): Promise<void> {
+  const db = await getDb()
+  await db.put(PENDING_UPSERTS_STORE, { id })
+}
+
+export async function clearDirty(id: string): Promise<void> {
+  const db = await getDb()
+  await db.delete(PENDING_UPSERTS_STORE, id)
+}
+
+export async function isRecordDirty(record: FishingRecord): Promise<boolean> {
+  const db = await getDb()
+  const pending = await db.get(PENDING_UPSERTS_STORE, record.id)
+  if (pending) return true
+  return !record.updatedAt
+}
+
+export async function addPendingDelete(id: string): Promise<void> {
+  const db = await getDb()
+  await db.put(PENDING_DELETES_STORE, { id })
+  await db.delete(PENDING_UPSERTS_STORE, id)
+}
+
+export async function removePendingDelete(id: string): Promise<void> {
+  const db = await getDb()
+  await db.delete(PENDING_DELETES_STORE, id)
+}
+
+export async function listPendingDeletes(): Promise<string[]> {
+  const db = await getDb()
+  const rows = await db.getAll(PENDING_DELETES_STORE)
+  return rows.map((row) => row.id)
 }
 
 export async function savePhotoBlob(recordId: string, blob: Blob): Promise<void> {

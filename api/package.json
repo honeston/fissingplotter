@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "esbuild src/handler.ts --bundle --platform=node --target=node20 --outfile=dist/handler.mjs --format=esm --external:@aws-sdk/*",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --config vitest.config.ts",
+    "test:unit": "vitest run --config vitest.unit.config.ts"
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.750.0",
@@ -17,6 +19,8 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.147",
-    "typescript": "~6.0.2"
+    "typescript": "~6.0.2",
+    "tsx": "^4.20.5",
+    "vitest": "^3.2.4"
   }
 }

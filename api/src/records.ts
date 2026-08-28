@@ -1,6 +1,5 @@
 import {
   DeleteCommand,
-  DynamoDBDocumentClient,
   PutCommand,
   QueryCommand,
 } from '@aws-sdk/lib-dynamodb'
@@ -50,8 +49,31 @@ export type TackleFields = {
   rig: string
 }
 
+export class RecordDeletedError extends Error {
+  constructor() {
+    super('Record deleted')
+    this.name = 'RecordDeletedError'
+  }
+}
+
+export type RecordDeletion = {
+  id: string
+  deletedAt: string
+}
+
+const DELETION_SORT_PREFIX = 'DELETED#'
+
 function sortKey(recordedAt: string, id: string): string {
   return `${recordedAt}#${id}`
+}
+
+function deletionSortKey(id: string): string {
+  return `${DELETION_SORT_PREFIX}${id}`
+}
+
+function isDeletionItem(item: Record<string, unknown>): boolean {
+  if (item.itemType === 'deletion') return true
+  return typeof item.sortKey === 'string' && item.sortKey.startsWith(DELETION_SORT_PREFIX)
 }
 
 function parseNonNegativeNumber(value: unknown, field: string): number | null {
@@ -116,7 +138,7 @@ function parseTackleFields(value: unknown): TackleFields | null {
   return hasContent ? fields : null
 }
 
-function validateRecord(input: unknown): FishingRecord {
+export function validateRecord(input: unknown): FishingRecord {
   if (!input || typeof input !== 'object') {
     throw new Error('Invalid record body')
   }
@@ -162,41 +184,74 @@ function validateRecord(input: unknown): FishingRecord {
   }
 }
 
-export async function listRecords(userId: string, since?: string): Promise<FishingRecord[]> {
-  const result = await doc.send(
-    new QueryCommand({
-      TableName: TABLE_NAME,
-      KeyConditionExpression: 'userId = :userId',
-      ExpressionAttributeValues: { ':userId': userId },
-      ScanIndexForward: false,
-    }),
-  )
+async function queryAllItems(userId: string): Promise<Record<string, unknown>[]> {
+  const items: Record<string, unknown>[] = []
+  let exclusiveStartKey: Record<string, unknown> | undefined
 
-  let records = (result.Items ?? []).map(storedToRecord)
-  if (since) {
-    records = records.filter((r) => (r.updatedAt ?? r.recordedAt) > since)
-  }
-  return records
+  do {
+    const result = await doc.send(
+      new QueryCommand({
+        TableName: TABLE_NAME,
+        KeyConditionExpression: 'userId = :userId',
+        ExpressionAttributeValues: { ':userId': userId },
+        ExclusiveStartKey: exclusiveStartKey,
+      }),
+    )
+    items.push(...((result.Items ?? []) as Record<string, unknown>[]))
+    exclusiveStartKey = result.LastEvaluatedKey as Record<string, unknown> | undefined
+  } while (exclusiveStartKey)
+
+  return items
 }
 
-async function findItemById(userId: string, id: string) {
+export async function listRecords(
+  userId: string,
+  since?: string,
+): Promise<{ records: FishingRecord[]; deleted: RecordDeletion[] }> {
+  const items = await queryAllItems(userId)
+
+  let records = items.filter((item) => !isDeletionItem(item)).map(storedToRecord)
+  let deleted = items
+    .filter(isDeletionItem)
+    .map(storedToDeletion)
+    .filter((d) => d.id && d.deletedAt)
+
+  if (since) {
+    records = records.filter((r) => (r.updatedAt ?? r.recordedAt) > since)
+    deleted = deleted.filter((d) => d.deletedAt > since)
+  }
+
+  records.sort((a, b) => {
+    const keyA = `${a.recordedAt}#${a.id}`
+    const keyB = `${b.recordedAt}#${b.id}`
+    return keyB < keyA ? -1 : keyB > keyA ? 1 : 0
+  })
+  deleted.sort((a, b) => (b.deletedAt < a.deletedAt ? -1 : b.deletedAt > a.deletedAt ? 1 : 0))
+
+  return { records, deleted }
+}
+
+async function findItemsById(userId: string, id: string): Promise<Record<string, unknown>[]> {
   const result = await doc.send(
     new QueryCommand({
       TableName: TABLE_NAME,
       IndexName: 'by-id',
       KeyConditionExpression: 'userId = :userId AND id = :id',
       ExpressionAttributeValues: { ':userId': userId, ':id': id },
-      Limit: 1,
     }),
   )
-  return result.Items?.[0]
+  return (result.Items ?? []) as Record<string, unknown>[]
 }
 
 export async function upsertRecord(userId: string, input: unknown): Promise<FishingRecord> {
   const record = validateRecord(input)
   const now = new Date().toISOString()
   const nextSortKey = sortKey(record.recordedAt, record.id)
-  const existing = await findItemById(userId, record.id)
+  const items = await findItemsById(userId, record.id)
+  if (items.some(isDeletionItem)) {
+    throw new RecordDeletedError()
+  }
+  const existing = items.find((item) => !isDeletionItem(item))
 
   if (existing && typeof existing.sortKey === 'string' && existing.sortKey !== nextSortKey) {
     await doc.send(
@@ -245,15 +300,37 @@ export async function upsertRecord(userId: string, input: unknown): Promise<Fish
   return { ...record, updatedAt: now }
 }
 
+async function putDeletionLog(userId: string, id: string, deletedAt: string): Promise<void> {
+  await doc.send(
+    new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        userId,
+        sortKey: deletionSortKey(id),
+        id,
+        itemType: 'deletion',
+        deletedAt,
+      },
+    }),
+  )
+}
+
 export async function deleteRecord(userId: string, id: string): Promise<void> {
-  const item = await findItemById(userId, id)
-  if (!item || typeof item.sortKey !== 'string') {
+  const items = await findItemsById(userId, id)
+  const existing = items.find((item) => !isDeletionItem(item))
+  const deletion = items.find(isDeletionItem)
+
+  if (!deletion) {
+    await putDeletionLog(userId, id, new Date().toISOString())
+  }
+
+  if (!existing || typeof existing.sortKey !== 'string') {
     return
   }
 
-  if (typeof item.photoKey === 'string' && item.photoKey) {
+  if (typeof existing.photoKey === 'string' && existing.photoKey) {
     try {
-      await deletePhotoByKey(item.photoKey)
+      await deletePhotoByKey(existing.photoKey)
     } catch {
       // 記録削除は続行
     }
@@ -262,12 +339,12 @@ export async function deleteRecord(userId: string, id: string): Promise<void> {
   await doc.send(
     new DeleteCommand({
       TableName: TABLE_NAME,
-      Key: { userId, sortKey: item.sortKey },
+      Key: { userId, sortKey: existing.sortKey },
     }),
   )
 }
 
-/** アカウント物理削除用: 当該ユーザーの記録を全件削除（写真はプレフィックス削除側でまとめて消す） */
+/** アカウント物理削除用: 当該ユーザーの記録と削除ログを全件削除（写真はプレフィックス削除側でまとめて消す） */
 export async function deleteAllRecordsForUser(userId: string): Promise<void> {
   let exclusiveStartKey: Record<string, unknown> | undefined
 
@@ -294,6 +371,13 @@ export async function deleteAllRecordsForUser(userId: string): Promise<void> {
 
     exclusiveStartKey = page.LastEvaluatedKey as Record<string, unknown> | undefined
   } while (exclusiveStartKey)
+}
+
+function storedToDeletion(item: Record<string, unknown>): RecordDeletion {
+  return {
+    id: String(item.id),
+    deletedAt: storedString(item.deletedAt) ?? '',
+  }
 }
 
 function storedToRecord(item: Record<string, unknown>): FishingRecord {

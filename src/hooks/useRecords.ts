@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { getAllRecords, syncFromServer } from '../lib/sync'
+import { getAllRecords, syncWithServer } from '../lib/sync'
 import type { FishingRecord } from '../types/record'
 
 export function useRecords() {
-  const { cloudEnabled } = useAuth()
+  const { cloudEnabled, authenticated } = useAuth()
   const [records, setRecords] = useState<FishingRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -13,8 +13,8 @@ export function useRecords() {
     setLoading(true)
     setError('')
     try {
-      if (cloudEnabled) {
-        await syncFromServer()
+      if (cloudEnabled && authenticated) {
+        await syncWithServer()
       }
       setRecords(await getAllRecords())
     } catch (err) {
@@ -22,7 +22,7 @@ export function useRecords() {
     } finally {
       setLoading(false)
     }
-  }, [cloudEnabled])
+  }, [cloudEnabled, authenticated])
 
   useEffect(() => {
     void reload()
