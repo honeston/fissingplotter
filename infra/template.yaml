@@ -35,6 +35,35 @@ Conditions:
     - !Not [!Equals [!Ref HostedZoneId, '']]
     - !Not [!Equals [!Ref AcmCertificateArn, '']]
 
+Mappings:
+  CognitoEmail:
+    SignUpVerification:
+      Subject: '【cast mark】メールアドレスの確認'
+      Body: |
+        cast mark へのご登録ありがとうございます。
+
+        アカウント作成を完了するには、以下の確認コードをアプリに入力してください。
+
+        ━━━━━━━━━━━━━━━━━━
+        確認コード: {####}
+        ━━━━━━━━━━━━━━━━━━
+
+        【入力手順】
+        1. cast mark の新規登録画面を開く
+        2. 「確認コード」欄に上記の6桁のコードを入力
+        3. 「確認する」をタップ
+
+        ※ 確認コードの有効期限は24時間です。
+        ※ 期限が切れた場合は、新規登録画面から再度お試しください。
+
+        このメールに心当たりがない場合は、破棄してください。
+
+        ---
+        cast mark
+        釣れた瞬間の条件を、そのまま残す
+
+        お問い合わせ: https://github.com/honeston/fissingplotter/issues
+
 Globals:
   Function:
     Runtime: nodejs20.x
@@ -175,12 +204,12 @@ Resources:
         RecoveryMechanisms:
           - Name: verified_email
             Priority: 1
-      EmailVerificationSubject: 'cast mark の確認コード'
-      EmailVerificationMessage: '確認コードは {####} です。アプリに入力してください。'
+      EmailVerificationSubject: !FindInMap [CognitoEmail, SignUpVerification, Subject]
+      EmailVerificationMessage: !FindInMap [CognitoEmail, SignUpVerification, Body]
       VerificationMessageTemplate:
         DefaultEmailOption: CONFIRM_WITH_CODE
-        EmailSubject: 'cast mark の確認コード'
-        EmailMessage: '確認コードは {####} です。アプリに入力してください。'
+        EmailSubject: !FindInMap [CognitoEmail, SignUpVerification, Subject]
+        EmailMessage: !FindInMap [CognitoEmail, SignUpVerification, Body]
       Policies:
         PasswordPolicy:
           MinimumLength: 8
