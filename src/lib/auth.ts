@@ -189,8 +189,30 @@ function requireCurrentUser(): CognitoUser {
   return user
 }
 
-export function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+/** getCurrentUser() は毎回新しい CognitoUser を返すため、API 呼び出し前にセッションを復元する */
+function ensureUserSession(user: CognitoUser): Promise<void> {
+  return new Promise((resolve, reject) => {
+    user.getSession((err: Error | null, session: CognitoUserSession | null) => {
+      if (err || !session?.isValid()) {
+        reject(new Error('ログインしていません'))
+        return
+      }
+      resolve()
+    })
+  })
+}
+
+async function requireAuthenticatedUser(): Promise<CognitoUser> {
   const user = requireCurrentUser()
+  await ensureUserSession(user)
+  return user
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const user = await requireAuthenticatedUser()
   return new Promise((resolve, reject) => {
     user.changePassword(currentPassword, newPassword, (err) => {
       if (err) reject(err)
@@ -200,8 +222,8 @@ export function changePassword(currentPassword: string, newPassword: string): Pr
 }
 
 /** 新しいメールアドレスへ確認コードを送る */
-export function requestEmailChange(newEmail: string): Promise<void> {
-  const user = requireCurrentUser()
+export async function requestEmailChange(newEmail: string): Promise<void> {
+  const user = await requireAuthenticatedUser()
   return new Promise((resolve, reject) => {
     user.updateAttributes(
       [new CognitoUserAttribute({ Name: 'email', Value: newEmail })],
@@ -214,8 +236,8 @@ export function requestEmailChange(newEmail: string): Promise<void> {
 }
 
 /** メールアドレス変更の確認コードを検証する */
-export function confirmEmailChange(code: string): Promise<void> {
-  const user = requireCurrentUser()
+export async function confirmEmailChange(code: string): Promise<void> {
+  const user = await requireAuthenticatedUser()
   return new Promise((resolve, reject) => {
     user.verifyAttribute('email', code, {
       onSuccess: () => resolve(),
