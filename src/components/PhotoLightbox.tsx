@@ -27,7 +27,28 @@ interface Transform {
   y: number
 }
 
-function PinchZoomImage({ src, alt }: { src: string; alt: string }) {
+const TAP_SLOP_PX = 10
+
+function isPointOnPhoto(
+  img: HTMLImageElement | null,
+  x: number,
+  y: number,
+) {
+  if (!img) return false
+  const rect = img.getBoundingClientRect()
+  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
+}
+
+function PinchZoomImage({
+  src,
+  alt,
+  onBackdropTap,
+}: {
+  src: string
+  alt: string
+  onBackdropTap: () => void
+}) {
+  const imgRef = useRef<HTMLImageElement>(null)
   const transformRef = useRef<Transform>({ scale: 1, x: 0, y: 0 })
   const [transform, setTransform] = useState<Transform>({ scale: 1, x: 0, y: 0 })
   const pointersRef = useRef(new Map<number, { x: number; y: number }>())
@@ -43,6 +64,8 @@ function PinchZoomImage({ src, alt }: { src: string; alt: string }) {
     x: number
     y: number
   } | null>(null)
+  const tapRef = useRef<{ x: number; y: number } | null>(null)
+  const closeOnClickRef = useRef(false)
 
   function applyTransform(next: Transform) {
     transformRef.current = next
@@ -56,8 +79,10 @@ function PinchZoomImage({ src, alt }: { src: string; alt: string }) {
       x: event.clientX,
       y: event.clientY,
     })
+    closeOnClickRef.current = false
 
     if (pointersRef.current.size === 2) {
+      tapRef.current = null
       const pts = [...pointersRef.current.values()]
       panStartRef.current = null
       pinchStartRef.current = {
@@ -68,6 +93,8 @@ function PinchZoomImage({ src, alt }: { src: string; alt: string }) {
       }
       return
     }
+
+    tapRef.current = { x: event.clientX, y: event.clientY }
 
     if (pointersRef.current.size === 1 && transformRef.current.scale > 1) {
       pinchStartRef.current = null
@@ -87,6 +114,14 @@ function PinchZoomImage({ src, alt }: { src: string; alt: string }) {
       x: event.clientX,
       y: event.clientY,
     })
+
+    const tap = tapRef.current
+    if (
+      tap &&
+      Math.hypot(event.clientX - tap.x, event.clientY - tap.y) > TAP_SLOP_PX
+    ) {
+      tapRef.current = null
+    }
 
     if (pointersRef.current.size === 2 && pinchStartRef.current) {
       const pts = [...pointersRef.current.values()]
@@ -141,6 +176,11 @@ function PinchZoomImage({ src, alt }: { src: string; alt: string }) {
     }
 
     if (pointersRef.current.size === 0) {
+      const tap = tapRef.current
+      tapRef.current = null
+      closeOnClickRef.current = Boolean(
+        tap && !isPointOnPhoto(imgRef.current, tap.x, tap.y),
+      )
       pinchStartRef.current = null
       panStartRef.current = null
       if (transformRef.current.scale <= 1.02) {
@@ -151,17 +191,24 @@ function PinchZoomImage({ src, alt }: { src: string; alt: string }) {
 
   return (
     <div
-      className="photo-lightbox-zoom flex h-full w-full touch-none items-center justify-center overflow-hidden"
+      className="photo-lightbox-zoom flex h-full w-full cursor-zoom-out touch-none items-center justify-center overflow-hidden"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
+      onClick={(event) => {
+        event.stopPropagation()
+        if (!closeOnClickRef.current) return
+        closeOnClickRef.current = false
+        onBackdropTap()
+      }}
     >
       <img
+        ref={imgRef}
         src={src}
         alt={alt}
         draggable={false}
-        className="max-h-full max-w-full origin-center object-contain will-change-transform"
+        className="max-h-full max-w-full origin-center cursor-default object-contain will-change-transform"
         style={{
           transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(${transform.scale})`,
         }}
@@ -202,7 +249,10 @@ export function PhotoLightbox({ src, alt, onClose }: PhotoLightboxProps) {
       aria-label="拡大写真"
       onPointerDown={(event) => event.stopPropagation()}
     >
-      <div className="flex shrink-0 justify-end px-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
+      <div
+        className="flex shrink-0 cursor-zoom-out justify-end px-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))]"
+        onClick={onClose}
+      >
         <button
           ref={closeRef}
           type="button"
@@ -210,7 +260,7 @@ export function PhotoLightbox({ src, alt, onClose }: PhotoLightboxProps) {
             event.stopPropagation()
             onClose()
           }}
-          className="rounded-md px-3 py-2 text-sm text-white hover:bg-white/10"
+          className="cursor-default rounded-md px-3 py-2 text-sm text-white hover:bg-white/10"
         >
           閉じる
         </button>
@@ -219,12 +269,7 @@ export function PhotoLightbox({ src, alt, onClose }: PhotoLightboxProps) {
         className="flex min-h-0 flex-1 cursor-zoom-out px-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]"
         onClick={onClose}
       >
-        <div
-          className="h-full min-h-0 w-full"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <PinchZoomImage src={src} alt={alt} />
-        </div>
+        <PinchZoomImage src={src} alt={alt} onBackdropTap={onClose} />
       </div>
     </div>,
     document.body,
