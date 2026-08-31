@@ -70,7 +70,7 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
               }}
               className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
             >
-              {savingPhoto ? '保存中…' : '保存'}
+              {savingPhoto ? '保存中…' : '画像を保存'}
             </button>
             {saveError && (
               <p className="mt-1.5 text-sm text-red-600" role="alert">

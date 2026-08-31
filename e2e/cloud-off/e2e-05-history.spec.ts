@@ -52,6 +52,7 @@ test.describe('E2E-05 履歴', () => {
     await page.goto('/history')
     await page.getByText('（魚種なし）').first().click()
     await expect(page.getByRole('heading', { name: /釣果詳細|月/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: '画像を保存' })).toBeVisible()
     await page.getByRole('button', { name: '写真を拡大' }).click()
     const lightbox = page.getByRole('dialog', { name: '拡大写真' })
     await expect(lightbox).toBeVisible()
