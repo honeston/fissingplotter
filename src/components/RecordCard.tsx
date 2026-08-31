@@ -44,7 +44,10 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
   if (showLargePhoto) {
     return (
       <div>
-        <div className="relative mb-3 flex h-64 items-center justify-center overflow-hidden rounded-xl border border-sky-200 bg-sky-50">
+        <div
+          data-photo-zoom
+          className="relative mb-3 flex h-64 items-center justify-center overflow-hidden rounded-xl border border-sky-200 bg-sky-50"
+        >
           <PhotoFrame
             url={photoUrl}
             loading={photoLoading}
@@ -235,9 +238,13 @@ function PhotoFrame({
       {url ? (
         <button
           type="button"
-          onClick={() => onOpen?.()}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation()
+            onOpen?.()
+          }}
           aria-label="写真を拡大"
-          className="relative block h-full w-full cursor-zoom-in border-0 bg-transparent p-0"
+          className="relative block h-full w-full cursor-zoom-in border-0 bg-transparent p-0 touch-manipulation"
         >
           <img
             src={url}

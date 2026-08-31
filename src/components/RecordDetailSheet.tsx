@@ -53,7 +53,7 @@ function isInteractiveTarget(target: EventTarget | null) {
     target instanceof Element &&
     Boolean(
       target.closest(
-        'button, a, input, textarea, select, .leaflet-container, [data-editing="true"], [data-photo-lightbox]',
+        'button, a, input, textarea, select, .leaflet-container, [data-editing="true"], [data-photo-lightbox], [data-photo-zoom]',
       ),
     )
   )
@@ -436,10 +436,12 @@ export function RecordDetailSheet({
 
     const blockBehind = (event: Event) => {
       if (isMapTarget(event.target)) return
+      if (isInteractiveTarget(event.target)) return
       event.stopPropagation()
     }
     const preventWhenDragging = (event: TouchEvent) => {
       if (isMapTarget(event.target)) return
+      if (isInteractiveTarget(event.target)) return
       event.stopPropagation()
       if (gestureRef.current.axis) event.preventDefault()
     }
