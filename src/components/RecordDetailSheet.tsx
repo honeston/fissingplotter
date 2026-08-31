@@ -53,7 +53,7 @@ function isInteractiveTarget(target: EventTarget | null) {
     target instanceof Element &&
     Boolean(
       target.closest(
-        'button, a, input, textarea, select, .leaflet-container, [data-editing="true"]',
+        'button, a, input, textarea, select, .leaflet-container, [data-editing="true"], [data-photo-lightbox]',
       ),
     )
   )

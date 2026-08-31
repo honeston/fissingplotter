@@ -16,6 +16,8 @@ flowchart TD
 
   sheet -->|"左右スワイプ / 前後"| next["別の記録"]
   sheet -->|"下スワイプ / 閉じる"| hist
+  sheet -->|"写真タップ"| zoom["拡大表示"]
+  zoom -->|"閉じる / 背景タップ"| sheet
   sheet -->|"編集"| edit["編集フォーム"]
   sheet -->|"削除"| confirm["削除確認"]
   edit -->|"保存"| sheet

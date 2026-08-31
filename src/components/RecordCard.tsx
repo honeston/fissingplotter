@@ -7,6 +7,7 @@ import { formatFishSize, formatFishWeight } from '../lib/units'
 import { saveImageToDevice } from '../lib/saveImageToDevice'
 import { usePhotoUrl } from '../hooks/usePhotoUrl'
 import { useUnitPrefs } from '../hooks/useUnitPrefs'
+import { PhotoLightbox } from './PhotoLightbox'
 import { EditedMark, RecordValueList } from './RecordValueList'
 import type { FishingRecord } from '../types/record'
 
@@ -21,6 +22,11 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
   const { prefs } = useUnitPrefs()
   const [savingPhoto, setSavingPhoto] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+
+  useEffect(() => {
+    setLightboxOpen(false)
+  }, [record.id])
 
   async function handleSavePhoto() {
     if (!photoUrl) return
@@ -43,8 +49,16 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
             url={photoUrl}
             loading={photoLoading}
             alt={record.fishSpecies ?? '釣果写真'}
+            onOpen={() => setLightboxOpen(true)}
           />
         </div>
+        {lightboxOpen && photoUrl && (
+          <PhotoLightbox
+            src={photoUrl}
+            alt={record.fishSpecies ?? '釣果写真'}
+            onClose={() => setLightboxOpen(false)}
+          />
+        )}
         {photoUrl && !photoLoading && (
           <div className="mb-3">
             <button
@@ -196,10 +210,12 @@ function PhotoFrame({
   url,
   loading,
   alt,
+  onOpen,
 }: {
   url: string | null
   loading: boolean
   alt: string
+  onOpen?: () => void
 }) {
   const [imageReady, setImageReady] = useState(false)
 
@@ -212,18 +228,32 @@ function PhotoFrame({
   return (
     <>
       {showSpinner && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-sky-50">
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-sky-50">
           <LoadingSpinner />
         </div>
       )}
       {url ? (
-        <img
-          src={url}
-          alt={alt}
-          draggable={false}
-          onLoad={() => setImageReady(true)}
-          className={`h-full w-full object-cover ${imageReady ? 'opacity-100' : 'opacity-0'}`}
-        />
+        <button
+          type="button"
+          onClick={() => onOpen?.()}
+          aria-label="写真を拡大"
+          className="relative block h-full w-full cursor-zoom-in border-0 bg-transparent p-0"
+        >
+          <img
+            src={url}
+            alt={alt}
+            draggable={false}
+            onLoad={() => setImageReady(true)}
+            className={`pointer-events-none h-full w-full object-cover ${
+              imageReady ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+          {imageReady && (
+            <span className="pointer-events-none absolute right-2 bottom-2 rounded-md bg-sky-950/60 px-2 py-0.5 text-xs text-white">
+              拡大
+            </span>
+          )}
+        </button>
       ) : (
         !loading && <span className="text-sm text-slate-400">写真なし</span>
       )}

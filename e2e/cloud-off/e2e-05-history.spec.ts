@@ -1,4 +1,4 @@
-import { expect, saveRecord, test, waitForRecordHome } from '../helpers'
+import { attachGalleryPhoto, expect, saveRecord, test, waitForRecordHome } from '../helpers'
 
 test.describe('E2E-05 履歴', () => {
   test('E2E-05a 記録ゼロで /history', async ({ freshPage: page }) => {
@@ -41,5 +41,22 @@ test.describe('E2E-05 履歴', () => {
     await saveRecord(page)
     await page.goto('/history?from=1999-01-01&to=1999-01-02')
     await expect(page.getByText('この期間の記録はありません')).toBeVisible()
+  })
+
+  test('E2E-05e 写真付き記録 → 詳細で写真タップ → 拡大 → 閉じる', async ({
+    freshPage: page,
+  }) => {
+    await waitForRecordHome(page)
+    await attachGalleryPhoto(page)
+    await saveRecord(page)
+    await page.goto('/history')
+    await page.getByText('（魚種なし）').first().click()
+    await expect(page.getByRole('heading', { name: /釣果詳細|月/ })).toBeVisible()
+    await page.getByRole('button', { name: '写真を拡大' }).click()
+    const lightbox = page.getByRole('dialog', { name: '拡大写真' })
+    await expect(lightbox).toBeVisible()
+    await lightbox.getByRole('button', { name: '閉じる' }).click()
+    await expect(lightbox).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: /釣果詳細|月/ })).toBeVisible()
   })
 })

@@ -109,3 +109,8 @@ html.detail-sheet-open .detail-sheet-overlay .leaflet-container.coordinate-picke
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+
+.photo-lightbox {
+  overscroll-behavior: none;
+  touch-action: none;
+}

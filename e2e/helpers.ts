@@ -17,7 +17,24 @@ export async function waitForRecordHome(page: Page) {
 
 export async function saveRecord(page: Page) {
   await page.getByRole('button', { name: '記録する' }).click()
-  await expect(page.getByText('保存しました')).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByText('保存しました', { exact: true })).toBeVisible({
+    timeout: 20_000,
+  })
+}
+
+/** 1×1 PNG。アルバム入力へ渡して圧縮・プレビューまで進める */
+const TINY_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+)
+
+export async function attachGalleryPhoto(page: Page) {
+  await page.locator('input[type="file"]:not([capture])').setInputFiles({
+    name: 'catch.png',
+    mimeType: 'image/png',
+    buffer: TINY_PNG,
+  })
+  await expect(page.getByAltText('選択した写真')).toBeVisible({ timeout: 15_000 })
 }
 
 /** 互換用。新規コンテキストでは不要。既存のクラウド E2E が参照する */
