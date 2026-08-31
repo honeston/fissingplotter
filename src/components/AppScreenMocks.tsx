@@ -149,15 +149,16 @@ export function EncyclopediaScreenMock() {
       </div>
       <div className="space-y-1.5">
         {[
-          ['シーバス', '8尾'],
-          ['アジ', '5尾'],
-          ['クロダイ', '3尾'],
-        ].map(([name, count]) => (
+          ['シーバス', '8尾', 'bg-cyan-200'],
+          ['アジ', '5尾', 'bg-sky-200'],
+          ['クロダイ', '3尾', 'bg-teal-200'],
+        ].map(([name, count, swatch]) => (
           <div
             key={name}
-            className="flex items-center justify-between rounded-lg border border-sky-100 bg-white px-2 py-1.5"
+            className="flex items-center gap-1.5 rounded-lg border border-sky-100 bg-white px-2 py-1.5"
           >
-            <span className="text-[11px] font-medium text-sky-950">{name}</span>
+            <span className={`h-6 w-6 shrink-0 rounded-md ${swatch}`} />
+            <span className="min-w-0 flex-1 text-[11px] font-medium text-sky-950">{name}</span>
             <span className="text-[10px] text-slate-500">{count}</span>
           </div>
         ))}

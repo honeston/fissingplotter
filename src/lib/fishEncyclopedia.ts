@@ -29,6 +29,42 @@ function pickNewer(a: FishingRecord, b: FishingRecord): FishingRecord {
   return new Date(a.recordedAt).getTime() >= new Date(b.recordedAt).getTime() ? a : b
 }
 
+function recordHasPhoto(
+  record: FishingRecord,
+  localPhotoIds: ReadonlySet<string>,
+): boolean {
+  return Boolean(record.photoKey) || localPhotoIds.has(record.id)
+}
+
+/** 写真付きのうち最大サイズ（同値・サイズなしは新しい方）。なければ null */
+export function pickCoverRecord(
+  records: FishingRecord[],
+  localPhotoIds: ReadonlySet<string>,
+): FishingRecord | null {
+  let cover: FishingRecord | null = null
+  for (const record of records) {
+    if (!recordHasPhoto(record, localPhotoIds)) continue
+    if (cover == null) {
+      cover = record
+      continue
+    }
+    const size = record.fishSizeCm
+    const coverSize = cover.fishSizeCm
+    if (size != null) {
+      if (
+        coverSize == null ||
+        size > coverSize ||
+        (size === coverSize && pickNewer(record, cover) === record)
+      ) {
+        cover = record
+      }
+    } else if (coverSize == null && pickNewer(record, cover) === record) {
+      cover = record
+    }
+  }
+  return cover
+}
+
 function findBestCatchDay(records: FishingRecord[]): {
   dateKey: string | null
   count: number

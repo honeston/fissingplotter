@@ -240,6 +240,13 @@ export async function getPhotoBlob(recordId: string): Promise<Blob | undefined> 
   return db.get(PHOTO_STORE, recordId)
 }
 
+/** 端末に写真 Blob がある記録 ID */
+export async function listPhotoRecordIds(): Promise<string[]> {
+  const db = await getDb()
+  const keys = await db.getAllKeys(PHOTO_STORE)
+  return keys.map(String)
+}
+
 export async function deletePhotoBlob(recordId: string): Promise<void> {
   const db = await getDb()
   await db.delete(PHOTO_STORE, recordId)

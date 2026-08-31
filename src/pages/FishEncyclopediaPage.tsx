@@ -1,16 +1,21 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { LoadingSpinner } from '../components/RecordCard'
+import { usePhotoUrl } from '../hooks/usePhotoUrl'
 import { useRecords } from '../hooks/useRecords'
 import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import { dateFromKey, formatDateLabel } from '../lib/dates'
 import {
   buildSpeciesStats,
+  pickCoverRecord,
   sortSpeciesStats,
   type SpeciesSortKey,
   type SpeciesStat,
   type SortDirection,
 } from '../lib/fishEncyclopedia'
+import { listPhotoRecordIds } from '../lib/storage'
 import { formatFishSize, formatFishWeight } from '../lib/units'
+import type { FishingRecord } from '../types/record'
 import { JafAttribution } from '../components/JafAttribution'
 
 const SORT_OPTIONS: { key: SpeciesSortKey; label: string }[] = [
@@ -32,6 +37,24 @@ export function FishEncyclopediaPage() {
   const { records, loading, error } = useRecords()
   const [sortKey, setSortKey] = useState<SpeciesSortKey>('count')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
+  const [photoIds, setPhotoIds] = useState<Set<string>>(new Set())
+  const [photoIdsReady, setPhotoIdsReady] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    void listPhotoRecordIds()
+      .then((ids) => {
+        if (cancelled) return
+        setPhotoIds(new Set(ids))
+        setPhotoIdsReady(true)
+      })
+      .catch(() => {
+        if (!cancelled) setPhotoIdsReady(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const stats = useMemo(() => {
     const built = buildSpeciesStats(records)
@@ -97,7 +120,11 @@ export function FishEncyclopediaPage() {
         <ul className="flex flex-col gap-3">
           {stats.map((stat) => (
             <li key={stat.species}>
-              <SpeciesStatCard stat={stat} />
+              <SpeciesStatCard
+                stat={stat}
+                photoIds={photoIds}
+                photoIdsReady={photoIdsReady}
+              />
             </li>
           ))}
         </ul>
@@ -108,34 +135,137 @@ export function FishEncyclopediaPage() {
   )
 }
 
-function SpeciesStatCard({ stat }: { stat: SpeciesStat }) {
+function SpeciesStatCard({
+  stat,
+  photoIds,
+  photoIdsReady,
+}: {
+  stat: SpeciesStat
+  photoIds: ReadonlySet<string>
+  photoIdsReady: boolean
+}) {
   const { prefs } = useUnitPrefs()
+  const cover = useMemo(
+    () => pickCoverRecord(stat.records, photoIds),
+    [stat.records, photoIds],
+  )
   return (
     <Link
       to={`/mypage/encyclopedia/${encodeURIComponent(stat.species)}`}
       className="block rounded-xl border border-sky-100 bg-white px-4 py-3 shadow-sm outline-none transition hover:border-sky-200 active:bg-sky-50 focus-visible:ring-2 focus-visible:ring-cyan-200"
     >
-      <div className="flex min-h-11 items-center justify-between gap-3">
-        <p className="truncate text-base font-medium text-sky-950">{stat.species}</p>
-        <p className="shrink-0 text-sm font-semibold text-cyan-800">{stat.count}匹</p>
-      </div>
+      <div className="flex items-start gap-3">
+        <SpeciesCoverImage
+          record={cover}
+          species={stat.species}
+          ready={photoIdsReady}
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex min-h-11 items-center justify-between gap-3">
+            <p className="truncate text-base font-medium text-sky-950">{stat.species}</p>
+            <p className="shrink-0 text-sm font-semibold text-cyan-800">{stat.count}匹</p>
+          </div>
 
-      <dl className="mt-2 space-y-1.5 text-sm text-slate-600">
-        <div className="flex items-center justify-between gap-2">
-          <dt className="shrink-0">最大サイズ</dt>
-          <dd className="font-medium text-sky-950">{formatFishSize(stat.maxSizeCm, prefs.length)}</dd>
+          <dl className="mt-2 space-y-1.5 text-sm text-slate-600">
+            <div className="flex items-center justify-between gap-2">
+              <dt className="shrink-0">最大サイズ</dt>
+              <dd className="font-medium text-sky-950">
+                {formatFishSize(stat.maxSizeCm, prefs.length)}
+              </dd>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <dt className="shrink-0">最大重量</dt>
+              <dd className="font-medium text-sky-950">
+                {formatFishWeight(stat.maxWeightG, prefs.weight)}
+              </dd>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <dt className="shrink-0">最大釣果日</dt>
+              <dd className="font-medium text-sky-950">
+                {formatBestCatchDay(stat.bestCatchDateKey, stat.bestCatchCount)}
+              </dd>
+            </div>
+          </dl>
         </div>
-        <div className="flex items-center justify-between gap-2">
-          <dt className="shrink-0">最大重量</dt>
-          <dd className="font-medium text-sky-950">{formatFishWeight(stat.maxWeightG, prefs.weight)}</dd>
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <dt className="shrink-0">最大釣果日</dt>
-          <dd className="font-medium text-sky-950">
-            {formatBestCatchDay(stat.bestCatchDateKey, stat.bestCatchCount)}
-          </dd>
-        </div>
-      </dl>
+      </div>
     </Link>
+  )
+}
+
+function SpeciesCoverImage({
+  record,
+  species,
+  ready,
+}: {
+  record: FishingRecord | null
+  species: string
+  ready: boolean
+}) {
+  if (!ready || !record) {
+    return <CoverFrame loading={!ready}>{!ready ? null : <CoverPlaceholder />}</CoverFrame>
+  }
+  return <LoadedCover record={record} species={species} />
+}
+
+function LoadedCover({
+  record,
+  species,
+}: {
+  record: FishingRecord
+  species: string
+}) {
+  const { url, loading } = usePhotoUrl(record)
+  return (
+    <CoverFrame loading={loading}>
+      {url ? (
+        <img
+          src={url}
+          alt={`${species}の代表画像`}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        !loading && <CoverPlaceholder />
+      )}
+    </CoverFrame>
+  )
+}
+
+function CoverFrame({
+  loading,
+  children,
+}: {
+  loading: boolean
+  children: ReactNode
+}) {
+  return (
+    <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-sky-200 bg-sky-50">
+      {loading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-sky-50">
+          <LoadingSpinner className="h-6 w-6" />
+        </div>
+      )}
+      {children}
+    </div>
+  )
+}
+
+function CoverPlaceholder() {
+  return (
+    <span className="flex h-full w-full items-center justify-center" aria-hidden>
+      <svg
+        viewBox="0 0 32 32"
+        className="h-8 w-8 text-sky-200"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M4 16c5-6 10-6 14 0s9 6 14 0"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        <circle cx="22" cy="11" r="1.6" fill="currentColor" />
+      </svg>
+    </span>
   )
 }

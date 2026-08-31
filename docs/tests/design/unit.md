@@ -16,7 +16,7 @@ IndexedDB・fetch・Cognito SDK・LocalStack はここでは触らない。
 |------|------------|----------|-----|
 | 月齢・潮種 | `api/src/moon.ts` | 月齢、潮種、月相の区分 | [UNIT-01〜03](../if.md#unit-01-月齢) |
 | 単位 | `src/lib/units.ts` | cm/inch、g/kg/oz の変換。保存値は cm / g のまま。空は null、不正は無効 | [UNIT-04](../if.md#unit-04-単位変換) |
-| 魚種図鑑 | `src/lib/fishEncyclopedia.ts` | 魚種なし除外、匹数、最大サイズ / 重量、最大釣果日 | [UNIT-05](../if.md#unit-05-魚種図鑑集計) |
+| 魚種図鑑 | `src/lib/fishEncyclopedia.ts` | 魚種なし除外、匹数、最大サイズ / 重量、最大釣果日、代表画像の記録選び | [UNIT-05](../if.md#unit-05-魚種図鑑集計) |
 | 座標 | `src/lib/coordinates.ts` | 片方だけ無効、範囲 | [UNIT-06](../if.md#unit-06-座標) |
 | 編集マーク | `src/lib/editedFields.ts` | `recordedAt` / `location` 以外は無視 | [UNIT-07](../if.md#unit-07-editedfields) |
 | 日付 | `src/lib/dates.ts` | 履歴の日キー、期間。空・不正は落とす。期間逆転は入れ替えて含む | [UNIT-08](../if.md#unit-08-日付) |
