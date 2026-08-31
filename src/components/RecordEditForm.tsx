@@ -1,4 +1,17 @@
 import { lazy, Suspense, useEffect, useId, useRef, useState } from 'react'
+import {
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Loader2,
+  MapPin,
+  Package,
+  Ruler,
+  Save,
+  Scale,
+  X,
+} from 'lucide-react'
 import { usePhotoUrl } from '../hooks/usePhotoUrl'
 import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import { fetchDerivedConditions } from '../lib/conditions'
@@ -37,6 +50,8 @@ import { LoadingSpinner } from './RecordCard'
 import { RecordValueList } from './RecordValueList'
 import { PhotoInput } from './PhotoInput'
 import { TackleFieldsForm } from './TackleFieldsForm'
+import { Icon } from './ui/Icon'
+import { IconButton } from './ui/IconButton'
 
 const CoordinatePickerMap = lazy(() =>
   import('./CoordinatePickerMap').then((m) => ({ default: m.CoordinatePickerMap })),
@@ -262,11 +277,13 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
         disabled={saving}
       />
 
-      <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor={sizeId}>
-        体長 {lengthUnitLabel(prefs.length)}（任意）
+      <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-sky-900" htmlFor={sizeId}>
+        <Icon icon={Ruler} size="sm" className="text-cyan-700" />
+        {lengthUnitLabel(prefs.length)}
       </label>
       <input
         id={sizeId}
+        aria-label={`体長 ${lengthUnitLabel(prefs.length)}`}
         type="number"
         inputMode="decimal"
         min={0}
@@ -278,11 +295,13 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
         className="mb-4 w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-base text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
       />
 
-      <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor={weightId}>
-        重さ {weightUnitLabel(prefs.weight)}（任意）
+      <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-sky-900" htmlFor={weightId}>
+        <Icon icon={Scale} size="sm" className="text-cyan-700" />
+        {weightUnitLabel(prefs.weight)}
       </label>
       <input
         id={weightId}
+        aria-label={`重さ ${weightUnitLabel(prefs.weight)}`}
         type="number"
         inputMode="decimal"
         min={0}
@@ -298,9 +317,15 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
         type="button"
         onClick={() => setTackleOpen((open) => !open)}
         disabled={saving}
-        className="mb-3 w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-left text-sm font-medium text-cyan-800 shadow-sm disabled:opacity-60"
+        aria-expanded={tackleOpen}
+        aria-label="タックル入力を開く"
+        className="mb-3 flex w-full items-center justify-between rounded-xl border border-sky-200 bg-white px-4 py-3 text-sm font-medium text-cyan-800 shadow-sm disabled:opacity-60"
       >
-        {tackleOpen ? 'タックル入力を閉じる' : 'タックル入力'}
+        <span className="inline-flex items-center gap-2">
+          <Icon icon={Package} size="sm" />
+          タックル
+        </span>
+        <Icon icon={tackleOpen ? ChevronUp : ChevronDown} size="sm" />
       </button>
       {tackleOpen && (
         <div className="mb-4 rounded-xl border border-sky-100 bg-sky-50/50 px-3 py-3">
@@ -313,8 +338,9 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
         </div>
       )}
 
-      <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor={timeId}>
-        記録日時
+      <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-sky-900" htmlFor={timeId}>
+        <Icon icon={Clock} size="sm" className="text-cyan-700" />
+        日時
       </label>
       <input
         id={timeId}
@@ -330,9 +356,9 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
         className="mb-4 w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-base text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
       />
 
-      <p className="mb-2 text-sm font-medium text-sky-900">場所</p>
-      <p className="mb-2 text-xs text-slate-500">
-        ドラッグで地図を移動、2本指で拡大縮小、タップで位置を指定します。天気・日出没・潮位は座標と時刻から自動で更新されます。
+      <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-sky-900">
+        <Icon icon={MapPin} size="sm" className="text-cyan-700" />
+        場所
       </p>
       <div className="relative mb-2 h-52 overflow-hidden rounded-xl border border-sky-100">
         <Suspense
@@ -354,13 +380,18 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
         type="button"
         onClick={() => void applyCurrentLocation()}
         disabled={busy}
-        className="mb-4 rounded-lg border border-sky-200 px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm enabled:hover:bg-sky-50 disabled:opacity-60"
+        aria-label="現在地を使う"
+        className="mb-4 inline-flex items-center gap-1.5 rounded-lg border border-sky-200 px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm enabled:hover:bg-sky-50 disabled:opacity-60"
       >
-        {geoBusy ? '現在地を取得中…' : '現在地を使う'}
+        <Icon icon={MapPin} size="sm" />
+        {geoBusy ? '取得中…' : '現在地'}
       </button>
 
       {fetching && (
-        <p className="mb-3 text-sm text-amber-800">天気・潮位・場所名を更新中…</p>
+        <p className="mb-3 flex items-center gap-1.5 text-sm text-amber-800">
+          <Icon icon={Loader2} size="sm" className="animate-spin" />
+          更新中…
+        </p>
       )}
       {warnings.length > 0 && !fetching && (
         <ul className="mb-3 list-disc pl-4 text-xs text-amber-800">
@@ -371,7 +402,10 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
       )}
 
       <div className="rounded-xl border border-sky-100 bg-sky-50/60 px-3 py-2">
-        <p className="text-xs font-medium text-slate-500">自動取得の内容（編集不可）</p>
+        <p className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+          <Icon icon={Calendar} size="xs" />
+          自動取得
+        </p>
         <RecordValueList record={draft} omitCatchFields />
       </div>
 
@@ -382,22 +416,25 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
       )}
 
       <div className="mt-4 flex gap-2">
-        <button
-          type="button"
+        <IconButton
+          icon={X}
+          label="キャンセル"
           onClick={onCancel}
           disabled={saving}
-          className="flex min-h-11 flex-1 items-center justify-center rounded-xl border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm disabled:opacity-60"
+          variant="secondary"
+          fullWidth
         >
-          キャンセル
-        </button>
-        <button
-          type="button"
+          取消
+        </IconButton>
+        <IconButton
+          icon={Save}
+          label="保存する"
           onClick={() => void handleSave()}
           disabled={busy}
-          className="flex min-h-11 flex-1 items-center justify-center rounded-xl bg-cyan-700 px-3 py-2 text-sm font-semibold text-white shadow-sm enabled:active:scale-[0.98] enabled:hover:bg-cyan-800 disabled:opacity-60"
+          fullWidth
         >
-          {saving ? '保存中…' : fetching ? '更新中…' : '保存する'}
-        </button>
+          {saving ? '保存中…' : fetching ? '更新中…' : '保存'}
+        </IconButton>
       </div>
       <JafAttribution className="mt-4" />
     </div>

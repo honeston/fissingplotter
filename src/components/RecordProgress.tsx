@@ -1,11 +1,11 @@
-import { Camera, Cloud, MapPin, Save, Waves } from 'lucide-react'
+import { Camera, CloudSun, MapPin, Save, Waves } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { RecordStepErrors, RecordSteps, StepState } from '../hooks/useRecord'
 import { Icon } from './ui/Icon'
 
 const labels: { key: keyof RecordSteps; label: string; icon: LucideIcon }[] = [
   { key: 'geo', label: '位置', icon: MapPin },
-  { key: 'weather', label: '天気', icon: Cloud },
+  { key: 'weather', label: '天気', icon: CloudSun },
   { key: 'tide', label: '潮位', icon: Waves },
   { key: 'save', label: '保存', icon: Save },
   { key: 'photo', label: '写真', icon: Camera },

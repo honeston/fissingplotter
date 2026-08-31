@@ -11,7 +11,7 @@ import {
 import { weatherCodeLabel } from '../../lib/weatherCode'
 import { Icon, type IconSize } from './Icon'
 
-function weatherIconForCode(code: number | null): LucideIcon {
+export function weatherIconForCode(code: number | null): LucideIcon {
   if (code == null) return Cloud
   if (code === 0) return Sun
   if (code <= 2) return CloudSun
