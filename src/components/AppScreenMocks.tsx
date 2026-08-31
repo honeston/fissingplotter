@@ -1,4 +1,5 @@
-import { Fish, ImagePlus, Package, Ruler, Scale } from 'lucide-react'
+import { Fish, ImagePlus, Ruler, Scale } from 'lucide-react'
+import { FishingRod } from './icons/FishingRod'
 import type { ReactNode } from 'react'
 import { Icon } from './ui/Icon'
 import { SERVICE_NAME } from '../legal/meta'
@@ -57,7 +58,7 @@ export function RecordScreenMock() {
         </div>
       </div>
       <div className="mb-2 flex items-center gap-1 rounded-lg border border-sky-200 bg-white px-2 py-1.5 text-[11px] text-cyan-800">
-        <Icon icon={Package} size="xs" />
+        <Icon icon={FishingRod} size="xs" />
         タックル
       </div>
       <div className="flex items-center justify-center gap-1 rounded-lg bg-cyan-700 px-2 py-2 text-[11px] font-semibold text-white">

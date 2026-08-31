@@ -1,4 +1,5 @@
-import { Package, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
+import { FishingRod } from '../components/icons/FishingRod'
 import { useCallback, useEffect, useState } from 'react'
 import { TackleFieldsForm } from '../components/TackleFieldsForm'
 import { IconButton } from '../components/ui/IconButton'
@@ -116,7 +117,7 @@ export function MyTacklePage() {
 
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
-      <PageHeader title="マイタックル" icon={Package} backTo="/mypage" backLabel="戻る" />
+      <PageHeader title="マイタックル" icon={FishingRod} backTo="/mypage" backLabel="戻る" />
 
       {!showForm && (
         <IconButton

@@ -30,6 +30,7 @@ import {
   tideSlopeCompactValue,
   tideSlopeIcon,
 } from './ui/conditionChips'
+import { FishingRod } from './icons/FishingRod'
 import { Icon } from './ui/Icon'
 import { WeatherIcon } from './ui/WeatherIcon'
 
@@ -105,12 +106,12 @@ export function RecordValueList({
           {hasTackleContent(record.tackle) && (
             <>
               {record.tackle!.name ? (
-                <IconRow icon={Package} label="タックル">
+                <IconRow icon={FishingRod} label="タックル">
                   {record.tackle!.name}
                 </IconRow>
               ) : null}
               {record.tackle!.rod ? (
-                <IconRow icon={Package} label="ロッド">
+                <IconRow icon={FishingRod} label="ロッド">
                   {record.tackle!.rod}
                 </IconRow>
               ) : null}

@@ -1,4 +1,5 @@
-import { BookOpen, Calendar, ChevronDown, ChevronUp, Fish, Package, Ruler, Scale } from 'lucide-react'
+import { BookOpen, Calendar, ChevronDown, ChevronUp, Fish, Ruler, Scale } from 'lucide-react'
+import { FishingRod } from '../components/icons/FishingRod'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FishSpeciesInput } from '../components/FishSpeciesInput'
@@ -317,7 +318,7 @@ export function HomePage() {
           className="flex w-full items-center justify-between rounded-xl border border-sky-200 bg-white px-4 py-3 text-sm font-medium text-cyan-800 shadow-sm disabled:opacity-60"
         >
           <span className="inline-flex items-center gap-2">
-            <Icon icon={Package} size="sm" />
+            <Icon icon={FishingRod} size="sm" />
             タックル
             {hasTackleContent(tackle) && !tackleOpen ? (
               <span className="text-xs font-normal text-slate-500">

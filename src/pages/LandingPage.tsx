@@ -5,7 +5,6 @@ import {
   FishSymbol,
   Lock,
   Map,
-  Package,
   PlayCircle,
   Shield,
 } from 'lucide-react'
@@ -16,6 +15,7 @@ import {
   RecordScreenMock,
 } from '../components/AppScreenMocks'
 import { LegalLinks } from '../components/LegalLinks'
+import { FishingRod } from '../components/icons/FishingRod'
 import { Icon } from '../components/ui/Icon'
 import { SERVICE_NAME } from '../legal/meta'
 
@@ -25,7 +25,7 @@ const FEATURES = [
   { icon: FishSymbol, title: 'ワンタップ', desc: 'GPS・天気・潮位を自動保存' },
   { icon: Map, title: '履歴', desc: 'カレンダーと地図で振り返り' },
   { icon: BookOpen, title: '図鑑', desc: '魚種ごとに尾数・最大サイズ' },
-  { icon: Package, title: 'タックル', desc: 'セット保存して記録時に呼び出し' },
+  { icon: FishingRod, title: 'タックル', desc: 'セット保存して記録時に呼び出し' },
   { icon: CloudOff, title: 'オフライン', desc: '端末保存、復帰後に同期' },
 ] as const
 

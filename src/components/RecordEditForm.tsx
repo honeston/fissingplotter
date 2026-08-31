@@ -6,7 +6,6 @@ import {
   Clock,
   Loader2,
   MapPin,
-  Package,
   Ruler,
   Save,
   Scale,
@@ -49,6 +48,7 @@ import { JafAttribution } from './JafAttribution'
 import { LoadingSpinner } from './RecordCard'
 import { RecordValueList } from './RecordValueList'
 import { PhotoInput } from './PhotoInput'
+import { FishingRod } from './icons/FishingRod'
 import { TackleFieldsForm } from './TackleFieldsForm'
 import { Icon } from './ui/Icon'
 import { IconButton } from './ui/IconButton'
@@ -322,7 +322,7 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
         className="mb-3 flex w-full items-center justify-between rounded-xl border border-sky-200 bg-white px-4 py-3 text-sm font-medium text-cyan-800 shadow-sm disabled:opacity-60"
       >
         <span className="inline-flex items-center gap-2">
-          <Icon icon={Package} size="sm" />
+          <Icon icon={FishingRod} size="sm" />
           タックル
         </span>
         <Icon icon={tackleOpen ? ChevronUp : ChevronDown} size="sm" />
