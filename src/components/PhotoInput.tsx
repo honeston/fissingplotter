@@ -1,6 +1,8 @@
+import { Camera, Download, ImagePlus, RefreshCw, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { compressImage } from '../lib/compressImage'
 import { saveImageToDevice } from '../lib/saveImageToDevice'
+import { Icon } from './ui/Icon'
 
 interface PhotoInputProps {
   previewUrl: string | null
@@ -12,6 +14,38 @@ interface PhotoInputProps {
 }
 
 type PhotoSource = 'camera' | 'gallery'
+
+function PhotoActionButton({
+  icon,
+  label,
+  onClick,
+  disabled,
+  danger,
+}: {
+  icon: typeof Camera
+  label: string
+  onClick: () => void
+  disabled?: boolean
+  danger?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm disabled:opacity-60 ${
+        danger
+          ? 'border-red-200 text-red-600 hover:bg-red-50'
+          : 'border-sky-200 text-cyan-800 hover:bg-sky-50'
+      }`}
+    >
+      <Icon icon={icon} size="sm" />
+      <span className="sr-only">{label}</span>
+    </button>
+  )
+}
 
 export function PhotoInput({
   previewUrl,
@@ -78,11 +112,10 @@ export function PhotoInput({
 
   const pickerDisabled = disabled || compressing
   const pickButtonClassName =
-    'flex min-h-12 flex-1 items-center justify-center rounded-xl border border-dashed border-sky-300 bg-sky-50/50 px-3 py-3 text-sm font-medium text-cyan-800 disabled:opacity-60'
+    'flex min-h-12 flex-1 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-sky-300 bg-sky-50/50 px-3 py-3 text-xs font-medium text-cyan-800 disabled:opacity-60'
 
   return (
     <div className="mb-4">
-      <span className="mb-2 block text-sm font-medium text-sky-900">写真（任意）</span>
       <input
         ref={cameraInputRef}
         type="file"
@@ -108,78 +141,59 @@ export function PhotoInput({
             className="h-24 w-24 rounded-xl border border-sky-200 object-cover"
           />
           <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <p className="text-xs text-slate-500">
-              {photoBlob ? `${Math.round(photoBlob.size / 1024)}KB（圧縮済み）` : ''}
-            </p>
-            {photoBlob && photoSource === 'camera' && (
-              <p className="text-xs leading-relaxed text-slate-500">
-                この写真はアプリにだけ残ります。カメラロールにも残す場合は下から保存してください。
+            {photoBlob ? (
+              <p className="text-xs tabular-nums text-slate-500">
+                {Math.round(photoBlob.size / 1024)}KB
               </p>
-            )}
-            {photoBlob && photoSource === 'gallery' && (
-              <p className="text-xs leading-relaxed text-slate-500">
-                アルバムの写真を記録に添付します。
-              </p>
-            )}
+            ) : null}
             <div className="flex flex-wrap gap-2">
               {photoSource === 'camera' ? (
                 <>
-                  <button
-                    type="button"
+                  <PhotoActionButton
+                    icon={RefreshCw}
+                    label="撮り直す"
                     disabled={pickerDisabled || saving}
                     onClick={() => cameraInputRef.current?.click()}
-                    className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
-                  >
-                    撮り直す
-                  </button>
-                  <button
-                    type="button"
+                  />
+                  <PhotoActionButton
+                    icon={ImagePlus}
+                    label="アルバムから選ぶ"
                     disabled={pickerDisabled || saving}
                     onClick={() => galleryInputRef.current?.click()}
-                    className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
-                  >
-                    アルバムから選ぶ
-                  </button>
+                  />
                   {photoBlob && (
-                    <button
-                      type="button"
+                    <PhotoActionButton
+                      icon={Download}
+                      label={saving ? '保存中…' : 'カメラロールに残す'}
                       disabled={disabled || compressing || saving}
                       onClick={() => void handleSaveToDevice()}
-                      className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
-                    >
-                      {saving ? '保存中…' : 'カメラロールに残す'}
-                    </button>
+                    />
                   )}
                 </>
               ) : (
                 <>
-                  <button
-                    type="button"
+                  <PhotoActionButton
+                    icon={ImagePlus}
+                    label="選び直す"
                     disabled={pickerDisabled || saving}
                     onClick={() => galleryInputRef.current?.click()}
-                    className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
-                  >
-                    選び直す
-                  </button>
-                  <button
-                    type="button"
+                  />
+                  <PhotoActionButton
+                    icon={Camera}
+                    label="カメラで撮る"
                     disabled={pickerDisabled || saving}
                     onClick={() => cameraInputRef.current?.click()}
-                    className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
-                  >
-                    カメラで撮る
-                  </button>
+                  />
                 </>
               )}
               {canClear && (
-                <button
-                  type="button"
+                <PhotoActionButton
+                  icon={Trash2}
+                  label="削除"
                   disabled={disabled || compressing || saving}
                   onClick={clearPhoto}
-                  className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
-                >
-                  削除
-                </button>
+                  danger
+                />
               )}
             </div>
           </div>
@@ -191,16 +205,20 @@ export function PhotoInput({
             disabled={pickerDisabled}
             onClick={() => cameraInputRef.current?.click()}
             className={pickButtonClassName}
+            aria-label="カメラで撮る"
           >
-            {compressing ? '圧縮中…' : 'カメラで撮る'}
+            <Icon icon={Camera} size="md" />
+            {compressing ? '…' : '撮影'}
           </button>
           <button
             type="button"
             disabled={pickerDisabled}
             onClick={() => galleryInputRef.current?.click()}
             className={pickButtonClassName}
+            aria-label="アルバムから選ぶ"
           >
-            {compressing ? '圧縮中…' : 'アルバムから選ぶ'}
+            <Icon icon={ImagePlus} size="md" />
+            {compressing ? '…' : 'アルバム'}
           </button>
         </div>
       )}

@@ -1,4 +1,7 @@
+import { Fish, ImagePlus, Ruler, Scale } from 'lucide-react'
+import { FishingRod } from './icons/FishingRod'
 import type { ReactNode } from 'react'
+import { Icon } from './ui/Icon'
 import { SERVICE_NAME } from '../legal/meta'
 import { GSI_STD_TILE_URL } from '../lib/gsiTiles'
 
@@ -36,25 +39,31 @@ function PhoneFrame({
 export function RecordScreenMock() {
   return (
     <PhoneFrame title="記録">
-      <div className="mb-2 flex h-16 items-center justify-center rounded-lg border border-dashed border-sky-200 bg-white text-[11px] text-slate-400">
-        写真を追加
+      <div className="mb-2 flex h-16 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-sky-200 bg-white text-[11px] text-slate-400">
+        <Icon icon={ImagePlus} size="sm" />
+        写真
       </div>
-      <div className="mb-2 rounded-lg border border-sky-200 bg-white px-2 py-1.5 text-[11px] text-slate-400">
-        魚種（任意）
+      <div className="mb-2 flex items-center gap-1.5 rounded-lg border border-sky-200 bg-white px-2 py-1.5 text-[11px] text-slate-400">
+        <Icon icon={Fish} size="xs" />
+        魚種
       </div>
       <div className="mb-2 grid grid-cols-2 gap-1.5">
-        <div className="rounded-lg border border-sky-200 bg-white px-2 py-1.5 text-[11px] text-slate-400">
-          体長
+        <div className="flex items-center gap-1 rounded-lg border border-sky-200 bg-white px-2 py-1.5 text-[11px] text-slate-400">
+          <Icon icon={Ruler} size="xs" />
+          cm
         </div>
-        <div className="rounded-lg border border-sky-200 bg-white px-2 py-1.5 text-[11px] text-slate-400">
-          重さ
+        <div className="flex items-center gap-1 rounded-lg border border-sky-200 bg-white px-2 py-1.5 text-[11px] text-slate-400">
+          <Icon icon={Scale} size="xs" />
+          g
         </div>
       </div>
-      <div className="mb-2 rounded-lg border border-sky-200 bg-white px-2 py-1.5 text-[11px] text-cyan-800">
-        タックル入力を開く
+      <div className="mb-2 flex items-center gap-1 rounded-lg border border-sky-200 bg-white px-2 py-1.5 text-[11px] text-cyan-800">
+        <Icon icon={FishingRod} size="xs" />
+        タックル
       </div>
-      <div className="rounded-lg bg-cyan-700 px-2 py-2 text-center text-[11px] font-semibold text-white">
-        記録する
+      <div className="flex items-center justify-center gap-1 rounded-lg bg-cyan-700 px-2 py-2 text-[11px] font-semibold text-white">
+        <Icon icon={Fish} size="xs" className="text-white" />
+        記録
       </div>
     </PhoneFrame>
   )

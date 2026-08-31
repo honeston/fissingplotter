@@ -1,5 +1,9 @@
+import { Lock } from 'lucide-react'
 import { useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
+import { Icon } from '../components/ui/Icon'
+import { IconButton } from '../components/ui/IconButton'
+import { PageHeader } from '../components/ui/PageHeader'
 import { useAuth } from '../contexts/AuthContext'
 
 const inputClassName =
@@ -48,22 +52,14 @@ export function ChangePasswordPage() {
 
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
-      <header className="mb-6 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium tracking-wide text-cyan-700">cast mark</p>
-          <h1 className="mt-1 text-2xl font-semibold text-sky-950">パスワード変更</h1>
-        </div>
-        <Link
-          to="/mypage"
-          className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
-        >
-          戻る
-        </Link>
-      </header>
+      <PageHeader title="PW変更" icon={Lock} backTo="/mypage" backLabel="戻る" />
 
       <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-sky-900">現在のパスワード</span>
+          <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-sky-900">
+            <Icon icon={Lock} size="sm" className="text-cyan-700" />
+            現在のPW
+          </span>
           <input
             type="password"
             autoComplete="current-password"
@@ -76,7 +72,10 @@ export function ChangePasswordPage() {
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-sky-900">新しいパスワード</span>
+          <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-sky-900">
+            <Icon icon={Lock} size="sm" className="text-cyan-700" />
+            新PW
+          </span>
           <input
             type="password"
             autoComplete="new-password"
@@ -90,8 +89,9 @@ export function ChangePasswordPage() {
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-sky-900">
-            新しいパスワード（確認）
+          <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-sky-900">
+            <Icon icon={Lock} size="sm" className="text-cyan-700" />
+            新PW（確認）
           </span>
           <input
             type="password"
@@ -116,13 +116,9 @@ export function ChangePasswordPage() {
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={busy}
-          className="min-h-12 rounded-xl bg-cyan-700 px-4 py-3 text-base font-semibold text-white shadow-md disabled:opacity-60"
-        >
-          {busy ? '変更中…' : 'パスワードを変更する'}
-        </button>
+        <IconButton type="submit" icon={Lock} label="パスワードを変更する" disabled={busy} fullWidth>
+          {busy ? '変更中…' : '変更'}
+        </IconButton>
       </form>
     </main>
   )

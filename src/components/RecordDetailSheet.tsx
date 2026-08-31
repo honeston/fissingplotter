@@ -1,10 +1,20 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  Pencil,
+  Trash2,
+  X,
+} from 'lucide-react'
 import { hasEditedField } from '../lib/editedFields'
 import { hasCoordinates } from '../lib/coordinates'
 import type { FishingRecord } from '../types/record'
 import { LoadingSpinner, RecordCard } from './RecordCard'
 import { EditedMark } from './RecordValueList'
 import { RecordEditForm } from './RecordEditForm'
+import { Icon } from './ui/Icon'
 
 const RecordsMap = lazy(() =>
   import('./RecordsMap').then((m) => ({ default: m.RecordsMap })),
@@ -707,23 +717,32 @@ function DetailSheetPanel({
         >
           <h2
             id={titleId}
-            className="min-w-0 truncate text-sm font-semibold text-sky-950"
+            aria-label={
+              editing ? '記録を編集' : expanded ? undefined : '釣果詳細'
+            }
+            className="flex min-w-0 items-center gap-1.5 truncate text-sm font-semibold text-sky-950"
           >
+            <Icon
+              icon={editing ? Pencil : ClipboardList}
+              size="sm"
+              className="shrink-0 text-cyan-700"
+            />
             {editing
-              ? '記録を編集'
+              ? '編集'
               : expanded
                 ? formatRecordDate(record.recordedAt)
-                : '釣果詳細'}
+                : '詳細'}
           </h2>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             {!editing && onDelete && !confirmingDelete && (
               <button
                 type="button"
                 onClick={() => setConfirmingDelete(true)}
                 disabled={!interactive}
-                className="rounded-md px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                aria-label="削除"
+                className="flex size-8 items-center justify-center rounded-md text-red-600 hover:bg-red-50"
               >
-                削除
+                <Icon icon={Trash2} size="sm" />
               </button>
             )}
             {!editing && onUpdated && !confirmingDelete && (
@@ -731,9 +750,10 @@ function DetailSheetPanel({
                 type="button"
                 onClick={() => setEditing(true)}
                 disabled={!interactive}
-                className="rounded-md px-2 py-1 text-xs font-medium text-cyan-800 hover:bg-sky-50"
+                aria-label="編集"
+                className="flex size-8 items-center justify-center rounded-md text-cyan-800 hover:bg-sky-50"
               >
-                編集
+                <Icon icon={Pencil} size="sm" />
               </button>
             )}
             <button
@@ -750,24 +770,29 @@ function DetailSheetPanel({
                 onDismiss()
               }}
               disabled={!interactive}
-              className="rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-slate-100"
+              aria-label={editing || confirmingDelete ? 'キャンセル' : '閉じる'}
+              className="flex size-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
             >
-              {editing || confirmingDelete ? 'キャンセル' : '閉じる'}
+              <Icon icon={X} size="sm" />
             </button>
           </div>
         </div>
 
         {confirmingDelete && onDelete && (
           <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-3">
-            <p className="text-sm text-red-800">この記録を削除しますか？</p>
+            <p className="flex items-center gap-2 text-sm text-red-800">
+              <Icon icon={AlertTriangle} size="sm" />
+              この記録を削除しますか？
+            </p>
             <div className="mt-2 flex justify-end gap-2">
               <button
                 type="button"
                 disabled={!interactive}
                 onClick={() => setConfirmingDelete(false)}
-                className="rounded-lg border border-sky-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-sky-50"
+                aria-label="やめる"
+                className="flex size-9 items-center justify-center rounded-lg border border-sky-200 bg-white text-slate-600 hover:bg-sky-50"
               >
-                やめる
+                <Icon icon={X} size="sm" />
               </button>
               <button
                 type="button"
@@ -776,9 +801,11 @@ function DetailSheetPanel({
                   setConfirmingDelete(false)
                   onDelete(record.id)
                 }}
-                className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+                aria-label="削除する"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
               >
-                削除する
+                <Icon icon={Trash2} size="sm" className="text-white" />
+                削除
               </button>
             </div>
           </div>
@@ -798,9 +825,10 @@ function DetailSheetPanel({
                   type="button"
                   disabled={!interactive || !hasPrevious}
                   onClick={() => onNavigate?.(records[index - 1])}
-                  className="rounded-lg border border-sky-200 px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm enabled:hover:bg-sky-50 disabled:opacity-30"
+                  aria-label="前の記録"
+                  className="flex size-9 items-center justify-center rounded-lg border border-sky-200 text-cyan-800 shadow-sm enabled:hover:bg-sky-50 disabled:opacity-30"
                 >
-                  ‹ 前
+                  <Icon icon={ChevronLeft} size="sm" />
                 </button>
                 <span className="text-xs tabular-nums text-slate-500">
                   {index + 1} / {total}
@@ -809,9 +837,10 @@ function DetailSheetPanel({
                   type="button"
                   disabled={!interactive || !hasNext}
                   onClick={() => onNavigate?.(records[index + 1])}
-                  className="rounded-lg border border-sky-200 px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm enabled:hover:bg-sky-50 disabled:opacity-30"
+                  aria-label="次の記録"
+                  className="flex size-9 items-center justify-center rounded-lg border border-sky-200 text-cyan-800 shadow-sm enabled:hover:bg-sky-50 disabled:opacity-30"
                 >
-                  次 ›
+                  <Icon icon={ChevronRight} size="sm" />
                 </button>
               </div>
             </div>

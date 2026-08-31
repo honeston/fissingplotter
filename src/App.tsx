@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
-import { BrowserRouter, NavLink, Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
 import { RequireAuth } from './components/RequireAuth'
 import { SyncStatusBanner } from './components/SyncStatusBanner'
+import { BottomNav } from './components/ui/BottomNav'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { isPublicContentPath } from './legal/meta'
 import { ChangeEmailPage } from './pages/ChangeEmailPage'
@@ -96,46 +97,7 @@ function AppShell() {
           />
         </Route>
       </Routes>
-      {showNav && (
-        <nav className="sticky bottom-0 border-t border-sky-100 bg-white/90 backdrop-blur">
-          <div className="mx-auto flex max-w-md">
-            <NavLink
-              to="/"
-              end
-              onClick={scrollWindowToTop}
-              className={({ isActive }) =>
-                `flex min-h-12 flex-1 items-center justify-center text-sm font-medium ${
-                  isActive ? 'text-cyan-800' : 'text-slate-400'
-                }`
-              }
-            >
-              記録
-            </NavLink>
-            <NavLink
-              to="/history"
-              onClick={scrollWindowToTop}
-              className={({ isActive }) =>
-                `flex min-h-12 flex-1 items-center justify-center text-sm font-medium ${
-                  isActive ? 'text-cyan-800' : 'text-slate-400'
-                }`
-              }
-            >
-              履歴
-            </NavLink>
-            <NavLink
-              to="/mypage"
-              onClick={scrollWindowToTop}
-              className={({ isActive }) =>
-                `flex min-h-12 flex-1 items-center justify-center text-sm font-medium ${
-                  isActive ? 'text-cyan-800' : 'text-slate-400'
-                }`
-              }
-            >
-              マイページ
-            </NavLink>
-          </div>
-        </nav>
-      )}
+      {showNav && <BottomNav />}
     </div>
   )
 }

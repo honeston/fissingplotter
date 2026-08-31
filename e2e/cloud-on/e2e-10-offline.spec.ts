@@ -5,8 +5,8 @@ test.describe('E2E-10 オフライン', () => {
   test('E2E-10a offline で記録する: 端末に残る', async ({ browser }) => {
     const { page, context } = await openSignedInApp(browser)
     await context.setOffline(true)
-    await page.getByRole('button', { name: '記録する' }).click()
-    await expect(page.getByText('保存しました')).toBeVisible({ timeout: 20_000 })
+    await page.getByTestId('record-submit').click()
+    await expect(page.getByTestId('record-saved')).toBeVisible({ timeout: 20_000 })
     await context.setOffline(false)
     await page.goto('/history')
     await expect(page.getByText('（魚種なし）').first()).toBeVisible()
@@ -15,8 +15,8 @@ test.describe('E2E-10 オフライン', () => {
 
   test('E2E-10b offline で削除 → オンラインで履歴に戻らない', async ({ browser }) => {
     const { page, context } = await openSignedInApp(browser)
-    await page.getByRole('button', { name: '記録する' }).click()
-    await expect(page.getByText('保存しました')).toBeVisible({ timeout: 20_000 })
+    await page.getByTestId('record-submit').click()
+    await expect(page.getByTestId('record-saved')).toBeVisible({ timeout: 20_000 })
     await page.goto('/history')
     await page.getByText('（魚種なし）').first().click()
     await context.setOffline(true)

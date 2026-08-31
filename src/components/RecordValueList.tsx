@@ -1,36 +1,77 @@
+import {
+  Anchor,
+  CloudSun,
+  Fish,
+  Link2,
+  MapPin,
+  Moon,
+  Package,
+  Ruler,
+  Scale,
+  Waves,
+  Wind,
+  type LucideIcon,
+} from 'lucide-react'
 import type { ReactNode } from 'react'
 import { hasCoordinates } from '../lib/coordinates'
 import { hasEditedField } from '../lib/editedFields'
-import { formatSunLine, formatTideCycleMoon, formatTideSlope } from '../lib/formatRecord'
+import { formatTideLine, formatTideSlope } from '../lib/formatRecord'
 import { mapsUrl } from '../lib/maps'
 import { formatFishSize, formatFishWeight } from '../lib/units'
 import { weatherCodeLabel } from '../lib/weatherCode'
 import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import type { FishingRecord } from '../types/record'
 import { hasTackleContent } from '../types/tackle'
+import {
+  sunCompactValue,
+  sunFullLine,
+  sunIconForRecord,
+  tideCycleValue,
+  tideSlopeCompactValue,
+  tideSlopeIcon,
+} from './ui/conditionChips'
+import { FishingRod } from './icons/FishingRod'
+import { Icon } from './ui/Icon'
+import { WeatherIcon } from './ui/WeatherIcon'
 
 export function EditedMark() {
   return <strong className="ml-1 font-bold">（編集済み）</strong>
 }
 
-function Row({
+function IconRow({
+  icon,
   label,
   edited,
   children,
 }: {
+  icon: LucideIcon
   label: string
   edited?: boolean
   children: ReactNode
 }) {
   return (
     <>
-      <dt className="text-slate-500">{label}</dt>
+      <dt className="flex items-center gap-1.5 text-slate-500" title={label}>
+        <Icon icon={icon} size="xs" className="shrink-0 text-slate-400" />
+        <span className="sr-only">{label}</span>
+      </dt>
       <dd className={`min-w-0 text-sky-950 ${edited ? 'font-bold' : ''}`}>
         {children}
         {edited ? <EditedMark /> : null}
       </dd>
     </>
   )
+}
+
+function tideCompactLevel(record: FishingRecord): string | null {
+  const line = formatTideLine(record)
+  if (line === '—') return null
+  if (record.tideLevel != null) {
+    return record.tideHarbor
+      ? `${record.tideLevel}cm · ${record.tideHarbor}`
+      : `${record.tideLevel}cm`
+  }
+  return line.split(' / ')[0]?.replace('潮位 ', '') ?? null
 }
 
 export function RecordValueList({
@@ -43,29 +84,62 @@ export function RecordValueList({
   const coords = hasCoordinates(record)
   const locationEdited = hasEditedField(record, 'location')
   const { prefs } = useUnitPrefs()
+  const sunValue = sunCompactValue(record)
+  const tideValue = tideCompactLevel(record)
+  const tideCycle = tideCycleValue(record)
+  const tideSlopeValue = tideSlopeCompactValue(record)
+  const hasWeather = record.weatherCode != null || record.temperature != null
 
   return (
-    <dl className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-3 gap-y-2 text-sm">
+    <dl className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-3 gap-y-2.5 text-sm">
       {!omitCatchFields && (
         <>
-          <Row label="魚種">{record.fishSpecies ?? '—'}</Row>
-          <Row label="体長">{formatFishSize(record.fishSizeCm, prefs.length)}</Row>
-          <Row label="重さ">{formatFishWeight(record.fishWeightG, prefs.weight)}</Row>
+          <IconRow icon={Fish} label="魚種">
+            {record.fishSpecies ?? '—'}
+          </IconRow>
+          <IconRow icon={Ruler} label="体長">
+            {formatFishSize(record.fishSizeCm, prefs.length)}
+          </IconRow>
+          <IconRow icon={Scale} label="重さ">
+            {formatFishWeight(record.fishWeightG, prefs.weight)}
+          </IconRow>
           {hasTackleContent(record.tackle) && (
             <>
-              {record.tackle!.name ? <Row label="タックル">{record.tackle!.name}</Row> : null}
-              {record.tackle!.rod ? <Row label="ロッド">{record.tackle!.rod}</Row> : null}
-              {record.tackle!.reel ? <Row label="リール">{record.tackle!.reel}</Row> : null}
-              {record.tackle!.line ? <Row label="ライン">{record.tackle!.line}</Row> : null}
-              {record.tackle!.lureOrBait ? (
-                <Row label="ルアー／エサ">{record.tackle!.lureOrBait}</Row>
+              {record.tackle!.name ? (
+                <IconRow icon={FishingRod} label="タックル">
+                  {record.tackle!.name}
+                </IconRow>
               ) : null}
-              {record.tackle!.rig ? <Row label="仕掛け">{record.tackle!.rig}</Row> : null}
+              {record.tackle!.rod ? (
+                <IconRow icon={FishingRod} label="ロッド">
+                  {record.tackle!.rod}
+                </IconRow>
+              ) : null}
+              {record.tackle!.reel ? (
+                <IconRow icon={Package} label="リール">
+                  {record.tackle!.reel}
+                </IconRow>
+              ) : null}
+              {record.tackle!.line ? (
+                <IconRow icon={Link2} label="ライン">
+                  {record.tackle!.line}
+                </IconRow>
+              ) : null}
+              {record.tackle!.lureOrBait ? (
+                <IconRow icon={Fish} label="ルアー／エサ">
+                  {record.tackle!.lureOrBait}
+                </IconRow>
+              ) : null}
+              {record.tackle!.rig ? (
+                <IconRow icon={Anchor} label="仕掛け">
+                  {record.tackle!.rig}
+                </IconRow>
+              ) : null}
             </>
           )}
         </>
       )}
-      <Row label="場所" edited={locationEdited}>
+      <IconRow icon={MapPin} label="場所" edited={locationEdited}>
         {coords ? (
           <a
             href={mapsUrl(record.latitude, record.longitude)}
@@ -80,21 +154,60 @@ export function RecordValueList({
         ) : (
           (record.locationName ?? '—')
         )}
-      </Row>
-      <Row label="天気">{weatherCodeLabel(record.weatherCode)}</Row>
-      <Row label="気温">
-        {record.temperature != null ? `${record.temperature}℃` : '—'}
-      </Row>
-      <Row label="風速">
-        {record.windSpeedMs != null ? `${record.windSpeedMs} m/s` : '—'}
-      </Row>
-      <Row label="太陽">{formatSunLine(record)}</Row>
-      <Row label="潮位">
-        {record.tideLevel != null ? `${record.tideLevel} cm` : '—'}
-        {record.tideHarbor ? `（${record.tideHarbor}）` : ''}
-      </Row>
-      <Row label="潮種">{formatTideCycleMoon(record)}</Row>
-      <Row label="潮位変化">{formatTideSlope(record.tideSlopeCmPerHour)}</Row>
+      </IconRow>
+      {hasWeather && (
+        <IconRow icon={CloudSun} label="天気">
+          <span className="inline-flex items-center gap-1.5">
+            <WeatherIcon code={record.weatherCode} size="xs" />
+            {record.weatherCode != null && (
+              <span>{weatherCodeLabel(record.weatherCode)}</span>
+            )}
+            {record.temperature != null && (
+              <span className="tabular-nums">{record.temperature}℃</span>
+            )}
+          </span>
+        </IconRow>
+      )}
+      {record.windSpeedMs != null && (
+        <IconRow icon={Wind} label="風速">
+          <span className="tabular-nums">{record.windSpeedMs} m/s</span>
+        </IconRow>
+      )}
+      {sunValue && (
+        <IconRow icon={sunIconForRecord(record)} label="太陽">
+          <span className="tabular-nums" title={sunFullLine(record)}>
+            {sunValue}
+          </span>
+        </IconRow>
+      )}
+      {tideCycle && (
+        <IconRow icon={Moon} label="潮種">
+          {tideCycle}
+        </IconRow>
+      )}
+      {(tideValue || tideSlopeValue) && (
+        <IconRow icon={Waves} label="潮位">
+          <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5 tabular-nums">
+            {tideValue && (
+              <span title={formatTideLine(record)}>{tideValue}</span>
+            )}
+            {tideSlopeValue && (
+              <span
+                className="inline-flex items-center gap-1"
+                title={formatTideSlope(record.tideSlopeCmPerHour)}
+              >
+                <Icon
+                  icon={tideSlopeIcon(record)}
+                  size="xs"
+                  className="shrink-0 text-slate-400"
+                />
+                <span className="sr-only">潮位変化</span>
+                {tideSlopeValue}
+              </span>
+            )}
+          </span>
+        </IconRow>
+      )}
     </dl>
   )
 }

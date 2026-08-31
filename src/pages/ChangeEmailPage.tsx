@@ -1,5 +1,9 @@
+import { KeyRound, Mail } from 'lucide-react'
 import { useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
+import { Icon } from '../components/ui/Icon'
+import { IconButton } from '../components/ui/IconButton'
+import { PageHeader } from '../components/ui/PageHeader'
 import { useAuth } from '../contexts/AuthContext'
 
 type Step = 'email' | 'confirm'
@@ -62,30 +66,21 @@ export function ChangeEmailPage() {
 
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
-      <header className="mb-6 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium tracking-wide text-cyan-700">cast mark</p>
-          <h1 className="mt-1 text-2xl font-semibold text-sky-950">メールアドレス変更</h1>
-        </div>
-        <Link
-          to="/mypage"
-          className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
-        >
-          戻る
-        </Link>
-      </header>
+      <PageHeader title="メール変更" icon={Mail} backTo="/mypage" backLabel="戻る" />
 
       {userEmail && (
-        <p className="mb-4 text-sm text-slate-500">
-          現在のメールアドレス: <span className="font-medium text-sky-950">{userEmail}</span>
+        <p className="mb-4 flex items-center gap-1.5 text-sm text-slate-500">
+          <Icon icon={Mail} size="sm" className="text-slate-400" />
+          <span className="truncate font-medium text-sky-950">{userEmail}</span>
         </p>
       )}
 
       {step === 'email' ? (
         <form onSubmit={(e) => void handleEmailSubmit(e)} className="flex flex-col gap-4">
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-sky-900">
-              新しいメールアドレス
+            <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-sky-900">
+              <Icon icon={Mail} size="sm" className="text-cyan-700" />
+              新メール
             </span>
             <input
               type="email"
@@ -109,18 +104,17 @@ export function ChangeEmailPage() {
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={busy}
-            className="min-h-12 rounded-xl bg-cyan-700 px-4 py-3 text-base font-semibold text-white shadow-md disabled:opacity-60"
-          >
-            {busy ? '送信中…' : '確認コードを送信する'}
-          </button>
+          <IconButton type="submit" icon={Mail} label="確認コードを送信する" disabled={busy} fullWidth>
+            {busy ? '送信中…' : 'コード送信'}
+          </IconButton>
         </form>
       ) : (
         <form onSubmit={(e) => void handleConfirmSubmit(e)} className="flex flex-col gap-4">
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-sky-900">確認コード</span>
+            <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-sky-900">
+              <Icon icon={KeyRound} size="sm" className="text-cyan-700" />
+              確認コード
+            </span>
             <input
               type="text"
               inputMode="numeric"
@@ -144,13 +138,9 @@ export function ChangeEmailPage() {
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={busy}
-            className="min-h-12 rounded-xl bg-cyan-700 px-4 py-3 text-base font-semibold text-white shadow-md disabled:opacity-60"
-          >
-            {busy ? '確認中…' : '変更を確定する'}
-          </button>
+          <IconButton type="submit" icon={Mail} label="変更を確定する" disabled={busy} fullWidth>
+            {busy ? '確認中…' : '確定'}
+          </IconButton>
 
           <button
             type="button"

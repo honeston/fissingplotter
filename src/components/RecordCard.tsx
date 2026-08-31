@@ -1,14 +1,14 @@
+import { Download, Maximize2, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { hasCoordinates } from '../lib/coordinates'
 import { hasEditedField } from '../lib/editedFields'
-import { formatSunLine, formatTideLine, formatWeatherLine } from '../lib/formatRecord'
-import { mapsUrl } from '../lib/maps'
 import { formatFishSize, formatFishWeight } from '../lib/units'
 import { saveImageToDevice } from '../lib/saveImageToDevice'
 import { usePhotoUrl } from '../hooks/usePhotoUrl'
 import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import { PhotoLightbox } from './PhotoLightbox'
 import { EditedMark, RecordValueList } from './RecordValueList'
+import { ConditionRow } from './ui/ConditionRow'
+import { Icon } from './ui/Icon'
 import type { FishingRecord } from '../types/record'
 
 interface RecordCardProps {
@@ -68,9 +68,11 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
                 e.stopPropagation()
                 void handleSavePhoto()
               }}
-              className="rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
+              aria-label={savingPhoto ? '保存中…' : '画像を保存'}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 px-3 py-1.5 text-sm text-cyan-800 hover:bg-sky-50 disabled:opacity-60"
             >
-              {savingPhoto ? '保存中…' : '画像を保存'}
+              <Icon icon={Download} size="sm" />
+              <span className="sr-only">{savingPhoto ? '保存中…' : '画像を保存'}</span>
             </button>
             {saveError && (
               <p className="mt-1.5 text-sm text-red-600" role="alert">
@@ -131,61 +133,14 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
               if (!window.confirm('この記録を削除しますか？')) return
               onDelete(record.id)
             }}
-            className="shrink-0 rounded-md px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+            aria-label="削除"
+            className="flex size-8 shrink-0 items-center justify-center rounded-md text-red-600 hover:bg-red-50"
           >
-            削除
+            <Icon icon={Trash2} size="sm" label="削除" />
           </button>
         )}
       </div>
-      <RecordDetails record={record} />
-    </div>
-  )
-}
-
-function RecordDetails({ record }: { record: FishingRecord }) {
-  const sunLine = formatSunLine(record)
-  const locationEdited = hasEditedField(record, 'location')
-
-  return (
-    <div className="mt-1 min-w-0">
-      <p className="mt-1 whitespace-nowrap text-xs text-slate-500">
-        {formatWeatherLine(record)}
-      </p>
-      {sunLine !== '—' && (
-        <p className="mt-0.5 whitespace-nowrap text-xs text-slate-500">{sunLine}</p>
-      )}
-      <p className="mt-0.5 whitespace-nowrap text-xs text-slate-500">
-        {formatTideLine(record)}
-      </p>
-      <a
-        href={
-          hasCoordinates(record)
-            ? mapsUrl(record.latitude, record.longitude)
-            : undefined
-        }
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`mt-1 inline-block whitespace-nowrap text-xs ${
-          locationEdited
-            ? 'font-bold text-sky-950'
-            : hasCoordinates(record)
-              ? 'text-cyan-700 underline'
-              : 'text-slate-400 no-underline'
-        }`}
-        onClick={(e) => {
-          if (!hasCoordinates(record)) {
-            e.preventDefault()
-            return
-          }
-          e.stopPropagation()
-        }}
-      >
-        {hasCoordinates(record)
-          ? (record.locationName ??
-            `${record.latitude.toFixed(5)}, ${record.longitude.toFixed(5)}`)
-          : (record.locationName ?? '座標なし')}
-        {locationEdited ? <EditedMark /> : null}
-      </a>
+      <ConditionRow record={record} compact />
     </div>
   )
 }
@@ -272,8 +227,8 @@ function PhotoFrame({
             }`}
           />
           {imageReady && (
-            <span className="pointer-events-none absolute right-2 bottom-2 rounded-md bg-sky-950/60 px-2 py-0.5 text-xs text-white">
-              拡大
+            <span className="pointer-events-none absolute right-2 bottom-2 rounded-md bg-sky-950/60 p-1 text-white">
+              <Icon icon={Maximize2} size="xs" label="拡大" />
             </span>
           )}
         </div>

@@ -1,3 +1,5 @@
+import { BookOpen, Calendar, ChevronDown, ChevronUp, Fish, Ruler, Scale } from 'lucide-react'
+import { FishingRod } from '../components/icons/FishingRod'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FishSpeciesInput } from '../components/FishSpeciesInput'
@@ -8,6 +10,9 @@ import { SavedRecordSummary } from '../components/SavedRecordSummary'
 import { TackleFieldsForm } from '../components/TackleFieldsForm'
 import { TideAttribution } from '../components/TideAttribution'
 import { WeatherAttribution } from '../components/WeatherAttribution'
+import { IconButton } from '../components/ui/IconButton'
+import { PageHeader } from '../components/ui/PageHeader'
+import { Icon } from '../components/ui/Icon'
 import { useRecord } from '../hooks/useRecord'
 import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import { canonicalFishSpeciesName } from '../lib/fishSpecies'
@@ -223,19 +228,30 @@ export function HomePage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
-      <header ref={topRef} className="mb-8 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium tracking-wide text-cyan-700">cast mark</p>
-          <h1 className="mt-1 text-2xl font-semibold text-sky-950">記録</h1>
-        </div>
-        <Link
-          to="/history"
-          className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
-        >
-          履歴
-        </Link>
-      </header>
+    <main ref={topRef} className="flex flex-1 flex-col px-4 pb-8 pt-6">
+      <PageHeader
+        title="記録"
+        action={
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              to="/history"
+              aria-label="履歴"
+              data-testid="header-history"
+              className="flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-sky-200 bg-white text-cyan-800 shadow-sm"
+            >
+              <Icon icon={Calendar} size="sm" label="履歴" />
+            </Link>
+            <Link
+              to="/mypage/encyclopedia"
+              aria-label="図鑑"
+              data-testid="header-encyclopedia"
+              className="flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-sky-200 bg-white text-cyan-800 shadow-sm"
+            >
+              <Icon icon={BookOpen} size="sm" label="図鑑" />
+            </Link>
+          </div>
+        }
+      />
 
       <PhotoInput
         previewUrl={photoPreviewUrl}
@@ -249,11 +265,13 @@ export function HomePage() {
 
       <div className="mb-4 grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor="fish-size">
-            体長 {lengthUnitLabel(prefs.length)}（任意）
+          <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-sky-900" htmlFor="fish-size">
+            <Icon icon={Ruler} size="sm" className="text-cyan-700" />
+            {lengthUnitLabel(prefs.length)}
           </label>
           <input
             id="fish-size"
+            aria-label={`体長 ${lengthUnitLabel(prefs.length)}`}
             type="number"
             inputMode="decimal"
             min={0}
@@ -266,11 +284,13 @@ export function HomePage() {
           />
         </div>
         <div>
-          <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor="fish-weight">
-            重さ {weightUnitLabel(prefs.weight)}（任意）
+          <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-sky-900" htmlFor="fish-weight">
+            <Icon icon={Scale} size="sm" className="text-cyan-700" />
+            {weightUnitLabel(prefs.weight)}
           </label>
           <input
             id="fish-weight"
+            aria-label={`重さ ${weightUnitLabel(prefs.weight)}`}
             type="number"
             inputMode="decimal"
             min={0}
@@ -293,14 +313,20 @@ export function HomePage() {
             setTackleMessage('')
           }}
           disabled={busy}
-          className="w-full rounded-xl border border-sky-200 bg-white px-4 py-3 text-left text-sm font-medium text-cyan-800 shadow-sm disabled:opacity-60"
+          aria-expanded={tackleOpen}
+          aria-label="タックル入力を開く"
+          className="flex w-full items-center justify-between rounded-xl border border-sky-200 bg-white px-4 py-3 text-sm font-medium text-cyan-800 shadow-sm disabled:opacity-60"
         >
-          {tackleOpen ? 'タックル入力を閉じる' : 'タックル入力を開く'}
-          {hasTackleContent(tackle) && !tackleOpen ? (
-            <span className="mt-0.5 block text-xs font-normal text-slate-500">
-              {tackle.name || '入力あり'}
-            </span>
-          ) : null}
+          <span className="inline-flex items-center gap-2">
+            <Icon icon={FishingRod} size="sm" />
+            タックル
+            {hasTackleContent(tackle) && !tackleOpen ? (
+              <span className="text-xs font-normal text-slate-500">
+                {tackle.name || '入力あり'}
+              </span>
+            ) : null}
+          </span>
+          <Icon icon={tackleOpen ? ChevronUp : ChevronDown} size="sm" />
         </button>
 
         {tackleOpen && (
@@ -369,20 +395,16 @@ export function HomePage() {
               disabled={busy}
               idPrefix="home-tackle"
             />
-            <label className="mt-3 flex items-start gap-2 text-sm text-sky-900">
+            <label className="mt-3 flex items-center gap-2 text-sm text-sky-900">
               <input
                 type="checkbox"
                 checked={keepTackle}
                 onChange={(e) => handleKeepTackleChange(e.target.checked)}
                 disabled={busy}
-                className="mt-0.5 size-4 accent-cyan-700"
+                aria-label="次回もこのタックルを使う"
+                className="size-4 accent-cyan-700"
               />
-              <span>
-                次回もこのタックルを使う
-                <span className="mt-0.5 block text-xs font-normal text-slate-500">
-                  記録後も入力を残し、次から入力を省略できます
-                </span>
-              </span>
+              <span>次回も使う</span>
             </label>
             {tackleMessage && (
               <p className="mt-2 text-sm text-cyan-800" role="status">
@@ -393,42 +415,45 @@ export function HomePage() {
         )}
       </div>
 
-      <p className="mb-4 text-sm text-slate-500">
-        ボタンを押すと、現在地・天気・気温・潮位を取得して保存します。位置情報が取れない場合も記録できます（オフライン時は端末のみ）。
-      </p>
-
       <div className="mt-auto">
         {fatalError && (
           <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
             {fatalError}
           </p>
         )}
-        <button
-          type="button"
+        <IconButton
+          icon={Fish}
+          label="記録する"
           onClick={() => void handleRecord()}
           disabled={busy}
-          className="flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-700 px-4 py-3 text-base font-semibold text-white shadow-md transition enabled:active:scale-[0.98] enabled:hover:bg-cyan-800 disabled:opacity-60"
+          fullWidth
+          testId="record-submit"
         >
-          {busy ? '記録中…' : '記録する'}
-        </button>
+          {busy ? '記録中…' : '記録'}
+        </IconButton>
         <div ref={statusRef} tabIndex={-1} className="mt-4 scroll-mt-4 outline-none">
           <RecordProgress steps={steps} errors={errors} />
           {lastResult && (
             <div ref={summaryRef} tabIndex={-1} className="scroll-mt-4 outline-none">
               <SavedRecordSummary result={lastResult} />
               <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
+                <IconButton
+                  icon={Fish}
+                  label="続けて記録"
                   onClick={scrollToTop}
-                  className="flex min-h-11 flex-1 items-center justify-center rounded-xl bg-cyan-700 px-3 py-2 text-sm font-semibold text-white shadow-sm enabled:active:scale-[0.98]"
+                  testId="record-continue"
+                  fullWidth
                 >
-                  続けて記録
-                </button>
+                  続ける
+                </IconButton>
                 <Link
                   to="/history"
-                  className="flex min-h-11 flex-1 items-center justify-center rounded-xl border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
+                  aria-label="履歴を見る"
+                  data-testid="view-history"
+                  className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
                 >
-                  履歴を見る
+                  <Icon icon={Calendar} size="sm" />
+                  履歴
                 </Link>
               </div>
             </div>

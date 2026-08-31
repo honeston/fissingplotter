@@ -1,9 +1,13 @@
+import { BookOpen, Calendar, FishSymbol, X } from 'lucide-react'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import type { DateRange } from 'react-day-picker'
 import { HistoryCalendar } from '../components/HistoryCalendar'
 import { RecordCard } from '../components/RecordCard'
 import { RecordDetailSheet } from '../components/RecordDetailSheet'
+import { EmptyState } from '../components/ui/EmptyState'
+import { Icon } from '../components/ui/Icon'
+import { PageHeader } from '../components/ui/PageHeader'
 import { useRecords } from '../hooks/useRecords'
 import {
   dateFromKey,
@@ -111,20 +115,30 @@ export function HistoryPage() {
 
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
-      <header className="mb-6 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium tracking-wide text-cyan-700">
-            cast mark
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold text-sky-950">履歴</h1>
-        </div>
-        <Link
-          to="/"
-          className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
-        >
-          記録
-        </Link>
-      </header>
+      <PageHeader
+        title="履歴"
+        icon={Calendar}
+        action={
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              to="/"
+              aria-label="記録"
+              data-testid="header-record"
+              className="flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-sky-200 bg-white text-cyan-800 shadow-sm"
+            >
+              <Icon icon={FishSymbol} size="sm" label="記録" />
+            </Link>
+            <Link
+              to="/mypage/encyclopedia"
+              aria-label="図鑑"
+              data-testid="header-encyclopedia"
+              className="flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-sky-200 bg-white text-cyan-800 shadow-sm"
+            >
+              <Icon icon={BookOpen} size="sm" label="図鑑" />
+            </Link>
+          </div>
+        }
+      />
 
       {statusMessage && (
         <p
@@ -140,30 +154,28 @@ export function HistoryPage() {
           selectedRange={selectedRange}
           onSelectRange={setSelectedRange}
         />
-        <p className="mt-2 text-center text-xs text-slate-500">
-          開始日と終了日をタップして期間を指定
-        </p>
       </div>
 
       {normalizedRange && (
         <div className="mb-3 flex items-center justify-between gap-2">
           <p className="text-sm text-sky-900">
             {formatDateRangeLabel(normalizedRange.from, normalizedRange.to)}
-            <span className="ml-1 text-slate-500">
-              （{navigableRecords.length}件）
+            <span className="ml-1 rounded-full bg-cyan-100 px-2 py-0.5 text-xs tabular-nums text-cyan-900">
+              {navigableRecords.length}
             </span>
           </p>
           <button
             type="button"
             onClick={() => setSelectedRange(undefined)}
-            className="shrink-0 text-xs text-cyan-700 underline"
+            aria-label="期間を解除"
+            className="flex size-8 items-center justify-center rounded-lg text-cyan-700 hover:bg-sky-50"
           >
-            期間を解除
+            <Icon icon={X} size="sm" label="期間を解除" />
           </button>
         </div>
       )}
 
-      <div className="mb-3 h-[40dvh] w-full overflow-hidden rounded-xl border border-sky-100 shadow-sm">
+      <div className="mb-6 h-[40dvh] w-full overflow-hidden rounded-xl border border-sky-100 shadow-sm">
         <Suspense
           fallback={
             <div className="h-full w-full rounded-xl bg-sky-50" aria-hidden />
@@ -175,39 +187,34 @@ export function HistoryPage() {
           />
         </Suspense>
       </div>
-      <Link
-        to="/mypage/encyclopedia"
-        className="mb-6 flex min-h-11 items-center justify-center rounded-xl border border-sky-200 bg-white px-4 py-3 text-sm font-medium text-cyan-800 shadow-sm"
-      >
-        マイ魚種図鑑
-      </Link>
-
       {loading && <p className="text-sm text-slate-500">読み込み中…</p>}
       {error && <p className="text-sm text-red-700">{error}</p>}
 
       {!loading && !error && records.length === 0 && (
-        <p className="rounded-xl border border-dashed border-sky-200 bg-white/70 px-4 py-8 text-center text-sm text-slate-500">
-          まだ記録がありません
-        </p>
+        <EmptyState icon={FishSymbol} message="まだ記録がありません" testId="empty-records" />
       )}
 
       {!loading &&
         !error &&
         records.length > 0 &&
         recordSections.length === 0 && (
-          <p className="rounded-xl border border-dashed border-sky-200 bg-white/70 px-4 py-8 text-center text-sm text-slate-500">
-            {normalizedRange
-              ? 'この期間の記録はありません'
-              : 'この日の記録はありません'}
-          </p>
+          <EmptyState
+            icon={Calendar}
+            message={
+              normalizedRange ? 'この期間の記録はありません' : 'この日の記録はありません'
+            }
+          />
         )}
 
       <div className="flex flex-col gap-6">
         {recordSections.map(({ dateKey, date, records: dayRecords }) => (
           <section key={dateKey}>
-            <p className="mb-3 text-base font-semibold text-sky-950">
-              {formatDateLabel(date)}の記録（{dayRecords.length}件）
-            </p>
+            <div className="mb-3 flex items-center gap-2">
+              <p className="text-base font-semibold text-sky-950">{formatDateLabel(date)}</p>
+              <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs tabular-nums text-sky-800">
+                {dayRecords.length}
+              </span>
+            </div>
             <ul className="flex flex-col gap-3">
               {dayRecords.map((record) => (
                 <li

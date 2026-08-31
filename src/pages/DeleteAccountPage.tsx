@@ -1,5 +1,9 @@
+import { AlertTriangle, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Icon } from '../components/ui/Icon'
+import { IconButton } from '../components/ui/IconButton'
+import { PageHeader } from '../components/ui/PageHeader'
 import { useAuth } from '../contexts/AuthContext'
 import { deleteAccount } from '../lib/api'
 import { clearLocalUserData } from '../lib/storage'
@@ -41,36 +45,27 @@ export function DeleteAccountPage() {
 
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
-      <header className="mb-6 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium tracking-wide text-cyan-700">cast mark</p>
-          <h1 className="mt-1 text-2xl font-semibold text-sky-950">退会</h1>
-        </div>
-        <Link
-          to="/mypage"
-          className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
-        >
-          戻る
-        </Link>
-      </header>
+      <PageHeader title="退会" icon={Trash2} backTo="/mypage" backLabel="戻る" />
 
       <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
         <div className="rounded-xl border border-red-200 bg-red-50/60 px-4 py-3 text-sm text-sky-950">
-          <p className="font-medium text-red-800">この操作は取り消せません</p>
+          <p className="flex items-center gap-2 font-medium text-red-800">
+            <Icon icon={AlertTriangle} size="sm" />
+            取り消せません
+          </p>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-700">
-            <li>アカウントにすぐログインできなくなります</li>
-            <li>クラウド上の釣り記録・写真は退会後 7 日以内に削除されます</li>
-            <li>この端末に保存された記録・写真・タックルも削除されます</li>
+            <li>ログイン不可</li>
+            <li>クラウドデータは7日以内に削除</li>
+            <li>端末の記録・写真・タックルも削除</li>
           </ul>
           <p className="mt-3 text-slate-600">
-            データの取扱いの詳細は
+            詳細は
             <Link
               to="/privacy"
               className="underline decoration-slate-300 underline-offset-2 hover:text-cyan-800"
             >
               プライバシーポリシー
             </Link>
-            をご覧ください。
           </p>
         </div>
 
@@ -82,9 +77,7 @@ export function DeleteAccountPage() {
             disabled={busy}
             className="mt-1 size-4 shrink-0 accent-red-700"
           />
-          <span className="text-sm text-sky-950">
-            上記の内容を理解し、アカウントを削除することに同意します
-          </span>
+          <span className="text-sm text-sky-950">削除に同意します</span>
         </label>
 
         {error && (
@@ -93,13 +86,16 @@ export function DeleteAccountPage() {
           </p>
         )}
 
-        <button
+        <IconButton
           type="submit"
+          icon={Trash2}
+          label="退会する"
+          variant="danger"
           disabled={busy || !confirmed}
-          className="min-h-12 rounded-xl bg-red-700 px-4 py-3 text-base font-semibold text-white shadow-md disabled:opacity-60"
+          fullWidth
         >
-          {busy ? '退会処理中…' : '退会する'}
-        </button>
+          {busy ? '処理中…' : '退会'}
+        </IconButton>
       </form>
     </main>
   )

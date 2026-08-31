@@ -1,6 +1,10 @@
+import { KeyRound, Lock, LogIn, Mail, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { LegalLinks } from '../components/LegalLinks'
+import { Icon } from '../components/ui/Icon'
+import { IconButton } from '../components/ui/IconButton'
+import { PageHeader } from '../components/ui/PageHeader'
 import { useAuth } from '../contexts/AuthContext'
 
 type Mode = 'login' | 'signup' | 'confirm'
@@ -55,7 +59,9 @@ export function LoginPage() {
   }
 
   const formTitle =
-    mode === 'login' ? 'ログイン' : mode === 'signup' ? '新規登録' : '確認コード'
+    mode === 'login' ? 'ログイン' : mode === 'signup' ? '登録' : '確認'
+
+  const headerIcon = mode === 'signup' ? UserPlus : mode === 'confirm' ? Mail : LogIn
 
   function switchMode(next: 'login' | 'signup') {
     setMode(next)
@@ -67,34 +73,20 @@ export function LoginPage() {
 
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
-      <header className="mb-6 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium tracking-wide text-cyan-700">cast mark</p>
-          <h1 className="mt-1 text-2xl font-semibold text-sky-950">{formTitle}</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            {mode === 'confirm'
-              ? 'メールに届いた確認コードを入力してください。'
-              : mode === 'signup'
-                ? 'メールアドレスでアカウントを作成します。記録時は位置情報を使います。'
-                : 'クラウド同期にはアカウントが必要です。記録時は位置情報を使います。'}
-          </p>
-        </div>
-        <Link
-          to="/"
-          className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
-        >
-          戻る
-        </Link>
-      </header>
+      <PageHeader title={formTitle} icon={headerIcon} backTo="/" backLabel="戻る" />
 
       <section>
         <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-sky-900">メールアドレス</span>
+            <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-sky-900">
+              <Icon icon={Mail} size="sm" className="text-cyan-700" />
+              メール
+            </span>
             <input
               type="email"
               autoComplete="email"
               required
+              placeholder="email@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={mode === 'confirm' || busy}
@@ -104,12 +96,16 @@ export function LoginPage() {
 
           {mode !== 'confirm' && (
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-sky-900">パスワード</span>
+              <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-sky-900">
+                <Icon icon={Lock} size="sm" className="text-cyan-700" />
+                パスワード
+              </span>
               <input
                 type="password"
                 autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                 required
                 minLength={8}
+                placeholder="8文字以上"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={busy}
@@ -120,7 +116,10 @@ export function LoginPage() {
 
           {mode === 'confirm' && (
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-sky-900">確認コード</span>
+              <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-sky-900">
+                <Icon icon={KeyRound} size="sm" className="text-cyan-700" />
+                確認コード
+              </span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -180,19 +179,30 @@ export function LoginPage() {
             </p>
           )}
 
-          <button
+          <IconButton
             type="submit"
+            icon={headerIcon}
+            label={
+              busy
+                ? '処理中…'
+                : mode === 'login'
+                  ? 'ログイン'
+                  : mode === 'signup'
+                    ? '登録する'
+                    : '確認する'
+            }
             disabled={busy || (mode === 'signup' && !agreed)}
-            className="min-h-12 rounded-xl bg-cyan-700 px-4 py-3 text-base font-semibold text-white shadow-md disabled:opacity-60"
+            fullWidth
+            testId="auth-submit"
           >
             {busy
               ? '処理中…'
               : mode === 'login'
                 ? 'ログイン'
                 : mode === 'signup'
-                  ? '登録する'
-                  : '確認する'}
-          </button>
+                  ? '登録'
+                  : '確認'}
+          </IconButton>
         </form>
 
         <div className="mt-6 space-y-2 text-sm text-cyan-800">
