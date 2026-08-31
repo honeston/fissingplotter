@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { hasCoordinates } from '../lib/coordinates'
 import { hasEditedField } from '../lib/editedFields'
 import { formatSunLine, formatTideLine, formatWeatherLine } from '../lib/formatRecord'
@@ -44,10 +44,7 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
   if (showLargePhoto) {
     return (
       <div>
-        <div
-          data-photo-zoom
-          className="relative mb-3 flex h-64 items-center justify-center overflow-hidden rounded-xl border border-sky-200 bg-sky-50"
-        >
+        <div className="relative mb-3 flex h-64 items-center justify-center overflow-hidden rounded-xl border border-sky-200 bg-sky-50">
           <PhotoFrame
             url={photoUrl}
             loading={photoLoading}
@@ -209,6 +206,8 @@ export function LoadingSpinner({
   )
 }
 
+const PHOTO_TAP_PX = 10
+
 function PhotoFrame({
   url,
   loading,
@@ -221,10 +220,58 @@ function PhotoFrame({
   onOpen?: () => void
 }) {
   const [imageReady, setImageReady] = useState(false)
+  const tapRef = useRef<{ pointerId: number; x: number; y: number } | null>(null)
+  const finishTapRef = useRef<((event: PointerEvent) => void) | null>(null)
 
   useEffect(() => {
     setImageReady(false)
   }, [url])
+
+  useEffect(() => {
+    return () => {
+      if (finishTapRef.current) {
+        window.removeEventListener('pointerup', finishTapRef.current)
+        window.removeEventListener('pointercancel', finishTapRef.current)
+      }
+    }
+  }, [])
+
+  function onPhotoPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (!onOpen || !url || !imageReady) return
+    const openPhoto = onOpen
+
+    if (finishTapRef.current) {
+      window.removeEventListener('pointerup', finishTapRef.current)
+      window.removeEventListener('pointercancel', finishTapRef.current)
+    }
+
+    tapRef.current = {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+    }
+
+    function finishTap(event: PointerEvent) {
+      if (tapRef.current?.pointerId !== event.pointerId) return
+      window.removeEventListener('pointerup', finishTap)
+      window.removeEventListener('pointercancel', finishTap)
+      finishTapRef.current = null
+
+      const tap = tapRef.current
+      tapRef.current = null
+      if (!tap) return
+
+      const dx = event.clientX - tap.x
+      const dy = event.clientY - tap.y
+      if (Math.abs(dx) < PHOTO_TAP_PX && Math.abs(dy) < PHOTO_TAP_PX) {
+        openPhoto()
+      }
+    }
+
+    finishTapRef.current = finishTap
+    window.addEventListener('pointerup', finishTap)
+    window.addEventListener('pointercancel', finishTap)
+  }
 
   const showSpinner = loading || Boolean(url && !imageReady)
 
@@ -236,15 +283,17 @@ function PhotoFrame({
         </div>
       )}
       {url ? (
-        <button
-          type="button"
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation()
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="写真を拡大"
+          onPointerDown={onPhotoPointerDown}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return
+            event.preventDefault()
             onOpen?.()
           }}
-          aria-label="写真を拡大"
-          className="relative block h-full w-full cursor-zoom-in border-0 bg-transparent p-0 touch-manipulation"
+          className="relative block h-full w-full cursor-zoom-in"
         >
           <img
             src={url}
@@ -260,7 +309,7 @@ function PhotoFrame({
               拡大
             </span>
           )}
-        </button>
+        </div>
       ) : (
         !loading && <span className="text-sm text-slate-400">写真なし</span>
       )}
