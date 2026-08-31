@@ -119,14 +119,24 @@ export function HistoryPage() {
         title="履歴"
         icon={Calendar}
         action={
-          <Link
-            to="/"
-            aria-label="記録"
-            data-testid="header-record"
-            className="flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-sky-200 bg-white text-cyan-800 shadow-sm"
-          >
-            <Icon icon={FishSymbol} size="sm" label="記録" />
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              to="/"
+              aria-label="記録"
+              data-testid="header-record"
+              className="flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-sky-200 bg-white text-cyan-800 shadow-sm"
+            >
+              <Icon icon={FishSymbol} size="sm" label="記録" />
+            </Link>
+            <Link
+              to="/mypage/encyclopedia"
+              aria-label="図鑑"
+              data-testid="header-encyclopedia"
+              className="flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-sky-200 bg-white text-cyan-800 shadow-sm"
+            >
+              <Icon icon={BookOpen} size="sm" label="図鑑" />
+            </Link>
+          </div>
         }
       />
 
@@ -165,7 +175,7 @@ export function HistoryPage() {
         </div>
       )}
 
-      <div className="mb-3 h-[40dvh] w-full overflow-hidden rounded-xl border border-sky-100 shadow-sm">
+      <div className="mb-6 h-[40dvh] w-full overflow-hidden rounded-xl border border-sky-100 shadow-sm">
         <Suspense
           fallback={
             <div className="h-full w-full rounded-xl bg-sky-50" aria-hidden />
@@ -177,15 +187,6 @@ export function HistoryPage() {
           />
         </Suspense>
       </div>
-      <Link
-        to="/mypage/encyclopedia"
-        data-testid="encyclopedia-link"
-        className="mb-6 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-sky-200 bg-white px-4 py-3 text-sm font-medium text-cyan-800 shadow-sm"
-      >
-        <Icon icon={BookOpen} size="sm" />
-        図鑑
-      </Link>
-
       {loading && <p className="text-sm text-slate-500">読み込み中…</p>}
       {error && <p className="text-sm text-red-700">{error}</p>}
 

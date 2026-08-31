@@ -1,4 +1,4 @@
-import { Calendar, ChevronDown, ChevronUp, Fish, Package, Ruler, Scale } from 'lucide-react'
+import { BookOpen, Calendar, ChevronDown, ChevronUp, Fish, Package, Ruler, Scale } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FishSpeciesInput } from '../components/FishSpeciesInput'
@@ -231,14 +231,24 @@ export function HomePage() {
       <PageHeader
         title="記録"
         action={
-          <Link
-            to="/history"
-            aria-label="履歴"
-            data-testid="header-history"
-            className="flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-sky-200 bg-white text-cyan-800 shadow-sm"
-          >
-            <Icon icon={Calendar} size="sm" label="履歴" />
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              to="/history"
+              aria-label="履歴"
+              data-testid="header-history"
+              className="flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-sky-200 bg-white text-cyan-800 shadow-sm"
+            >
+              <Icon icon={Calendar} size="sm" label="履歴" />
+            </Link>
+            <Link
+              to="/mypage/encyclopedia"
+              aria-label="図鑑"
+              data-testid="header-encyclopedia"
+              className="flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-sky-200 bg-white text-cyan-800 shadow-sm"
+            >
+              <Icon icon={BookOpen} size="sm" label="図鑑" />
+            </Link>
+          </div>
         }
       />
 
