@@ -1,3 +1,4 @@
+import { BookOpen } from 'lucide-react'
 import { useEffect, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -6,6 +7,7 @@ import {
   RecordScreenMock,
 } from '../components/AppScreenMocks'
 import { LegalLinks } from '../components/LegalLinks'
+import { PageHeader } from '../components/ui/PageHeader'
 import { useAuth } from '../contexts/AuthContext'
 import { SERVICE_NAME } from '../legal/meta'
 
@@ -58,21 +60,7 @@ export function GuidePage() {
 
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
-      <header className="mb-6 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium tracking-wide text-cyan-700">{SERVICE_NAME}</p>
-          <h1 className="mt-1 text-2xl font-semibold text-sky-950">使い方</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            釣行の条件と釣果を、その場で残すための手順です。
-          </p>
-        </div>
-        <Link
-          to={backTo}
-          className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
-        >
-          戻る
-        </Link>
-      </header>
+      <PageHeader title="使い方" icon={BookOpen} backTo={backTo} backLabel="戻る" />
 
       <nav aria-label="目次" className="mb-8 rounded-xl border border-sky-200 bg-white px-4 py-3 shadow-sm">
         <p className="mb-2 text-sm font-medium text-sky-900">目次</p>

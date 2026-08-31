@@ -1,6 +1,8 @@
+import { Package, Plus } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { TackleFieldsForm } from '../components/TackleFieldsForm'
+import { IconButton } from '../components/ui/IconButton'
+import { PageHeader } from '../components/ui/PageHeader'
 import { listMyTackles, MY_TACKLE_EVENT, removeMyTackle, saveMyTackle } from '../lib/myTackle'
 import {
   EMPTY_TACKLE_FIELDS,
@@ -114,27 +116,19 @@ export function MyTacklePage() {
 
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
-      <header className="mb-6 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium tracking-wide text-cyan-700">cast mark</p>
-          <h1 className="mt-1 text-2xl font-semibold text-sky-950">マイタックル</h1>
-        </div>
-        <Link
-          to="/mypage"
-          className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
-        >
-          戻る
-        </Link>
-      </header>
+      <PageHeader title="マイタックル" icon={Package} backTo="/mypage" backLabel="戻る" />
 
       {!showForm && (
-        <button
-          type="button"
+        <IconButton
+          icon={Plus}
+          label="新しいタックルを追加"
           onClick={startCreate}
-          className="mb-4 rounded-xl border border-cyan-600 bg-cyan-50 px-4 py-3 text-sm font-medium text-cyan-900 shadow-sm"
+          variant="secondary"
+          fullWidth
+          className="mb-4 border-cyan-600 bg-cyan-50 text-cyan-900"
         >
-          新しいタックルを追加
-        </button>
+          追加
+        </IconButton>
       )}
 
       {showForm && (

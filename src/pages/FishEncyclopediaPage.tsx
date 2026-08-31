@@ -1,6 +1,8 @@
+import { BookOpen } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { LoadingSpinner } from '../components/RecordCard'
+import { PageHeader } from '../components/ui/PageHeader'
 import { usePhotoUrl } from '../hooks/usePhotoUrl'
 import { useRecords } from '../hooks/useRecords'
 import { useUnitPrefs } from '../hooks/useUnitPrefs'
@@ -72,18 +74,7 @@ export function FishEncyclopediaPage() {
 
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
-      <header className="mb-6 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium tracking-wide text-cyan-700">cast mark</p>
-          <h1 className="mt-1 text-2xl font-semibold text-sky-950">マイ魚種図鑑</h1>
-        </div>
-        <Link
-          to="/mypage"
-          className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-cyan-800 shadow-sm"
-        >
-          戻る
-        </Link>
-      </header>
+      <PageHeader title="マイ魚種図鑑" icon={BookOpen} backTo="/mypage" backLabel="戻る" />
 
       <div className="mb-4 flex flex-wrap gap-2">
         {SORT_OPTIONS.map(({ key, label }) => {

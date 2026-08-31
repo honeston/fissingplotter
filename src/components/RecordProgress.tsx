@@ -1,25 +1,28 @@
+import { Camera, Cloud, MapPin, Save, Waves } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import type { RecordStepErrors, RecordSteps, StepState } from '../hooks/useRecord'
+import { Icon } from './ui/Icon'
 
-const labels: { key: keyof RecordSteps; label: string }[] = [
-  { key: 'geo', label: '位置' },
-  { key: 'weather', label: '天気・気温' },
-  { key: 'tide', label: '潮位' },
-  { key: 'save', label: '保存' },
-  { key: 'photo', label: '写真' },
+const labels: { key: keyof RecordSteps; label: string; icon: LucideIcon }[] = [
+  { key: 'geo', label: '位置', icon: MapPin },
+  { key: 'weather', label: '天気', icon: Cloud },
+  { key: 'tide', label: '潮位', icon: Waves },
+  { key: 'save', label: '保存', icon: Save },
+  { key: 'photo', label: '写真', icon: Camera },
 ]
 
 function statusText(state: StepState) {
   switch (state) {
     case 'pending':
-      return '取得中…'
+      return '…'
     case 'ok':
-      return '完了'
+      return '✓'
     case 'error':
-      return '失敗'
+      return '×'
     case 'skipped':
       return '—'
     default:
-      return '待機'
+      return '·'
   }
 }
 
@@ -50,19 +53,20 @@ export function RecordProgress({
 
   return (
     <section className="mb-4 rounded-xl border border-sky-100 bg-white/90 px-4 py-3">
-      <h2 className="mb-2 text-sm font-semibold text-sky-950">取得状況</h2>
-      <ul className="space-y-1.5">
-        {labels.map(({ key, label }) => (
-          <li key={key} className="flex items-start justify-between gap-3 text-sm">
-            <span className="text-slate-600">{label}</span>
-            <span className={`text-right ${statusClass(steps[key])}`}>
+      <ul className="flex flex-wrap gap-3">
+        {labels.map(({ key, label, icon }) => (
+          <li
+            key={key}
+            className="flex items-center gap-1.5 text-sm"
+            title={errors[key] ? `${label}: ${errors[key]}` : label}
+          >
+            <Icon icon={icon} size="sm" className="text-slate-400" />
+            <span className={`tabular-nums ${statusClass(steps[key])}`}>
               {statusText(steps[key])}
-              {errors[key] ? (
-                <span className="mt-0.5 block text-xs font-normal text-red-600">
-                  {errors[key]}
-                </span>
-              ) : null}
             </span>
+            {errors[key] ? (
+              <span className="sr-only">{errors[key]}</span>
+            ) : null}
           </li>
         ))}
       </ul>

@@ -16,8 +16,8 @@ export async function waitForRecordHome(page: Page) {
 }
 
 export async function saveRecord(page: Page) {
-  await page.getByRole('button', { name: '記録する' }).click()
-  await expect(page.getByText('保存しました', { exact: true })).toBeVisible({
+  await page.getByTestId('record-submit').click()
+  await expect(page.getByTestId('record-saved')).toBeVisible({
     timeout: 20_000,
   })
 }

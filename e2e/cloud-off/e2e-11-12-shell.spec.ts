@@ -3,9 +3,9 @@ import { expect, test } from '../helpers'
 test.describe('E2E-11 / E2E-12 シェルと静的ページ（クラウド無効）', () => {
   test('E2E-11 記録ホームに 3 タブ。公開ページでは出ない', async ({ freshPage: page }) => {
     const nav = page.locator('nav.sticky')
-    await expect(nav.getByRole('link', { name: '記録' })).toBeVisible()
-    await expect(nav.getByRole('link', { name: '履歴' })).toBeVisible()
-    await expect(nav.getByRole('link', { name: 'マイページ' })).toBeVisible()
+    await expect(nav.getByTestId('nav-record')).toBeVisible()
+    await expect(nav.getByTestId('nav-history')).toBeVisible()
+    await expect(nav.getByTestId('nav-mypage')).toBeVisible()
 
     await page.goto('/guide')
     await expect(page.getByRole('heading', { name: '使い方' })).toBeVisible()

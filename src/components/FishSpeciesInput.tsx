@@ -1,3 +1,4 @@
+import { Fish } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import {
   canonicalFishSpeciesName,
@@ -6,6 +7,7 @@ import {
   searchFishSpecies,
   type FishSpeciesMatch,
 } from '../lib/fishSpecies'
+import { Icon } from './ui/Icon'
 
 interface FishSpeciesInputProps {
   value: string
@@ -79,8 +81,9 @@ export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInput
 
   return (
     <div ref={containerRef} className="relative mb-4">
-      <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor={listId}>
-        魚種（任意）
+      <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-sky-900" htmlFor={listId}>
+        <Icon icon={Fish} size="sm" className="text-cyan-700" />
+        魚種
       </label>
       <input
         ref={inputRef}
@@ -93,6 +96,7 @@ export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInput
         aria-expanded={showList}
         aria-autocomplete="list"
         aria-controls={`${listId}-listbox`}
+        aria-label="魚種（任意）"
         placeholder="例: アジ、シーバス"
         value={value}
         onChange={(e) => {

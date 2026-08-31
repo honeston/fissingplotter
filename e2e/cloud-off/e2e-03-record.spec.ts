@@ -4,7 +4,7 @@ test.describe('E2E-03 記録保存', () => {
   test('E2E-03a 入力なしで記録する: 保存サマリー。履歴に 1 件', async ({ freshPage: page }) => {
     await waitForRecordHome(page)
     await saveRecord(page)
-    await page.getByRole('link', { name: '履歴を見る' }).first().click()
+    await page.getByTestId('view-history').first().click()
     await expect(page.getByRole('heading', { name: '履歴' })).toBeVisible()
     await expect(page.getByText('まだ記録がありません')).toHaveCount(0)
     await expect(page.getByText('（魚種なし）').first()).toBeVisible()
@@ -17,7 +17,7 @@ test.describe('E2E-03 記録保存', () => {
     await page.getByLabel(/体長/).fill('25')
     await saveRecord(page)
     await expect(page.getByText('アジ').first()).toBeVisible()
-    await page.getByRole('button', { name: '続けて記録' }).click()
+    await page.getByTestId('record-continue').click()
     await expect(page.getByLabel('魚種（任意）')).toHaveValue('')
     await expect(page.getByLabel(/体長/)).toHaveValue('')
   })
@@ -25,7 +25,7 @@ test.describe('E2E-03 記録保存', () => {
   test('E2E-03c 体長に -1: エラーで未保存', async ({ freshPage: page }) => {
     await waitForRecordHome(page)
     await page.getByLabel(/体長/).fill('-1')
-    await page.getByRole('button', { name: '記録する' }).click()
+    await page.getByTestId('record-submit').click()
     await expect(page.getByText('体長は 0 以上の数値で入力してください')).toBeVisible()
     await expect(page.getByText('保存しました')).toHaveCount(0)
     await page.goto('/history')

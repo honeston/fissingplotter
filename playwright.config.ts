@@ -22,9 +22,9 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'npx vite --port 5177 --strictPort --mode e2e',
-    port: 5177,
-    reuseExistingServer: false,
+    command: 'npx vite --host 127.0.0.1 --port 5177 --strictPort --mode e2e',
+    url: 'http://127.0.0.1:5177',
+    reuseExistingServer: !process.env.CI,
     env: {
       VITE_API_URL: '',
       VITE_COGNITO_USER_POOL_ID: '',
