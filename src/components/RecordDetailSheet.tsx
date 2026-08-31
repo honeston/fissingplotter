@@ -20,6 +20,8 @@ interface RecordDetailSheetProps {
 }
 
 const AXIS_LOCK_PX = 10
+const PHOTO_AXIS_LOCK_PX = 24
+const PHOTO_TAP_PX = 24
 const SWIPE_PX = 24
 const SNAP_FRACTION = 0.18
 const DISMISS_PX = 96
@@ -40,12 +42,25 @@ interface GestureState {
   axis: GestureAxis
   active: boolean
   fromHeader: boolean
+  fromPhotoTap: boolean
 }
 
 interface TrackMetrics {
   cardWidth: number
   step: number
   centerPad: number
+}
+
+function isPhotoTapTarget(target: EventTarget | null) {
+  return (
+    target instanceof Element && Boolean(target.closest('[data-photo-tap]'))
+  )
+}
+
+function dispatchPhotoTap(scrollRoot: HTMLDivElement | null | undefined) {
+  scrollRoot?.querySelector('[data-photo-tap]')?.dispatchEvent(
+    new CustomEvent('photo-tap', { bubbles: true }),
+  )
 }
 
 function isInteractiveTarget(target: EventTarget | null) {
@@ -137,6 +152,7 @@ export function RecordDetailSheet({
     axis: null,
     active: false,
     fromHeader: false,
+    fromPhotoTap: false,
   })
 
   navRef.current = {
@@ -362,6 +378,7 @@ export function RecordDetailSheet({
     gesture.fromHeader = Boolean(
       headerRef.current?.contains(event.target as Node),
     )
+    gesture.fromPhotoTap = isPhotoTapTarget(event.target)
     dragXRef.current = 0
     dragYRef.current = 0
   }
@@ -375,7 +392,8 @@ export function RecordDetailSheet({
     const nav = navRef.current
 
     if (!gesture.axis) {
-      if (Math.abs(dx) < AXIS_LOCK_PX && Math.abs(dy) < AXIS_LOCK_PX) return
+      const axisLockPx = gesture.fromPhotoTap ? PHOTO_AXIS_LOCK_PX : AXIS_LOCK_PX
+      if (Math.abs(dx) < axisLockPx && Math.abs(dy) < axisLockPx) return
 
       if (Math.abs(dx) > Math.abs(dy)) {
         if (!nav.hasNavigation) {
@@ -421,6 +439,13 @@ export function RecordDetailSheet({
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
     if (!gesture.active || gesture.axis == null) {
+      if (gesture.active && gesture.fromPhotoTap) {
+        const dx = event.clientX - gesture.startX
+        const dy = event.clientY - gesture.startY
+        if (Math.abs(dx) < PHOTO_TAP_PX && Math.abs(dy) < PHOTO_TAP_PX) {
+          dispatchPhotoTap(scrollRef.current)
+        }
+      }
       resetGesture()
       return
     }

@@ -206,7 +206,7 @@ export function LoadingSpinner({
   )
 }
 
-const PHOTO_TAP_PX = 10
+const PHOTO_TAP_EVENT = 'photo-tap'
 
 function PhotoFrame({
   url,
@@ -220,58 +220,24 @@ function PhotoFrame({
   onOpen?: () => void
 }) {
   const [imageReady, setImageReady] = useState(false)
-  const tapRef = useRef<{ pointerId: number; x: number; y: number } | null>(null)
-  const finishTapRef = useRef<((event: PointerEvent) => void) | null>(null)
+  const frameRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setImageReady(false)
   }, [url])
 
   useEffect(() => {
-    return () => {
-      if (finishTapRef.current) {
-        window.removeEventListener('pointerup', finishTapRef.current)
-        window.removeEventListener('pointercancel', finishTapRef.current)
-      }
-    }
-  }, [])
-
-  function onPhotoPointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    if (!onOpen || !url || !imageReady) return
+    const el = frameRef.current
+    if (!el || !onOpen) return
     const openPhoto = onOpen
 
-    if (finishTapRef.current) {
-      window.removeEventListener('pointerup', finishTapRef.current)
-      window.removeEventListener('pointercancel', finishTapRef.current)
+    function handlePhotoTap() {
+      openPhoto()
     }
 
-    tapRef.current = {
-      pointerId: event.pointerId,
-      x: event.clientX,
-      y: event.clientY,
-    }
-
-    function finishTap(event: PointerEvent) {
-      if (tapRef.current?.pointerId !== event.pointerId) return
-      window.removeEventListener('pointerup', finishTap)
-      window.removeEventListener('pointercancel', finishTap)
-      finishTapRef.current = null
-
-      const tap = tapRef.current
-      tapRef.current = null
-      if (!tap) return
-
-      const dx = event.clientX - tap.x
-      const dy = event.clientY - tap.y
-      if (Math.abs(dx) < PHOTO_TAP_PX && Math.abs(dy) < PHOTO_TAP_PX) {
-        openPhoto()
-      }
-    }
-
-    finishTapRef.current = finishTap
-    window.addEventListener('pointerup', finishTap)
-    window.addEventListener('pointercancel', finishTap)
-  }
+    el.addEventListener(PHOTO_TAP_EVENT, handlePhotoTap)
+    return () => el.removeEventListener(PHOTO_TAP_EVENT, handlePhotoTap)
+  }, [onOpen, url])
 
   const showSpinner = loading || Boolean(url && !imageReady)
 
@@ -284,10 +250,11 @@ function PhotoFrame({
       )}
       {url ? (
         <div
+          ref={frameRef}
+          data-photo-tap
           role="button"
           tabIndex={0}
           aria-label="写真を拡大"
-          onPointerDown={onPhotoPointerDown}
           onKeyDown={(event) => {
             if (event.key !== 'Enter' && event.key !== ' ') return
             event.preventDefault()

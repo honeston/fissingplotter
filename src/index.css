@@ -114,3 +114,7 @@ html.detail-sheet-open .detail-sheet-overlay .leaflet-container.coordinate-picke
   overscroll-behavior: none;
   touch-action: none;
 }
+
+.photo-lightbox-zoom {
+  touch-action: none;
+}
