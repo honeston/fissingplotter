@@ -1,4 +1,4 @@
-import { Calendar, FishSymbol, User } from 'lucide-react'
+import { BookOpen, Calendar, FishSymbol } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { Icon } from './Icon'
 
@@ -11,7 +11,14 @@ function scrollWindowToTop() {
 const NAV_ITEMS = [
   { to: '/', end: true, label: '記録', shortLabel: '記録', icon: FishSymbol, testId: 'nav-record' },
   { to: '/history', end: false, label: '履歴', shortLabel: '履歴', icon: Calendar, testId: 'nav-history' },
-  { to: '/mypage', end: false, label: 'マイページ', shortLabel: 'マイ', icon: User, testId: 'nav-mypage' },
+  {
+    to: '/mypage/encyclopedia',
+    end: false,
+    label: 'マイ図鑑',
+    shortLabel: '図鑑',
+    icon: BookOpen,
+    testId: 'nav-encyclopedia',
+  },
 ] as const
 
 export function BottomNav() {

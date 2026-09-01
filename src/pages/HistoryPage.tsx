@@ -1,4 +1,4 @@
-import { BookOpen, Calendar, FishSymbol, X } from 'lucide-react'
+import { Calendar, FishSymbol, X } from 'lucide-react'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import type { DateRange } from 'react-day-picker'
@@ -119,24 +119,14 @@ export function HistoryPage() {
         title="履歴"
         icon={Calendar}
         action={
-          <div className="flex shrink-0 items-center gap-2">
-            <Link
-              to="/"
-              aria-label="記録"
-              data-testid="header-record"
-              className="flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-sky-200 bg-white text-cyan-800 shadow-sm"
-            >
-              <Icon icon={FishSymbol} size="sm" label="記録" />
-            </Link>
-            <Link
-              to="/mypage/encyclopedia"
-              aria-label="図鑑"
-              data-testid="header-encyclopedia"
-              className="flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-sky-200 bg-white text-cyan-800 shadow-sm"
-            >
-              <Icon icon={BookOpen} size="sm" label="図鑑" />
-            </Link>
-          </div>
+          <Link
+            to="/"
+            aria-label="記録"
+            data-testid="header-record"
+            className="flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-sky-200 bg-white text-cyan-800 shadow-sm"
+          >
+            <Icon icon={FishSymbol} size="sm" label="記録" />
+          </Link>
         }
       />
 

@@ -2,15 +2,22 @@ import { expect, test } from '../helpers'
 
 test.describe('E2E-11 / E2E-12 シェルと静的ページ（クラウド無効）', () => {
   test('E2E-11 記録ホームに 3 タブ。公開ページでは出ない', async ({ freshPage: page }) => {
+    await expect(page.getByTestId('banner-mypage')).toBeVisible()
     const nav = page.locator('nav.sticky')
     await expect(nav.getByTestId('nav-record')).toBeVisible()
     await expect(nav.getByTestId('nav-history')).toBeVisible()
-    await expect(nav.getByTestId('nav-mypage')).toBeVisible()
+    await expect(nav.getByTestId('nav-encyclopedia')).toBeVisible()
+
+    await page.getByTestId('banner-mypage').click()
+    await expect(page.getByRole('heading', { name: 'マイページ' })).toBeVisible()
+    await nav.getByTestId('nav-encyclopedia').click()
+    await expect(page.getByRole('heading', { name: 'マイ魚種図鑑' })).toBeVisible()
 
     await page.goto('/guide')
     await expect(page.getByRole('heading', { name: '使い方' })).toBeVisible()
     await expect(page.locator('nav.sticky')).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'ログアウト' })).toHaveCount(0)
+    await expect(page.getByTestId('banner-mypage')).toHaveCount(0)
   })
 
   test('E2E-12 /guide /privacy /terms 本文。戻る先は /mypage', async ({ freshPage: page }) => {

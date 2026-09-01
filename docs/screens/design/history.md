@@ -7,7 +7,6 @@ flowchart TD
   hist["履歴"] --> cal["カレンダーで期間指定"]
   hist --> map["地図ピン"]
   hist --> list["日ごとのカード一覧"]
-  hist -->|"マイ魚種図鑑"| encyclo["図鑑一覧"]
 
   cal --> list
   cal --> map

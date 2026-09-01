@@ -7,10 +7,11 @@ test.describe('E2E-11 / E2E-12 シェルと静的ページ（クラウド有効�
   }) => {
     const { page, context, user } = await openSignedInApp(browser)
     await expect(page.getByText(`${user.email} でログイン中`)).toBeVisible()
+    await expect(page.getByTestId('banner-mypage')).toBeVisible()
     const nav = page.locator('nav.sticky')
     await expect(nav.getByTestId('nav-record')).toBeVisible()
     await expect(nav.getByTestId('nav-history')).toBeVisible()
-    await expect(nav.getByTestId('nav-mypage')).toBeVisible()
+    await expect(nav.getByTestId('nav-encyclopedia')).toBeVisible()
     await expect(nav.getByTestId('nav-record')).toHaveClass(/text-cyan-800/)
     await context.close()
   })
@@ -21,6 +22,7 @@ test.describe('E2E-11 / E2E-12 シェルと静的ページ（クラウド有効�
     await expect(page.getByRole('heading', { name: '使い方' })).toBeVisible()
     await expect(page.locator('nav.sticky')).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'ログアウト' })).toHaveCount(0)
+    await expect(page.getByTestId('banner-mypage')).toHaveCount(0)
     await context.close()
   })
 

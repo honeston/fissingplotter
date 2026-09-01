@@ -77,7 +77,7 @@ export function FishEncyclopediaPage() {
 
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
-      <PageHeader title="マイ魚種図鑑" icon={BookOpen} backTo="/mypage" backLabel="戻る" />
+      <PageHeader title="マイ魚種図鑑" icon={BookOpen} />
 
       {!loading && !error && (
         <section

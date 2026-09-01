@@ -1,4 +1,4 @@
-import { BookOpen, Key, Mail, Ruler, Scale, Trash2, User } from 'lucide-react'
+import { Key, Mail, Ruler, Scale, Trash2, User } from 'lucide-react'
 import { FishingRod } from '../components/icons/FishingRod'
 import { Link } from 'react-router-dom'
 import { JafAttribution } from '../components/JafAttribution'
@@ -102,7 +102,6 @@ export function MyPage() {
 
       <section className="mb-6 flex flex-col gap-3">
         <MenuTile to="/mypage/tackle" icon={FishingRod} title="タックル" testId="menu-tackle" />
-        <MenuTile to="/mypage/encyclopedia" icon={BookOpen} title="図鑑" testId="menu-encyclopedia" />
       </section>
 
       <section className="mb-6 rounded-xl border border-sky-200 bg-white px-4 py-3 shadow-sm">
