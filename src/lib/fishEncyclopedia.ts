@@ -186,3 +186,13 @@ export function findSpeciesStat(
 ): SpeciesStat | undefined {
   return stats.find((stat) => stat.species === species)
 }
+
+/** 図鑑に載る魚種数と釣果数（魚種なしは含めない） */
+export function encyclopediaTotals(stats: SpeciesStat[]): {
+  speciesCount: number
+  catchCount: number
+} {
+  let catchCount = 0
+  for (const stat of stats) catchCount += stat.count
+  return { speciesCount: stats.length, catchCount }
+}

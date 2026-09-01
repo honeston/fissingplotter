@@ -9,6 +9,7 @@ import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import { dateFromKey, formatDateLabel } from '../lib/dates'
 import {
   buildSpeciesStats,
+  encyclopediaTotals,
   pickCoverRecord,
   sortSpeciesStats,
   type SpeciesSortKey,
@@ -63,6 +64,8 @@ export function FishEncyclopediaPage() {
     return sortSpeciesStats(built, sortKey, sortDirection)
   }, [records, sortKey, sortDirection])
 
+  const totals = useMemo(() => encyclopediaTotals(stats), [stats])
+
   function handleSort(key: SpeciesSortKey) {
     if (key === sortKey) {
       setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'))
@@ -75,6 +78,29 @@ export function FishEncyclopediaPage() {
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
       <PageHeader title="マイ魚種図鑑" icon={BookOpen} backTo="/mypage" backLabel="戻る" />
+
+      {!loading && !error && (
+        <section
+          className="mb-4 rounded-xl border border-sky-200 bg-white px-4 py-3 shadow-sm"
+          aria-label="図鑑の合計"
+          data-testid="encyclopedia-totals"
+        >
+          <dl className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <dt className="text-slate-500">魚種</dt>
+              <dd className="mt-0.5 text-lg font-semibold tabular-nums text-sky-950">
+                {totals.speciesCount}種
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">釣果数</dt>
+              <dd className="mt-0.5 text-lg font-semibold tabular-nums text-sky-950">
+                {totals.catchCount}匹
+              </dd>
+            </div>
+          </dl>
+        </section>
+      )}
 
       <div className="mb-4 flex flex-wrap gap-2">
         {SORT_OPTIONS.map(({ key, label }) => {

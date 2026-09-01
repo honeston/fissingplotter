@@ -142,6 +142,16 @@ export function HistoryScreenMock() {
 export function EncyclopediaScreenMock() {
   return (
     <PhoneFrame title="マイ魚種図鑑">
+      <div className="mb-2 grid grid-cols-2 gap-1.5 rounded-lg border border-sky-100 bg-white px-2 py-1.5">
+        <div>
+          <p className="text-[9px] text-slate-500">魚種</p>
+          <p className="text-[11px] font-semibold text-sky-950">3種</p>
+        </div>
+        <div>
+          <p className="text-[9px] text-slate-500">釣果数</p>
+          <p className="text-[11px] font-semibold text-sky-950">16匹</p>
+        </div>
+      </div>
       <div className="mb-2 flex gap-1">
         {['数', '魚種', '最大サイズ'].map((label, i) => (
           <span

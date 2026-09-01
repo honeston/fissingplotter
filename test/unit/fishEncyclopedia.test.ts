@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { buildSpeciesStats, pickCoverRecord } from '../../src/lib/fishEncyclopedia'
+import {
+  buildSpeciesStats,
+  encyclopediaTotals,
+  pickCoverRecord,
+} from '../../src/lib/fishEncyclopedia'
 import { sampleRecord } from './recordFixture'
 
 describe('UNIT-05 魚種図鑑集計', () => {
@@ -67,5 +71,16 @@ describe('UNIT-05 魚種図鑑集計', () => {
     expect(pickCoverRecord([smallWithPhoto, localBlob], new Set(['blob']))).toBe(localBlob)
     expect(pickCoverRecord([localBlob, newerSameSize], new Set(['blob']))).toBe(newerSameSize)
     expect(pickCoverRecord([largeNoPhoto], new Set())).toBeNull()
+  })
+
+  it('UNIT-05c 魚種合計と釣果合計。魚種なしは含めない', () => {
+    const stats = buildSpeciesStats([
+      sampleRecord({ id: 'a1', fishSpecies: 'アジ' }),
+      sampleRecord({ id: 'a2', fishSpecies: 'アジ' }),
+      sampleRecord({ id: 'm1', fishSpecies: 'メバル' }),
+      sampleRecord({ id: 'none', fishSpecies: null }),
+    ])
+
+    expect(encyclopediaTotals(stats)).toEqual({ speciesCount: 2, catchCount: 3 })
   })
 })
