@@ -129,7 +129,7 @@ export function TideGraph({
   const aria = [
     '潮位グラフ',
     summary,
-    `${chart.markers.catchLabel} ${formatTideClock(recordedAtMs)}`,
+    `記録 ${formatTideClock(recordedAtMs)}`,
     chart.markers.showNow ? `いま ${formatTideClock(nowMs)}` : '',
   ]
     .filter(Boolean)
@@ -261,31 +261,21 @@ export function TideGraph({
               stroke="#fff"
               strokeWidth="1.25"
             />
-            <text
-              x={catchX}
-              y={
-                chart.markers.showNow && Math.abs(catchX - nowX) < 42
-                  ? PAD_T - 18
-                  : PAD_T - 8
-              }
-              textAnchor={textAnchorForX(catchX)}
-              className="fill-orange-700"
-              fontSize="9"
-              fontFamily="system-ui, sans-serif"
-            >
-              {chart.markers.catchLabel === 'いま' ? 'いま' : '釣れた'}
-            </text>
+            {chart.markers.catchLabel === 'いま' ? (
+              <text
+                x={catchX}
+                y={PAD_T - 8}
+                textAnchor={textAnchorForX(catchX)}
+                className="fill-slate-500"
+                fontSize="9"
+                fontFamily="system-ui, sans-serif"
+              >
+                いま
+              </text>
+            ) : null}
           </g>
         )}
       </svg>
-      <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs tabular-nums">
-        <span className="text-orange-700">
-          {chart.markers.catchLabel} {formatTideClock(recordedAtMs)}
-        </span>
-        {chart.markers.showNow ? (
-          <span className="text-slate-500">いま {formatTideClock(nowMs)}</span>
-        ) : null}
-      </p>
       {summary ? (
         <p className="mt-0.5 text-xs tabular-nums text-slate-500">{summary}</p>
       ) : null}
