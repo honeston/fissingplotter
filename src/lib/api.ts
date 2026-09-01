@@ -142,6 +142,18 @@ export async function fetchCurrentPlace(
   return data.placeName
 }
 
+export interface TideExtremum {
+  kind: 'high' | 'low'
+  time: string
+  levelCm: number
+}
+
+export interface TideSeriesPayload {
+  startTime: string
+  intervalSec: number
+  levels: number[]
+}
+
 export interface CurrentTideResult {
   levelCm: number
   time: string
@@ -152,6 +164,8 @@ export interface CurrentTideResult {
   moonPhase: string
   moonAge: number
   tideSlopeCmPerHour: number
+  series: TideSeriesPayload
+  extrema: TideExtremum[]
 }
 
 export async function fetchCurrentTide(

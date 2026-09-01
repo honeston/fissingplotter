@@ -14,6 +14,7 @@ import type { FishingRecord } from '../types/record'
 import { LoadingSpinner, RecordCard } from './RecordCard'
 import { EditedMark } from './RecordValueList'
 import { RecordEditForm } from './RecordEditForm'
+import { TideGraph } from './TideGraph'
 import { Icon } from './ui/Icon'
 
 const RecordsMap = lazy(() =>
@@ -866,6 +867,7 @@ function DetailSheetPanel({
         ) : (
           <>
             <RecordCard record={record} showLargePhoto />
+            <TideGraph record={record} enabled={interactive} />
             {hasCoordinates(record) && (
               <div className="relative mt-4 h-52 overflow-hidden rounded-xl border border-sky-100">
                 {showMap ? (

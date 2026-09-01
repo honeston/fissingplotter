@@ -78,7 +78,7 @@ flowchart LR
 |------|--------|----------------|
 | `/weather/current` | OpenWeatherMap | 新規記録の気温・天気・風 |
 | `/place/current` | Nominatim | 記録・編集の場所名 |
-| `/tide/current` | 海しる潮汐推算 | 記録・編集の潮位（`at` で時刻指定可） |
+| `/tide/current` | 海しる潮汐推算 | 記録・編集の潮位（`at` で時刻指定可）。詳細シートの当日グラフ（系列・満干） |
 
 詳細: [天気・場所名・潮位](design/weather.md) / [API IF API-07〜09](if.md#api-07-get-weathercurrent)
 

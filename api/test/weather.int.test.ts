@@ -95,7 +95,9 @@ describe('INT-07 天気場所潮位', () => {
       return jsonResponse({
         time: '2026-08-01T00:00:00+09:00',
         interval: 3600,
-        tide: Array.from({ length: 24 }, (_, i) => 100 + i),
+        tide: Array.from({ length: 24 }, (_, i) =>
+          Math.round(100 + 50 * Math.sin((2 * Math.PI * i) / 12.42)),
+        ),
       })
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -107,9 +109,21 @@ describe('INT-07 天気場所潮位', () => {
       query: { lat: LAT, lng: LNG, at: AT },
     })
     expect(statusOf(res)).toBe(200)
-    const body = jsonOf<{ tide: { levelCm: number; stationName: string } }>(res)
+    const body = jsonOf<{
+      tide: {
+        levelCm: number
+        stationName: string
+        series: { startTime: string; intervalSec: number; levels: number[] }
+        extrema: { kind: string; time: string; levelCm: number }[]
+      }
+    }>(res)
     expect(typeof body.tide.levelCm).toBe('number')
     expect(body.tide.stationName).toBeTruthy()
+    expect(body.tide.series.intervalSec).toBe(3600)
+    expect(body.tide.series.levels).toHaveLength(24)
+    expect(body.tide.extrema.length).toBeGreaterThanOrEqual(2)
+    expect(body.tide.extrema.some((e) => e.kind === 'high')).toBe(true)
+    expect(body.tide.extrema.some((e) => e.kind === 'low')).toBe(true)
   })
 
   it('INT-07f at 不正は 400 Invalid at', async () => {

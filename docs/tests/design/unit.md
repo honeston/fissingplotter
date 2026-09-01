@@ -25,6 +25,7 @@ IndexedDB・fetch・Cognito SDK・LocalStack はここでは触らない。
 | 認証（ローカル） | `api/src/auth.ts` | JWT の `sub`、`LOCAL_DEV_USER_ID` フォールバック | [UNIT-11](../if.md#unit-11-local-dev-の-userid) |
 | 記録バリデーション | `api/src/records.ts`（または同等） | 必須欠落、負の体長 / 重量、緯度だけ、非数値の緯度。HTTP 400 は INT-04 | [UNIT-12](../if.md#unit-12-記録バリデーション) |
 | 同期マージ | 純関数（実装時に切り出す） | 削除ログ、未送信、両方にある ID、両方未送信の後勝ち、削除と未送信編集の同時 | [UNIT-13](../if.md#unit-13-同期マージ) |
+| 潮位系列 | `api/src/tideSeries.ts`、`src/lib/tideChart.ts` | 間引き、満干、いま／釣れた時刻の重ね | [UNIT-14](../if.md#unit-14-潮位系列グラフ) |
 
 魚種名の正規化（`src/lib/fishSpecies.ts`）は辞書依存が大きい。代表ケースだけ UNIT。網羅はしない。
 

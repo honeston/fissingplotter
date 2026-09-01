@@ -27,7 +27,9 @@ Nominatim の Lambda プロキシ。約 11m グリッド・30 分キャッシュ
 
 海しる潮汐推算 v3。最寄り推算点の日次系列をキャッシュ。キー未設定は 500。月齢・潮種は内製。
 
-応答: `{ "tide": { levelCm, time, stationCode, stationName, distanceKm, tideCycle, moonPhase, moonAge, tideSlopeCmPerHour } }`。
+応答: `{ "tide": { levelCm, time, stationCode, stationName, distanceKm, tideCycle, moonPhase, moonAge, tideSlopeCmPerHour, series, extrema } }`。
+
+`series` は当日の天文潮位（グラフ用に最大 10 分間隔）。`extrema` は満潮・干潮（間引き前の系列の転地点。日の端は前日・翌日に続くので含めない）。
 
 ```mermaid
 sequenceDiagram

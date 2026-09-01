@@ -1,6 +1,12 @@
 import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb'
 import { createDynamoClient } from './awsClients.js'
 import { moonAgeDays, moonPhaseFromAge, tideCycleFromMoonAge } from './moon.js'
+import {
+  downsampleDaySeries,
+  findTideExtrema,
+  type DaySeries,
+  type TideExtremum,
+} from './tideSeries.js'
 import stationsData from './tideStations.json'
 
 function cacheTable(): string {
@@ -34,6 +40,12 @@ export interface TidePayload {
   moonPhase: string
   moonAge: number
   tideSlopeCmPerHour: number
+  series: {
+    startTime: string
+    intervalSec: number
+    levels: number[]
+  }
+  extrema: TideExtremum[]
 }
 
 function toRad(deg: number) {
@@ -77,11 +89,6 @@ function jstDateKey(at: Date): string {
   return `${get('year')}${get('month')}${get('day')}`
 }
 
-interface DaySeries {
-  startMs: number
-  intervalSec: number
-  levels: number[]
-}
 
 async function readSeriesCache(cacheKey: string): Promise<DaySeries | null> {
   const table = cacheTable()
@@ -224,6 +231,7 @@ export async function getTideAt(
   const levelCm = series.levels[index]
   const sampleMs = series.startMs + index * series.intervalSec * 1000
   const age = moonAgeDays(at)
+  const graph = downsampleDaySeries(series)
 
   return {
     levelCm,
@@ -235,5 +243,11 @@ export async function getTideAt(
     moonPhase: moonPhaseFromAge(age),
     moonAge: age,
     tideSlopeCmPerHour: slopeCmPerHour(series, index),
+    series: {
+      startTime: new Date(graph.startMs).toISOString(),
+      intervalSec: graph.intervalSec,
+      levels: graph.levels,
+    },
+    extrema: findTideExtrema(series),
   }
 }

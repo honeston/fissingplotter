@@ -173,6 +173,20 @@ I/O なし。端末の生存件・未送信フラグ・端末の削除ログと�
 | UNIT-13g | P1 | 同じ id が両方にある。端末は未送信。クラウドの値は違う（他端末が先に POST した想定） | 端末を残す。POST 対象。`updatedAt` では選ばない。後に成功した POST がクラウドの正 |
 | UNIT-13h | P1 | 端末に未送信の編集があり、同じ id が端末の削除ログにもある | 削除が勝つ。生存件から外す。POST しない。DELETE 対象。クラウド `deleted` との同時は 13a |
 
+### UNIT-14 潮位系列・グラフ
+
+満潮・干潮の抽出とグラフ用の間引き。I/O なし。
+
+| ID | 優先 | 対象 | 入力 | 期待 |
+|----|------|------|------|------|
+| UNIT-14a | P1 | `downsampleDaySeries` | 1 分間隔 1440 点 | 10 分間隔 144 点 |
+| UNIT-14b | P1 | 同上 | すでに 1 時間間隔 | そのまま |
+| UNIT-14c | P1 | `findTideExtrema` | 半日周期の正弦（1 日） | 満潮 2・干潮 2。時刻は理論値の数分以内 |
+| UNIT-14d | P1 | 同上 | 単調増加 / ピークが台地 | 満干なし。台地は中央の時刻 |
+| UNIT-14e | P1 | `src/lib/tideChart.ts` | 系列と記録時刻 | 補間。いまと釣れた時刻が近ければ印は一つ |
+
+[API IF API-09](../api/if.md#api-09-get-tidecurrent) / [SCR-08](../screens/if.md#scr-08-記録詳細シート)
+
 ---
 
 ## 3. API 結合 INT
@@ -257,7 +271,7 @@ HTTP。必須欠落・負の重量などは [UNIT-12](#unit-12-記録バリデ�
 | INT-07b | P1 | lat なし | 400 `Invalid lat/lng` |
 | INT-07c | P1 | 天気キーなし | 500 `Weather API is not configured` |
 | INT-07d | P1 | GET `/place/current` モック成功 | 200 `{ placeName }` |
-| INT-07e | P1 | GET `/tide/current` モック成功 | 200。`tide.levelCm` 等 |
+| INT-07e | P1 | GET `/tide/current` モック成功 | 200。`tide.levelCm` 等。`series.levels` と `extrema`（満・干） |
 | INT-07f | P2 | `at` 不正 | 400 `Invalid at` |
 | INT-07g | P2 | 同じ座標を連続 GET | 2 回目はキャッシュ（外部 fetch 回数 1） |
 
@@ -454,7 +468,7 @@ HTTP。必須欠落・負の重量などは [UNIT-12](#unit-12-記録バリデ�
 
 | 操作 | 期待 |
 |------|------|
-| キーありで記録 | 気温・場所名・潮位が入ることがある |
+| キーありで記録 | 気温・場所名・潮位が入ることがある。詳細シートに当日の潮位グラフ（満干・釣れた時刻） |
 | キーなし / オフライン | それらが「—」でも保存できる |
 
 ### MAN-05 PWA
@@ -487,7 +501,7 @@ HTTP。必須欠落・負の重量などは [UNIT-12](#unit-12-記録バリデ�
 | API-03 | INT-04, UNIT-12 |
 | API-04 | INT-05 |
 | API-05 / 06 | INT-06 |
-| API-07〜09 | INT-07, MAN-04 |
+| API-07〜09 | INT-07, MAN-04, UNIT-14 |
 | API-10 | INT-08, MAN-02c |
 | BATCH-01 | INT-09 |
 | 404 | INT-10 |

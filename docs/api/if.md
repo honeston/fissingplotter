@@ -335,7 +335,7 @@ Nominatim reverse のプロキシ。約 11m グリッド（小数 4 桁）・30 
 
 ### API-09 GET `/tide/current`
 
-海しる潮汐推算 v3。最寄り推算点の日次系列をキャッシュ。月齢・潮種は内製。`at` 指定で過去・未来の天文潮位を取れる（編集画面が使う）。
+海しる潮汐推算 v3。最寄り推算点の日次系列をキャッシュ。月齢・潮種は内製。`at` 指定で過去・未来の天文潮位を取れる（編集画面と詳細シートのグラフが使う）。グラフ用に系列を 10 分間隔へ間引く。満潮・干潮は間引き前の系列から取る。
 
 | クエリ | 必須 | 内容 |
 |--------|------|------|
@@ -357,7 +357,16 @@ Nominatim reverse のプロキシ。約 11m グリッド（小数 4 桁）・30 
     "tideCycle": "中潮",
     "moonPhase": "上弦",
     "moonAge": 8.2,
-    "tideSlopeCmPerHour": -12.5
+    "tideSlopeCmPerHour": -12.5,
+    "series": {
+      "startTime": "2026-08-28T15:00:00.000Z",
+      "intervalSec": 600,
+      "levels": [74, 78, 82]
+    },
+    "extrema": [
+      { "kind": "low", "time": "2026-08-28T02:18:00.000Z", "levelCm": 42 },
+      { "kind": "high", "time": "2026-08-28T08:40:00.000Z", "levelCm": 148 }
+    ]
   }
 }
 ```
@@ -372,6 +381,10 @@ Nominatim reverse のプロキシ。約 11m グリッド（小数 4 桁）・30 
 | moonPhase | string | 月相 |
 | moonAge | number | 月齢 |
 | tideSlopeCmPerHour | number | 潮位の傾き cm/h |
+| series.startTime | string | 日次系列の先頭（ISO8601） |
+| series.intervalSec | number | 点の間隔秒。グラフ用に最大 600 |
+| series.levels | number[] | 各点の天文潮位 cm |
+| extrema | object[] | 満潮 `high` / 干潮 `low`。`time` と `levelCm`。端点は含めない |
 
 ---
 

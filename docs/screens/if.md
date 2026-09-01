@@ -341,7 +341,7 @@ GPS 失敗でも保存する。天気・場所名・潮位の失敗は null（�
 | 削除 | 確認「この記録を削除しますか？」→ 削除する / やめる |
 | 画像を保存 | 端末へ保存 |
 
-表示: 日付・時刻、写真（大）、`RecordValueList`（場所・天気・気温・風速・太陽・潮位・潮種・潮位変化、および魚種・サイズ・タックル）。`recordedAt` / `location` を手動変更した項目は「（編集済み）」。場所は地図リンク。
+表示: 日付・時刻、写真（大）、`RecordValueList`（場所・天気・気温・風速・太陽・潮位・潮種・潮位変化、および魚種・サイズ・タックル）。`recordedAt` / `location` を手動変更した項目は「（編集済み）」。場所は地図リンク。座標ありかつクラウド時は、記録日の潮位グラフ（釣れた時刻の印。記録日が当日ならいまの印も。満潮・干潮の時刻）。取得失敗・オフライン・座標なしは出さない。
 
 削除は端末からすぐ消す。オンラインなら `DELETE /records/{id}`。失敗・オフラインなら端末の削除ログに残し、次回同期で送る（[1.5](#15-同期)）。
 
@@ -502,6 +502,7 @@ GPS 失敗でも保存する。天気・場所名・潮位の失敗は null（�
 | 潮位 | tideLevel + tideHarbor | cm |
 | 潮種 | tideCycle + moonPhase + moonAge | |
 | 潮位変化 | tideSlopeCmPerHour | |
+| 潮位グラフ | GET `/tide/current` の series / extrema | SCR-08。記録には保存しない。失敗は非表示 |
 
 ---
 
@@ -517,7 +518,7 @@ Cognito は HTTP API ではない。マイタックル・単位は端末のみ�
 | SCR-05 再設定 | ForgotPassword / ConfirmForgotPassword / signIn | — |
 | SCR-06 記録 | JWT | weather / place / tide / photos/presign / POST records |
 | SCR-07 履歴 | JWT | 同期 `GET /records`、写真 viewUrl |
-| SCR-08 削除 | JWT | DELETE records/{id}（オフライン時は端末の削除ログ） |
+| SCR-08 詳細 | JWT | GET `/tide/current`（グラフ。座標あり時。失敗は非表示）。削除は `DELETE records/{id}`（オフライン時は端末の削除ログ） |
 | SCR-09 編集 | JWT | place / tide / photos/presign / POST records |
 | SCR-14 メール | UpdateUserAttributes | — |
 | SCR-15 パスワード | changePassword | — |
