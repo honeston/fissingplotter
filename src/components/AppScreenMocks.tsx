@@ -152,6 +152,9 @@ export function EncyclopediaScreenMock() {
           <p className="text-[11px] font-semibold text-sky-950">16匹</p>
         </div>
       </div>
+      <div className="mb-1.5 rounded-md border border-sky-100 bg-white px-2 py-1 text-[9px] text-slate-400">
+        魚種名・別名
+      </div>
       <div className="mb-2 flex gap-1">
         {['数', '魚種', '最大サイズ'].map((label, i) => (
           <span

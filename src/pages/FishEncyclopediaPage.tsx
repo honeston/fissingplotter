@@ -1,7 +1,9 @@
-import { BookOpen } from 'lucide-react'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { BookOpen, Search, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { JafAttribution } from '../components/JafAttribution'
 import { LoadingSpinner } from '../components/RecordCard'
+import { Icon } from '../components/ui/Icon'
 import { PageHeader } from '../components/ui/PageHeader'
 import { usePhotoUrl } from '../hooks/usePhotoUrl'
 import { useRecords } from '../hooks/useRecords'
@@ -10,6 +12,7 @@ import { dateFromKey, formatDateLabel } from '../lib/dates'
 import {
   buildSpeciesStats,
   encyclopediaTotals,
+  filterSpeciesStats,
   pickCoverRecord,
   sortSpeciesStats,
   type SpeciesSortKey,
@@ -19,7 +22,6 @@ import {
 import { listPhotoRecordIds } from '../lib/storage'
 import { formatFishSize, formatFishWeight } from '../lib/units'
 import type { FishingRecord } from '../types/record'
-import { JafAttribution } from '../components/JafAttribution'
 
 const SORT_OPTIONS: { key: SpeciesSortKey; label: string }[] = [
   { key: 'count', label: '数' },
@@ -40,8 +42,11 @@ export function FishEncyclopediaPage() {
   const { records, loading, error } = useRecords()
   const [sortKey, setSortKey] = useState<SpeciesSortKey>('count')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
+  const [query, setQuery] = useState('')
+  const [composingQuery, setComposingQuery] = useState<string | null>(null)
   const [photoIds, setPhotoIds] = useState<Set<string>>(new Set())
   const [photoIdsReady, setPhotoIdsReady] = useState(false)
+  const searchQuery = composingQuery ?? query
 
   useEffect(() => {
     let cancelled = false
@@ -59,12 +64,18 @@ export function FishEncyclopediaPage() {
     }
   }, [])
 
-  const stats = useMemo(() => {
+  const allStats = useMemo(() => {
     const built = buildSpeciesStats(records)
     return sortSpeciesStats(built, sortKey, sortDirection)
   }, [records, sortKey, sortDirection])
 
-  const totals = useMemo(() => encyclopediaTotals(stats), [stats])
+  const stats = useMemo(
+    () => filterSpeciesStats(allStats, searchQuery),
+    [allStats, searchQuery],
+  )
+
+  const totals = useMemo(() => encyclopediaTotals(allStats), [allStats])
+  const hasSpecies = allStats.length > 0
 
   function handleSort(key: SpeciesSortKey) {
     if (key === sortKey) {
@@ -102,6 +113,15 @@ export function FishEncyclopediaPage() {
         </section>
       )}
 
+      {hasSpecies && (
+        <SpeciesSearchField
+          value={query}
+          composingValue={composingQuery}
+          onChange={setQuery}
+          onComposingChange={setComposingQuery}
+        />
+      )}
+
       <div className="mb-4 flex flex-wrap gap-2">
         {SORT_OPTIONS.map(({ key, label }) => {
           const active = sortKey === key
@@ -127,9 +147,15 @@ export function FishEncyclopediaPage() {
       {loading && <p className="text-sm text-slate-500">読み込み中…</p>}
       {error && <p className="text-sm text-red-700">{error}</p>}
 
-      {!loading && !error && stats.length === 0 && (
+      {!loading && !error && !hasSpecies && (
         <p className="rounded-xl border border-dashed border-sky-200 bg-white/70 px-4 py-8 text-center text-sm text-slate-500">
           魚種付きの記録がまだありません
+        </p>
+      )}
+
+      {!loading && !error && hasSpecies && stats.length === 0 && (
+        <p className="rounded-xl border border-dashed border-sky-200 bg-white/70 px-4 py-8 text-center text-sm text-slate-500">
+          該当する魚種がありません
         </p>
       )}
 
@@ -149,6 +175,83 @@ export function FishEncyclopediaPage() {
 
       <JafAttribution className="mt-auto pt-6" />
     </main>
+  )
+}
+
+function SpeciesSearchField({
+  value,
+  composingValue,
+  onChange,
+  onComposingChange,
+}: {
+  value: string
+  composingValue: string | null
+  onChange: (value: string) => void
+  onComposingChange: (value: string | null) => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const composingRef = useRef(false)
+  const displayValue = composingValue ?? value
+  const canClear = displayValue.trim().length > 0
+
+  function clear() {
+    composingRef.current = false
+    onComposingChange(null)
+    onChange('')
+    inputRef.current?.focus()
+  }
+
+  return (
+    <div className="relative mb-4">
+      <Icon
+        icon={Search}
+        size="sm"
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-cyan-700"
+      />
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="search"
+        autoComplete="off"
+        enterKeyHint="search"
+        aria-label="魚種を検索"
+        placeholder="魚種名・別名"
+        data-testid="encyclopedia-search"
+        value={displayValue}
+        onChange={(e) => {
+          onChange(e.target.value)
+          if (!composingRef.current) onComposingChange(null)
+        }}
+        onInput={() => {
+          if (!composingRef.current) return
+          onComposingChange(inputRef.current?.value ?? '')
+        }}
+        onCompositionStart={() => {
+          composingRef.current = true
+          onComposingChange(inputRef.current?.value ?? '')
+        }}
+        onCompositionUpdate={(e) => {
+          onComposingChange(e.currentTarget.value)
+        }}
+        onCompositionEnd={(e) => {
+          composingRef.current = false
+          onComposingChange(null)
+          onChange(e.currentTarget.value)
+        }}
+        className="w-full rounded-xl border border-sky-200 bg-white py-3 pl-10 pr-11 text-base text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200"
+      />
+      {canClear && (
+        <button
+          type="button"
+          onClick={clear}
+          aria-label="検索をクリア"
+          data-testid="encyclopedia-search-clear"
+          className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-cyan-700 hover:bg-sky-50"
+        >
+          <Icon icon={X} size="sm" />
+        </button>
+      )}
+    </div>
   )
 }
 

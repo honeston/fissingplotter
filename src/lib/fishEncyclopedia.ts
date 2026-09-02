@@ -1,4 +1,5 @@
 import { recordDateKey } from './dates'
+import { speciesMatchesSearch } from './fishSpecies'
 import type { FishingRecord } from '../types/record'
 
 export type SpeciesStat = {
@@ -185,6 +186,15 @@ export function findSpeciesStat(
   species: string,
 ): SpeciesStat | undefined {
   return stats.find((stat) => stat.species === species)
+}
+
+/** 魚種名・別名（ひらがな可）で絞り込む。空クエリは全件 */
+export function filterSpeciesStats(
+  stats: SpeciesStat[],
+  query: string,
+): SpeciesStat[] {
+  if (!query.trim()) return stats
+  return stats.filter((stat) => speciesMatchesSearch(stat.species, query))
 }
 
 /** 図鑑に載る魚種数と釣果数（魚種なしは含めない） */

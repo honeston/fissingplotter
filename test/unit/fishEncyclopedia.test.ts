@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildSpeciesStats,
   encyclopediaTotals,
+  filterSpeciesStats,
   pickCoverRecord,
 } from '../../src/lib/fishEncyclopedia'
 import { sampleRecord } from './recordFixture'
@@ -82,5 +83,23 @@ describe('UNIT-05 魚種図鑑集計', () => {
     ])
 
     expect(encyclopediaTotals(stats)).toEqual({ speciesCount: 2, catchCount: 3 })
+  })
+
+  it('UNIT-05d 検索はひらがな・別名にヒット。合計は絞り込み前', () => {
+    const stats = buildSpeciesStats([
+      sampleRecord({ id: 'a1', fishSpecies: 'アジ' }),
+      sampleRecord({ id: 's1', fishSpecies: 'スズキ' }),
+      sampleRecord({ id: 'm1', fishSpecies: 'メバル' }),
+    ])
+
+    expect(filterSpeciesStats(stats, '').map((s) => s.species)).toEqual(
+      expect.arrayContaining(['アジ', 'スズキ', 'メバル']),
+    )
+    expect(filterSpeciesStats(stats, '')).toHaveLength(3)
+    expect(filterSpeciesStats(stats, 'あじ').map((s) => s.species)).toEqual(['アジ'])
+    expect(filterSpeciesStats(stats, 'シーバス').map((s) => s.species)).toEqual(['スズキ'])
+    expect(filterSpeciesStats(stats, '  アジ  ').map((s) => s.species)).toEqual(['アジ'])
+    expect(filterSpeciesStats(stats, 'いない魚')).toEqual([])
+    expect(encyclopediaTotals(stats)).toEqual({ speciesCount: 3, catchCount: 3 })
   })
 })

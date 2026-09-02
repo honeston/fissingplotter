@@ -10,6 +10,7 @@ test.describe('E2E-07 魚種図鑑', () => {
     await expect(totals).toContainText('0種')
     await expect(totals).toContainText('0匹')
     await expect(page.getByText('魚種付きの記録がまだありません')).toBeVisible()
+    await expect(page.getByTestId('encyclopedia-search')).toHaveCount(0)
   })
 
   test('E2E-07b アジを保存 → 図鑑カードから詳細', async ({ freshPage: page }) => {
@@ -39,5 +40,37 @@ test.describe('E2E-07 魚種図鑑', () => {
     const card = page.getByRole('link', { name: /アジ/ })
     await expect(card).toBeVisible()
     await expect(card.getByRole('img', { name: 'アジの代表画像' })).toBeVisible()
+  })
+
+  test('E2E-07d アジとヒラメ → 検索で絞り込み', async ({ freshPage: page }) => {
+    await waitForRecordHome(page)
+    await page.getByLabel('魚種（任意）').fill('アジ')
+    await page.keyboard.press('Escape')
+    await saveRecord(page)
+    await page.getByTestId('record-continue').click()
+    await page.getByLabel('魚種（任意）').fill('ヒラメ')
+    await page.keyboard.press('Escape')
+    await saveRecord(page)
+
+    await page.goto('/mypage/encyclopedia')
+    const totals = page.getByTestId('encyclopedia-totals')
+    await expect(totals).toContainText('2種')
+    await expect(page.getByRole('link', { name: /アジ/ })).toBeVisible()
+    await expect(page.getByRole('link', { name: /ヒラメ/ })).toBeVisible()
+
+    const search = page.getByTestId('encyclopedia-search')
+    await search.fill('アジ')
+    await expect(page.getByRole('link', { name: /アジ/ })).toBeVisible()
+    await expect(page.getByRole('link', { name: /ヒラメ/ })).toHaveCount(0)
+    await expect(totals).toContainText('2種')
+
+    await search.fill('いない魚')
+    await expect(page.getByText('該当する魚種がありません')).toBeVisible()
+    await expect(totals).toContainText('2種')
+
+    await page.getByTestId('encyclopedia-search-clear').click()
+    await expect(search).toHaveValue('')
+    await expect(page.getByRole('link', { name: /アジ/ })).toBeVisible()
+    await expect(page.getByRole('link', { name: /ヒラメ/ })).toBeVisible()
   })
 })

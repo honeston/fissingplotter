@@ -19,7 +19,7 @@ const RECENT_KEY = 'fissingplotter-recent-species'
 const RECENT_LIMIT = 10
 
 /** 検索用: ひらがな→カタカナ、半角→全角（NFKC） */
-function normalizeForSearch(text: string): string {
+export function normalizeForSearch(text: string): string {
   return text
     .normalize('NFKC')
     .replace(/[\u3041-\u3096]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0x60))
@@ -27,19 +27,49 @@ function normalizeForSearch(text: string): string {
 }
 
 const searchRows: { name: string; term: string; normalized: string }[] = []
+/** 標準和名・別名のどちらで記録されていても、関連名でヒットさせる */
+const relatedTermsBySpecies = new Map<string, Set<string>>()
+
+function addRelatedTerms(key: string, terms: readonly string[]) {
+  let set = relatedTermsBySpecies.get(key)
+  if (!set) {
+    set = new Set()
+    relatedTermsBySpecies.set(key, set)
+  }
+  for (const term of terms) set.add(term)
+}
+
 for (const entry of entries) {
+  const terms = [entry.name, ...(entry.aliases ?? [])]
+  addRelatedTerms(entry.name, terms)
   searchRows.push({
     name: entry.name,
     term: entry.name,
     normalized: normalizeForSearch(entry.name),
   })
   for (const alias of entry.aliases ?? []) {
+    addRelatedTerms(alias, terms)
     searchRows.push({
       name: entry.name,
       term: alias,
       normalized: normalizeForSearch(alias),
     })
   }
+}
+
+/** 図鑑などの絞り込み。空なら常に真。ひらがな・別名も対象 */
+export function speciesMatchesSearch(species: string, query: string): boolean {
+  const q = query.trim()
+  if (!q) return true
+  const qNorm = normalizeForSearch(q)
+  const terms = relatedTermsBySpecies.get(species)
+  if (terms) {
+    for (const term of terms) {
+      if (normalizeForSearch(term).includes(qNorm)) return true
+    }
+    return false
+  }
+  return normalizeForSearch(species).includes(qNorm)
 }
 
 export function getFishSpeciesEntries(): FishSpeciesEntry[] {
