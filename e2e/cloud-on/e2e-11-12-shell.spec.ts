@@ -2,16 +2,17 @@ import { expect, test } from '../helpers'
 import { openSignedInApp } from '../cloudAuth'
 
 test.describe('E2E-11 / E2E-12 シェルと静的ページ（クラウド有効）', () => {
-  test('E2E-11a ログイン相当で / にバナーと 3 タブ。記録タブアクティブ', async ({
+  test('E2E-11a ログイン相当で / にバナーと 4 タブ。記録タブアクティブ', async ({
     browser,
   }) => {
     const { page, context, user } = await openSignedInApp(browser)
     await expect(page.getByText(`${user.email} でログイン中`)).toBeVisible()
-    await expect(page.getByTestId('banner-mypage')).toBeVisible()
+    await expect(page.getByTestId('banner-mypage')).toHaveCount(0)
     const nav = page.locator('nav.sticky')
     await expect(nav.getByTestId('nav-record')).toBeVisible()
     await expect(nav.getByTestId('nav-history')).toBeVisible()
     await expect(nav.getByTestId('nav-encyclopedia')).toBeVisible()
+    await expect(nav.getByTestId('nav-mypage')).toBeVisible()
     await expect(nav.getByTestId('nav-record')).toHaveClass(/text-cyan-800/)
     await context.close()
   })
