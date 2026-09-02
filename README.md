@@ -1,6 +1,6 @@
 # cast mark
 
-スマホ向け釣り記録 PWA。ワンタップで気温・時刻・座標・潮位・魚種を保存する（端末 + クラウド同期）。
+スマホ向け釣り記録 PWA。投稿や共有はなく、ワンタップで気温・時刻・座標・潮位・魚種を自分の記録として保存する（端末 + クラウド同期）。
 
 - リポジトリ: https://github.com/honeston/fissingplotter
 - ドキュメント: [`docs/`](docs/README.md)（再編中。[画面概要](docs/screens/overview.md) / [API 概要](docs/api/overview.md)）

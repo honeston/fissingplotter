@@ -20,7 +20,7 @@ export default defineConfig({
       manifest: {
         name: 'cast mark',
         short_name: 'cast mark',
-        description: '釣り記録 — 気温・潮位・座標をワンタップ保存',
+        description: '簡単操作で自分だけの釣果マップ。投稿もフォローもなし。気温・潮位・座標をワンタップ保存',
         theme_color: '#0e7490',
         background_color: '#f0f9ff',
         display: 'standalone',

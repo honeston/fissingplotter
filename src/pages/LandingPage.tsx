@@ -17,13 +17,13 @@ import {
 import { LegalLinks } from '../components/LegalLinks'
 import { FishingRod } from '../components/icons/FishingRod'
 import { Icon } from '../components/ui/Icon'
-import { SERVICE_NAME } from '../legal/meta'
+import { SERVICE_NAME, SERVICE_TAGLINE } from '../legal/meta'
 
 const SIGNUP_HREF = '/login?mode=signup'
 
 const FEATURES = [
   { icon: FishSymbol, title: 'ワンタップ', desc: 'GPS・天気・潮位を自動保存' },
-  { icon: Map, title: '履歴', desc: 'カレンダーと地図で振り返り' },
+  { icon: Map, title: '履歴', desc: 'カレンダーと地図で自分の釣果を振り返り' },
   { icon: BookOpen, title: '図鑑', desc: '魚種ごとに尾数・最大サイズ' },
   { icon: FishingRod, title: 'タックル', desc: 'セット保存して記録時に呼び出し' },
   { icon: CloudOff, title: 'オフライン', desc: '端末保存、復帰後に同期' },
@@ -33,13 +33,10 @@ export function LandingPage() {
   return (
     <>
       <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
-        <header className="mb-8 flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
+        <header className="mb-6 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
             <Icon icon={FishSymbol} size="xl" className="text-cyan-700" />
-            <div>
-              <h1 className="text-2xl font-semibold text-sky-950">{SERVICE_NAME}</h1>
-              <p className="mt-1 text-sm text-slate-500">釣れた瞬間を、そのまま残す</p>
-            </div>
+            <h1 className="text-2xl font-semibold text-sky-950">{SERVICE_NAME}</h1>
           </div>
           <Link
             to="/login"
@@ -50,6 +47,11 @@ export function LandingPage() {
             ログイン
           </Link>
         </header>
+
+        <h2 className="text-lg font-semibold leading-snug text-sky-950">{SERVICE_TAGLINE}</h2>
+        <p className="mt-2 mb-6 text-sm leading-relaxed text-slate-600">
+          投稿もフォローもありません。ワンタップで位置・天気・潮位を残し、地図と図鑑は自分だけが見られます。気負わず、自分のペースで始められます。
+        </p>
 
         <Link
           to={SIGNUP_HREF}
@@ -105,10 +107,13 @@ export function LandingPage() {
           <EncyclopediaScreenMock />
         </section>
 
-        <section className="mt-10 flex items-start gap-3 rounded-xl border border-sky-200 bg-white px-4 py-4 shadow-sm">
-          <Icon icon={Shield} size="lg" className="shrink-0 text-cyan-700" />
-          <p className="text-sm text-slate-500">
-            記録は本人のみ。公開データベースではありません。
+        <section className="mt-10 rounded-xl border border-sky-200 bg-white px-4 py-4 shadow-sm">
+          <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold text-sky-950">
+            <Icon icon={Shield} size="md" className="text-cyan-700" />
+            投稿なし。自分の記録だけ
+          </h2>
+          <p className="text-sm leading-relaxed text-slate-500">
+            タイムラインもフォローもありません。記録・地図・図鑑は本人だけが見られます。SNSが苦手でも、自分の釣果を地図に残すだけで始められます。公開の釣り場データベースでもありません。
           </p>
         </section>
 
