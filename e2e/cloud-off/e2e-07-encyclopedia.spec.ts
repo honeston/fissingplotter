@@ -73,4 +73,18 @@ test.describe('E2E-07 魚種図鑑', () => {
     await expect(page.getByRole('link', { name: /アジ/ })).toBeVisible()
     await expect(page.getByRole('link', { name: /ヒラメ/ })).toBeVisible()
   })
+
+  test('E2E-07e アジを匹数 3 で保存 → 図鑑は 3匹', async ({ freshPage: page }) => {
+    await waitForRecordHome(page)
+    await page.getByLabel('魚種（任意）').fill('アジ')
+    await page.keyboard.press('Escape')
+    await page.getByLabel('匹数').fill('3')
+    await saveRecord(page)
+    await page.goto('/mypage/encyclopedia')
+    const totals = page.getByTestId('encyclopedia-totals')
+    await expect(totals).toContainText('1種')
+    await expect(totals).toContainText('3匹')
+    const card = page.getByRole('link', { name: /アジ/ })
+    await expect(card).toContainText('3匹')
+  })
 })

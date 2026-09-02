@@ -21,6 +21,7 @@ import {
   toDatetimeLocalValue,
 } from '../lib/dates'
 import { withEditedField } from '../lib/editedFields'
+import { parseFishCount, fishCountToInputString } from '../lib/fishCount'
 import { rememberFishSpecies, canonicalFishSpeciesName } from '../lib/fishSpecies'
 import { getCurrentPosition } from '../lib/geolocation'
 import { updateRecord } from '../lib/sync'
@@ -67,11 +68,13 @@ interface RecordEditFormProps {
 
 export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProps) {
   const timeId = useId()
+  const countId = useId()
   const sizeId = useId()
   const weightId = useId()
   const { url: existingPhotoUrl } = usePhotoUrl(record)
   const { prefs } = useUnitPrefs()
   const [draft, setDraft] = useState<FishingRecord>(record)
+  const [fishCountInput, setFishCountInput] = useState(fishCountToInputString(record.fishCount))
   const [fishSizeInput, setFishSizeInput] = useState(
     record.fishSizeCm != null ? sizeToInputString(record.fishSizeCm, prefs.length) : '',
   )
@@ -99,6 +102,7 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
   useEffect(() => {
     originalRef.current = record
     setDraft(record)
+    setFishCountInput(fishCountToInputString(record.fishCount))
     setFishSizeInput(
       record.fishSizeCm != null ? sizeToInputString(record.fishSizeCm, prefs.length) : '',
     )
@@ -194,6 +198,12 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
 
   async function handleSave() {
     setError('')
+    const parsedCount = parseFishCount(fishCountInput)
+    if (parsedCount === 'invalid') {
+      setError('匹数は 1 以上の整数で入力してください')
+      return
+    }
+
     const parsedSize = parseSizeToCm(fishSizeInput, prefs.length)
     if (parsedSize === 'invalid') {
       setError('体長は 0 以上の数値で入力してください')
@@ -235,6 +245,7 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
           ...draft,
           recordedAt,
           fishSpecies: species,
+          fishCount: parsedCount,
           fishSizeCm: parsedSize,
           fishWeightG: parsedWeight,
           tackle: normalizeTackleFields(tackleDraft),
@@ -269,13 +280,34 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
         disabled={saving}
       />
 
-      <FishSpeciesInput
-        value={draft.fishSpecies ?? ''}
-        onChange={(value) =>
-          setDraft((current) => ({ ...current, fishSpecies: value || null }))
-        }
-        disabled={saving}
-      />
+      <div className="mb-4 flex items-start gap-2">
+        <FishSpeciesInput
+          value={draft.fishSpecies ?? ''}
+          onChange={(value) =>
+            setDraft((current) => ({ ...current, fishSpecies: value || null }))
+          }
+          disabled={saving}
+          className="min-w-0 flex-1"
+        />
+        <div className="w-16 shrink-0">
+          <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor={countId}>
+            匹数
+          </label>
+          <input
+            id={countId}
+            aria-label="匹数"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            step={1}
+            placeholder="1"
+            value={fishCountInput}
+            onChange={(e) => setFishCountInput(e.target.value)}
+            disabled={saving}
+            className="w-full rounded-xl border border-sky-200 bg-white px-1.5 py-3 text-center text-base tabular-nums text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
+          />
+        </div>
+      </div>
 
       <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-sky-900" htmlFor={sizeId}>
         <Icon icon={Ruler} size="sm" className="text-cyan-700" />

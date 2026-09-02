@@ -43,9 +43,14 @@ export function RecordScreenMock() {
         <Icon icon={ImagePlus} size="sm" />
         写真
       </div>
-      <div className="mb-2 flex items-center gap-1.5 rounded-lg border border-sky-200 bg-white px-2 py-1.5 text-[11px] text-slate-400">
-        <Icon icon={Fish} size="xs" />
-        魚種
+      <div className="mb-2 flex gap-1.5">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-lg border border-sky-200 bg-white px-2 py-1.5 text-[11px] text-slate-400">
+          <Icon icon={Fish} size="xs" />
+          魚種
+        </div>
+        <div className="flex w-8 shrink-0 items-center justify-center rounded-lg border border-sky-200 bg-white text-[11px] text-slate-400">
+          匹
+        </div>
       </div>
       <div className="mb-2 grid grid-cols-2 gap-1.5">
         <div className="flex items-center gap-1 rounded-lg border border-sky-200 bg-white px-2 py-1.5 text-[11px] text-slate-400">

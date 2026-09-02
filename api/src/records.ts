@@ -30,6 +30,7 @@ export interface FishingRecord {
   moonAge: number | null
   tideSlopeCmPerHour: number | null
   fishSpecies: string | null
+  fishCount: number | null
   fishSizeCm: number | null
   fishWeightG: number | null
   tackle: TackleFields | null
@@ -84,6 +85,14 @@ function parseNonNegativeNumber(value: unknown, field: string): number | null {
   return value
 }
 
+function parsePositiveInteger(value: unknown, field: string): number | null {
+  if (value == null || value === '') return null
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 1) {
+    throw new Error(`Invalid ${field}`)
+  }
+  return value
+}
+
 function optionalNumber(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
@@ -96,6 +105,12 @@ function storedNumber(value: unknown): number | null {
   if (value == null || value === '') return null
   const n = Number(value)
   return Number.isFinite(n) ? n : null
+}
+
+function storedPositiveInteger(value: unknown): number | null {
+  const n = storedNumber(value)
+  if (n == null || !Number.isInteger(n) || n < 1) return null
+  return n
 }
 
 function storedString(value: unknown): string | null {
@@ -176,6 +191,7 @@ export function validateRecord(input: unknown): FishingRecord {
     moonAge: optionalNumber(r.moonAge),
     tideSlopeCmPerHour: optionalNumber(r.tideSlopeCmPerHour),
     fishSpecies: optionalString(r.fishSpecies),
+    fishCount: parsePositiveInteger(r.fishCount, 'fishCount'),
     fishSizeCm: parseNonNegativeNumber(r.fishSizeCm, 'fishSizeCm'),
     fishWeightG: parseNonNegativeNumber(r.fishWeightG, 'fishWeightG'),
     tackle: parseTackleFields(r.tackle),
@@ -287,6 +303,7 @@ export async function upsertRecord(userId: string, input: unknown): Promise<Fish
         moonAge: record.moonAge,
         tideSlopeCmPerHour: record.tideSlopeCmPerHour,
         fishSpecies: record.fishSpecies,
+        fishCount: record.fishCount,
         fishSizeCm: record.fishSizeCm,
         fishWeightG: record.fishWeightG,
         tackle: record.tackle,
@@ -402,6 +419,7 @@ function storedToRecord(item: Record<string, unknown>): FishingRecord {
     moonAge: storedNumber(item.moonAge),
     tideSlopeCmPerHour: storedNumber(item.tideSlopeCmPerHour),
     fishSpecies: storedString(item.fishSpecies),
+    fishCount: storedPositiveInteger(item.fishCount),
     fishSizeCm: storedNumber(item.fishSizeCm),
     fishWeightG: storedNumber(item.fishWeightG),
     tackle: parseTackleFields(item.tackle),

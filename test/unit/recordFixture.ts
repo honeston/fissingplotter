@@ -21,6 +21,7 @@ export function sampleRecord(
     moonAge: null,
     tideSlopeCmPerHour: null,
     fishSpecies: null,
+    fishCount: null,
     fishSizeCm: null,
     fishWeightG: null,
     tackle: null,

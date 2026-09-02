@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { usePhotoUrl } from '../hooks/usePhotoUrl'
 import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import type { RecordResult } from '../hooks/useRecord'
+import { formatFishCount } from '../lib/fishCount'
 import { formatFishSize, formatFishWeight } from '../lib/units'
 import { ConditionRow } from './ui/ConditionRow'
 import { Icon } from './ui/Icon'
@@ -14,6 +15,7 @@ function SavedRecordSummary({ result }: { result: RecordResult }) {
 
   const catchBits = [
     saved.fishSpecies,
+    saved.fishCount != null ? formatFishCount(saved.fishCount) : null,
     saved.fishSizeCm != null ? formatFishSize(saved.fishSizeCm, prefs.length) : null,
     saved.fishWeightG != null ? formatFishWeight(saved.fishWeightG, prefs.weight) : null,
   ].filter(Boolean)

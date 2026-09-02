@@ -94,6 +94,7 @@ DynamoDB および `POST /records` 本文。クライアント生成 `id`。`upd
 | moonAge | number \| null | いいえ | 月齢 |
 | tideSlopeCmPerHour | number \| null | いいえ | 潮位の傾き |
 | fishSpecies | string \| null | いいえ | 魚種 |
+| fishCount | number \| null | いいえ | 匹数。1 以上の整数。空は null |
 | fishSizeCm | number \| null | いいえ | 0 以上 |
 | fishWeightG | number \| null | いいえ | 0 以上 |
 | tackle | TackleFields \| null | いいえ | 全空なら null |
@@ -101,7 +102,7 @@ DynamoDB および `POST /records` 本文。クライアント生成 `id`。`upd
 | editedFields | string[] | いいえ | `recordedAt` / `location` のみ。他は無視 |
 | updatedAt | string \| null | サーバ | 一覧・応答に含む |
 
-緯度・経度は片方だけだと 400 `Invalid coordinates`。非数値は `Invalid latitude` / `Invalid longitude`。`fishSizeCm` / `fishWeightG` が負または非数値なら `Invalid fishSizeCm` 等。
+緯度・経度は片方だけだと 400 `Invalid coordinates`。非数値は `Invalid latitude` / `Invalid longitude`。`fishSizeCm` / `fishWeightG` が負または非数値なら `Invalid fishSizeCm` 等。`fishCount` が 1 未満・小数・非数値なら `Invalid fishCount`。
 
 ### 2.2 TackleFields
 
@@ -150,6 +151,7 @@ DynamoDB および `POST /records` 本文。クライアント生成 `id`。`upd
   "moonAge": 8.2,
   "tideSlopeCmPerHour": -12.5,
   "fishSpecies": "アジ",
+  "fishCount": 3,
   "fishSizeCm": 25,
   "fishWeightG": 180,
   "tackle": {
@@ -444,6 +446,7 @@ API-05 の `uploadUrl` に対するクライアント操作。Lambda は介さ�
 | Invalid recordedAt | 400 | recordedAt 欠落 |
 | Invalid latitude / longitude / coordinates | 400 | 座標 |
 | Invalid fishSizeCm / fishWeightG | 400 | 負数など |
+| Invalid fishCount | 400 | 1 未満・小数など |
 | Invalid recordId | 400 | presign |
 | Invalid lat/lng | 400 | weather / place / tide |
 | Invalid at | 400 | tide の時刻 |

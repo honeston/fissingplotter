@@ -13,6 +13,7 @@ interface FishSpeciesInputProps {
   value: string
   onChange: (value: string) => void
   disabled?: boolean
+  className?: string
 }
 
 function formatSuggestionLabel(match: FishSpeciesMatch): string {
@@ -22,7 +23,7 @@ function formatSuggestionLabel(match: FishSpeciesMatch): string {
   return match.name
 }
 
-export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInputProps) {
+export function FishSpeciesInput({ value, onChange, disabled, className }: FishSpeciesInputProps) {
   const listId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -80,7 +81,7 @@ export function FishSpeciesInput({ value, onChange, disabled }: FishSpeciesInput
   const showList = open && suggestions.length > 0 && !disabled
 
   return (
-    <div ref={containerRef} className="relative mb-4">
+    <div ref={containerRef} className={['relative', className ?? 'mb-4'].join(' ')}>
       <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-sky-900" htmlFor={listId}>
         <Icon icon={Fish} size="sm" className="text-cyan-700" />
         魚種

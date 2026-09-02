@@ -33,6 +33,28 @@ test.describe('E2E-03 記録保存', () => {
     await expect(page.getByText('まだ記録がありません')).toBeVisible()
   })
 
+  test('E2E-03e 魚種・匹数 3 で保存。続けて記録でクリア', async ({ freshPage: page }) => {
+    await waitForRecordHome(page)
+    await page.getByLabel('魚種（任意）').fill('アジ')
+    await page.keyboard.press('Escape')
+    await page.getByLabel('匹数').fill('3')
+    await saveRecord(page)
+    await expect(page.getByTestId('record-saved')).toContainText('3匹')
+    await page.getByTestId('record-continue').click()
+    await expect(page.getByLabel('匹数')).toHaveValue('')
+  })
+
+  test('E2E-03f 匹数に 0: エラーで未保存', async ({ freshPage: page }) => {
+    await waitForRecordHome(page)
+    await page.getByLabel('匹数').fill('0')
+    await page.getByTestId('record-submit').click()
+    await expect(page.getByText('匹数は 1 以上の整数で入力してください')).toBeVisible()
+    await expect(page.getByText('保存しました')).toHaveCount(0)
+    await page.goto('/history')
+    await expect(page.getByRole('heading', { name: '履歴' })).toBeVisible()
+    await expect(page.getByText('まだ記録がありません')).toBeVisible()
+  })
+
   test('E2E-03d geolocation 失敗でも保存される', async ({ browser }) => {
     const context = await browser.newContext({
       viewport: { width: 390, height: 844 },

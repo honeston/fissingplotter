@@ -20,7 +20,7 @@
 
 応答: `201 { "record": FishingRecord }`（`updatedAt` をサーバが付与）。
 
-必須: `id`（文字列）、`recordedAt`（ISO8601）。緯度・経度は両方あるか両方ないか。`fishSizeCm` / `fishWeightG` は 0 以上。
+必須: `id`（文字列）、`recordedAt`（ISO8601）。緯度・経度は両方あるか両方ないか。`fishSizeCm` / `fishWeightG` は 0 以上。`fishCount` は 1 以上の整数。
 
 | フィールド | 型 | 内容 |
 |-----------|-----|------|
@@ -38,6 +38,7 @@
 | `moonAge` | number \| null | 月齢 |
 | `tideSlopeCmPerHour` | number \| null | 潮位の傾き |
 | `fishSpecies` | string \| null | 魚種 |
+| `fishCount` | number \| null | 匹数。1 以上の整数 |
 | `fishSizeCm` / `fishWeightG` | number \| null | 体長 cm / 重量 g |
 | `tackle` | object \| null | `name` `rod` `reel` `line` `lureOrBait` `rig` |
 | `photoKey` | string \| null | S3 キー |

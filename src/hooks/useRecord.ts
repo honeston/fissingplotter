@@ -165,6 +165,7 @@ export function useRecord() {
             moonAge,
             tideSlopeCmPerHour,
             fishSpecies: input.fishSpecies,
+            fishCount: input.fishCount,
             fishSizeCm: input.fishSizeCm,
             fishWeightG: input.fishWeightG,
             tackle: input.tackle,

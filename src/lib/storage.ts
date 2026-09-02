@@ -65,6 +65,12 @@ function getDb() {
   return dbPromise
 }
 
+function normalizeFishCount(value: number | null | undefined): number | null {
+  if (value == null) return null
+  if (!Number.isInteger(value) || value < 1) return null
+  return value
+}
+
 function fillSunTimes(record: FishingRecord): FishingRecord {
   if (
     record.sunriseAt &&
@@ -104,6 +110,7 @@ function normalizeRecord(record: FishingRecord): FishingRecord {
     moonPhase: record.moonPhase ?? null,
     moonAge: record.moonAge ?? null,
     tideSlopeCmPerHour: record.tideSlopeCmPerHour ?? null,
+    fishCount: normalizeFishCount(record.fishCount),
     fishSizeCm: record.fishSizeCm ?? null,
     fishWeightG: record.fishWeightG ?? null,
     tackle: normalizeTackleFields(record.tackle),
@@ -134,6 +141,7 @@ function buildRecord(input: NewFishingRecord): FishingRecord {
     moonAge: input.moonAge ?? null,
     tideSlopeCmPerHour: input.tideSlopeCmPerHour ?? null,
     fishSpecies: input.fishSpecies,
+    fishCount: normalizeFishCount(input.fishCount),
     fishSizeCm: input.fishSizeCm ?? null,
     fishWeightG: input.fishWeightG ?? null,
     tackle: normalizeTackleFields(input.tackle),

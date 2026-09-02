@@ -2,6 +2,7 @@ import {
   Anchor,
   CloudSun,
   Fish,
+  Hash,
   Link2,
   MapPin,
   Moon,
@@ -16,6 +17,7 @@ import type { ReactNode } from 'react'
 import { hasCoordinates } from '../lib/coordinates'
 import { hasEditedField } from '../lib/editedFields'
 import { formatTideLine, formatTideSlope } from '../lib/formatRecord'
+import { formatFishCount } from '../lib/fishCount'
 import { mapsUrl } from '../lib/maps'
 import { formatFishSize, formatFishWeight } from '../lib/units'
 import { weatherCodeLabel } from '../lib/weatherCode'
@@ -96,6 +98,9 @@ export function RecordValueList({
         <>
           <IconRow icon={Fish} label="魚種">
             {record.fishSpecies ?? '—'}
+          </IconRow>
+          <IconRow icon={Hash} label="匹数">
+            {formatFishCount(record.fishCount)}
           </IconRow>
           <IconRow icon={Ruler} label="体長">
             {formatFishSize(record.fishSizeCm, prefs.length)}

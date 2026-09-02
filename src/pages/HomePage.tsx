@@ -16,6 +16,7 @@ import { Icon } from '../components/ui/Icon'
 import { useRecord } from '../hooks/useRecord'
 import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import { canonicalFishSpeciesName } from '../lib/fishSpecies'
+import { parseFishCount } from '../lib/fishCount'
 import { listMyTackles, saveMyTackle } from '../lib/myTackle'
 import { getAllRecords } from '../lib/sync'
 import {
@@ -53,6 +54,7 @@ function tackleFieldsOrEmpty(fields: TackleFields | null | undefined): TackleFie
 export function HomePage() {
   const { prefs } = useUnitPrefs()
   const [fishSpecies, setFishSpecies] = useState('')
+  const [fishCountInput, setFishCountInput] = useState('')
   const [fishSizeInput, setFishSizeInput] = useState('')
   const [fishWeightInput, setFishWeightInput] = useState('')
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null)
@@ -187,6 +189,12 @@ export function HomePage() {
     setFatalError('')
     reset()
 
+    const parsedCount = parseFishCount(fishCountInput)
+    if (parsedCount === 'invalid') {
+      setFatalError('匹数は 1 以上の整数で入力してください')
+      return
+    }
+
     const parsedSize = parseSizeToCm(fishSizeInput, prefs.length)
     if (parsedSize === 'invalid') {
       setFatalError('体長は 0 以上の数値で入力してください')
@@ -202,12 +210,14 @@ export function HomePage() {
     try {
       await record({
         fishSpecies: fishSpecies.trim() ? canonicalFishSpeciesName(fishSpecies.trim()) : null,
+        fishCount: parsedCount,
         fishSizeCm: parsedSize,
         fishWeightG: parsedWeight,
         tackle: normalizeTackleFields(tackle),
         photoBlob,
       })
       setFishSpecies('')
+      setFishCountInput('')
       setFishSizeInput('')
       setFishWeightInput('')
       if (keepTackle) {
@@ -251,7 +261,32 @@ export function HomePage() {
         disabled={busy}
       />
 
-      <FishSpeciesInput value={fishSpecies} onChange={setFishSpecies} disabled={busy} />
+      <div className="mb-4 flex items-start gap-2">
+        <FishSpeciesInput
+          value={fishSpecies}
+          onChange={setFishSpecies}
+          disabled={busy}
+          className="min-w-0 flex-1"
+        />
+        <div className="w-16 shrink-0">
+          <label className="mb-2 block text-sm font-medium text-sky-900" htmlFor="fish-count">
+            匹数
+          </label>
+          <input
+            id="fish-count"
+            aria-label="匹数"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            step={1}
+            placeholder="1"
+            value={fishCountInput}
+            onChange={(e) => setFishCountInput(e.target.value)}
+            disabled={busy}
+            className="w-full rounded-xl border border-sky-200 bg-white px-1.5 py-3 text-center text-base tabular-nums text-sky-950 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
+          />
+        </div>
+      </div>
 
       <div className="mb-4 grid grid-cols-2 gap-3">
         <div>

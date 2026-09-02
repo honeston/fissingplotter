@@ -45,6 +45,17 @@ describe('UNIT-12 記録バリデーション', () => {
     expectInvalid(body({ latitude: 'abc', longitude: 139.65 }), 'Invalid latitude')
   })
 
+  it('UNIT-12h fishCount 0 / 小数 / 負は Invalid fishCount', () => {
+    expectInvalid(body({ fishCount: 0 }), 'Invalid fishCount')
+    expectInvalid(body({ fishCount: 1.5 }), 'Invalid fishCount')
+    expectInvalid(body({ fishCount: -1 }), 'Invalid fishCount')
+  })
+
+  it('fishCount 3 は通る。空は null', () => {
+    expect(validateRecord(body({ fishCount: 3 })).fishCount).toBe(3)
+    expect(validateRecord(body()).fishCount).toBeNull()
+  })
+
   it('タックル全空は null（エラーにしない）', () => {
     const record = validateRecord(
       body({

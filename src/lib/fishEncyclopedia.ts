@@ -1,4 +1,5 @@
 import { recordDateKey } from './dates'
+import { catchCountOf } from './fishCount'
 import { speciesMatchesSearch } from './fishSpecies'
 import type { FishingRecord } from '../types/record'
 
@@ -73,7 +74,7 @@ function findBestCatchDay(records: FishingRecord[]): {
   const counts = new Map<string, number>()
   for (const record of records) {
     const key = recordDateKey(record)
-    counts.set(key, (counts.get(key) ?? 0) + 1)
+    counts.set(key, (counts.get(key) ?? 0) + catchCountOf(record))
   }
 
   let bestKey: string | null = null
@@ -134,7 +135,7 @@ export function buildSpeciesStats(records: FishingRecord[]): SpeciesStat[] {
     const bestDay = findBestCatchDay(speciesRecords)
     stats.push({
       species,
-      count: speciesRecords.length,
+      count: speciesRecords.reduce((sum, record) => sum + catchCountOf(record), 0),
       maxSizeCm: maxSizeRecord?.fishSizeCm ?? null,
       maxWeightG: maxWeightRecord?.fishWeightG ?? null,
       maxSizeRecord,

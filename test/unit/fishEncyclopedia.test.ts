@@ -5,6 +5,7 @@ import {
   filterSpeciesStats,
   pickCoverRecord,
 } from '../../src/lib/fishEncyclopedia'
+import { recordDateKey } from '../../src/lib/dates'
 import { sampleRecord } from './recordFixture'
 
 describe('UNIT-05 魚種図鑑集計', () => {
@@ -101,5 +102,26 @@ describe('UNIT-05 魚種図鑑集計', () => {
     expect(filterSpeciesStats(stats, '  アジ  ').map((s) => s.species)).toEqual(['アジ'])
     expect(filterSpeciesStats(stats, 'いない魚')).toEqual([])
     expect(encyclopediaTotals(stats)).toEqual({ speciesCount: 3, catchCount: 3 })
+  })
+
+  it('UNIT-05e 匹数は fishCount の合計。未入力は 1。最大釣果日は多い日', () => {
+    const many = sampleRecord({
+      id: 'a1',
+      recordedAt: '2026-08-01T00:00:00.000Z',
+      fishSpecies: 'アジ',
+      fishCount: 3,
+    })
+    const one = sampleRecord({
+      id: 'a2',
+      recordedAt: '2026-08-02T00:00:00.000Z',
+      fishSpecies: 'アジ',
+    })
+    const stats = buildSpeciesStats([many, one])
+
+    expect(stats).toHaveLength(1)
+    expect(stats[0].count).toBe(4)
+    expect(stats[0].bestCatchCount).toBe(3)
+    expect(stats[0].bestCatchDateKey).toBe(recordDateKey(many))
+    expect(encyclopediaTotals(stats)).toEqual({ speciesCount: 1, catchCount: 4 })
   })
 })

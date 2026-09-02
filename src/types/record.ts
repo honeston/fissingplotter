@@ -1,6 +1,6 @@
 import type { TackleFields } from './tackle'
 
-/** ユーザーが手動修正した項目。魚種・体長・重さは対象外。 */
+/** ユーザーが手動修正した項目。魚種・体長・重さ・匹数は対象外。 */
 export type EditedField = 'recordedAt' | 'location'
 
 /** 釣り記録1件 */
@@ -24,6 +24,8 @@ export interface FishingRecord {
   moonAge: number | null
   tideSlopeCmPerHour: number | null
   fishSpecies: string | null
+  /** 匹数。未入力は null（図鑑集計では 1） */
+  fishCount: number | null
   fishSizeCm: number | null
   fishWeightG: number | null
   /** 記録時点のタックル（スナップショット） */
@@ -42,6 +44,7 @@ export type NewFishingRecord = Omit<FishingRecord, 'id' | 'recordedAt'> & {
 /** 記録フォーム入力 */
 export interface RecordFormInput {
   fishSpecies: string | null
+  fishCount: number | null
   fishSizeCm: number | null
   fishWeightG: number | null
   tackle: TackleFields | null

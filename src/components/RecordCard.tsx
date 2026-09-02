@@ -1,6 +1,7 @@
 import { Download, Maximize2, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { hasEditedField } from '../lib/editedFields'
+import { formatFishCount } from '../lib/fishCount'
 import { formatFishSize, formatFishWeight } from '../lib/units'
 import { saveImageToDevice } from '../lib/saveImageToDevice'
 import { usePhotoUrl } from '../hooks/usePhotoUrl'
@@ -112,6 +113,11 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
             </span>
             <span className="mt-0.5 block font-medium text-sky-950">
               {record.fishSpecies ?? '（魚種なし）'}
+              {record.fishCount != null ? (
+                <span className="ml-2 text-sm font-normal text-slate-600">
+                  {formatFishCount(record.fishCount)}
+                </span>
+              ) : null}
               {record.fishSizeCm != null ? (
                 <span className="ml-2 text-sm font-normal text-slate-600">
                   {formatFishSize(record.fishSizeCm, prefs.length)}

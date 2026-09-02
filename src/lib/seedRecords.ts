@@ -3,6 +3,7 @@ import { putRecord } from './storage'
 import { getSunTimes } from './sun'
 
 const nullExtras = {
+  fishCount: null as number | null,
   fishSizeCm: null as number | null,
   fishWeightG: null as number | null,
   tackle: null,
@@ -11,8 +12,8 @@ const nullExtras = {
 
 type SeedBase = Omit<
   FishingRecord,
-  'recordedAt' | 'dawnAt' | 'sunriseAt' | 'sunsetAt' | 'duskAt' | 'editedFields'
->
+  'recordedAt' | 'dawnAt' | 'sunriseAt' | 'sunsetAt' | 'duskAt' | 'editedFields' | 'fishCount'
+> & { fishCount?: number | null }
 
 type SunOffset =
   | { at: 'sunrise'; minutes: number }
@@ -49,6 +50,7 @@ function stampSun(base: SeedBase, daysAgoCount: number, offset: SunOffset): Fish
   const stamped = getSunTimes(recordedAt, latitude, longitude) ?? sun
   return {
     ...base,
+    fishCount: base.fishCount ?? null,
     recordedAt: recordedAt.toISOString(),
     dawnAt: stamped?.dawnAt ?? null,
     sunriseAt: stamped?.sunriseAt ?? null,
@@ -76,6 +78,7 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
       moonAge: 0.4,
       tideSlopeCmPerHour: 15.2,
       fishSpecies: 'アジ',
+      fishCount: 3,
       fishSizeCm: 28,
       fishWeightG: 280,
       tackle: null,
