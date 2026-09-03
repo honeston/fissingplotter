@@ -2,10 +2,19 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { RecordCard } from '../components/RecordCard'
 import { RecordDetailSheet } from '../components/RecordDetailSheet'
+import { SpeciesCatchPatternSection } from '../components/SpeciesCatchPattern'
 import { useRecords } from '../hooks/useRecords'
 import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import { dateFromKey, formatDateLabel, groupRecordsByDate, recordDateKey } from '../lib/dates'
 import { buildSpeciesStats, findSpeciesStat } from '../lib/fishEncyclopedia'
+import {
+  buildSpeciesCatchPattern,
+  conditionFilterQuery,
+  findConditionBucket,
+  parseConditionFilter,
+  recordsMatchingFilter,
+  type SpeciesConditionFilter,
+} from '../lib/speciesCatchStats'
 import { formatFishSize, formatFishWeight } from '../lib/units'
 import { deleteRecord } from '../lib/sync'
 import type { FishingRecord } from '../types/record'
@@ -47,18 +56,32 @@ export function FishEncyclopediaSpeciesPage() {
     () => (species ? findSpeciesStat(stats, species) : undefined),
     [stats, species],
   )
+  const catchPattern = useMemo(
+    () => (speciesStat ? buildSpeciesCatchPattern(speciesStat.records) : null),
+    [speciesStat],
+  )
+  const conditionFilter = useMemo(() => parseConditionFilter(searchParams), [searchParams])
+  const visibleRecords = useMemo(() => {
+    if (!speciesStat || !catchPattern) return []
+    if (!conditionFilter) return speciesStat.records
+    return recordsMatchingFilter(catchPattern, conditionFilter)
+  }, [speciesStat, conditionFilter, catchPattern])
+  const filterLabel = useMemo(() => {
+    if (!conditionFilter || !catchPattern) return null
+    return findConditionBucket(catchPattern, conditionFilter)?.label ?? null
+  }, [conditionFilter, catchPattern])
 
   const daySections = useMemo(
-    () => (speciesStat ? groupRecordsByDate(speciesStat.records) : []),
-    [speciesStat],
+    () => groupRecordsByDate(visibleRecords),
+    [visibleRecords],
   )
 
   const resolvedHighlightDateKey = useMemo(() => {
     if (highlightDateKey) return highlightDateKey
-    if (!highlightRecordId || !speciesStat) return null
-    const record = speciesStat.records.find((item) => item.id === highlightRecordId)
+    if (!highlightRecordId) return null
+    const record = visibleRecords.find((item) => item.id === highlightRecordId)
     return record ? recordDateKey(record) : null
-  }, [highlightDateKey, highlightRecordId, speciesStat])
+  }, [highlightDateKey, highlightRecordId, visibleRecords])
 
   useEffect(() => {
     if ((!highlightDateKey && !highlightRecordId) || loading || !speciesStat) return
@@ -70,6 +93,14 @@ export function FishEncyclopediaSpeciesPage() {
     return () => window.clearTimeout(timer)
   }, [highlightDateKey, highlightRecordId, loading, speciesStat, daySections])
 
+  function applyConditionFilter(next: SpeciesConditionFilter | null) {
+    if (!next) {
+      setSearchParams({}, { replace: true })
+      return
+    }
+    setSearchParams(conditionFilterQuery(next), { replace: true })
+  }
+
   function scrollToDate(dateKey: string) {
     setSearchParams({ date: dateKey }, { replace: true })
   }
@@ -79,8 +110,7 @@ export function FishEncyclopediaSpeciesPage() {
   }
 
   function openRecord(record: FishingRecord) {
-    if (!speciesStat) return
-    setSheetRecords(speciesStat.records)
+    setSheetRecords(visibleRecords)
     setSelectedRecord(record)
   }
 
@@ -215,52 +245,78 @@ export function FishEncyclopediaSpeciesPage() {
             </dl>
           </section>
 
-          <h2 className="mb-3 text-sm font-medium text-sky-900">記録一覧</h2>
-          <div className="flex flex-col gap-6">
-            {daySections.map(({ dateKey, date, records: dayRecords }) => {
-              const isDayHighlight =
-                resolvedHighlightDateKey === dateKey && !highlightRecordId
-              return (
-                <section
-                  key={dateKey}
-                  ref={isDayHighlight ? setHighlightTarget : undefined}
-                  className={
-                    isDayHighlight
-                      ? 'scroll-mt-4 rounded-xl border border-cyan-300 bg-cyan-50/60 px-3 py-3'
-                      : undefined
-                  }
+          {catchPattern && (
+            <SpeciesCatchPatternSection
+              pattern={catchPattern}
+              filter={conditionFilter}
+              onSelect={applyConditionFilter}
+              onClear={() => applyConditionFilter(null)}
+            />
+          )}
+
+          <h2 className="mb-3 text-sm font-medium text-sky-900">
+            {filterLabel ? `記録一覧（${filterLabel}）` : '記録一覧'}
+          </h2>
+          {visibleRecords.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-sky-200 bg-white/70 px-4 py-8 text-center">
+              <p className="text-sm text-slate-500">この条件の記録はありません</p>
+              {conditionFilter && (
+                <button
+                  type="button"
+                  onClick={() => applyConditionFilter(null)}
+                  className="mt-3 text-sm font-medium text-cyan-800 underline"
                 >
-                  <p className="mb-3 text-base font-semibold text-sky-950">
-                    {formatDateLabel(date)}の記録（{dayRecords.length}件）
-                    {isDayHighlight && (
-                      <span className="ml-2 text-sm font-medium text-cyan-800">
-                        最大釣果日
-                      </span>
-                    )}
-                  </p>
-                  <ul className="flex flex-col gap-3">
-                    {dayRecords.map((record) => {
-                      const isRecordHighlight = highlightRecordId === record.id
-                      return (
-                        <li
-                          key={record.id}
-                          ref={isRecordHighlight ? setHighlightTarget : undefined}
-                          onClick={() => openRecord(record)}
-                          className={`cursor-pointer rounded-xl border bg-white px-4 py-3 shadow-sm transition scroll-mt-4 ${
-                            isRecordHighlight
-                              ? 'border-cyan-400 ring-2 ring-cyan-200'
-                              : 'border-sky-100 hover:border-sky-200 active:bg-sky-50'
-                          }`}
-                        >
-                          <RecordCard record={record} />
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </section>
-              )
-            })}
-          </div>
+                  解除
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-6">
+              {daySections.map(({ dateKey, date, records: dayRecords }) => {
+                const isDayHighlight =
+                  resolvedHighlightDateKey === dateKey && !highlightRecordId
+                return (
+                  <section
+                    key={dateKey}
+                    ref={isDayHighlight ? setHighlightTarget : undefined}
+                    className={
+                      isDayHighlight
+                        ? 'scroll-mt-4 rounded-xl border border-cyan-300 bg-cyan-50/60 px-3 py-3'
+                        : undefined
+                    }
+                  >
+                    <p className="mb-3 text-base font-semibold text-sky-950">
+                      {formatDateLabel(date)}の記録（{dayRecords.length}件）
+                      {isDayHighlight && (
+                        <span className="ml-2 text-sm font-medium text-cyan-800">
+                          最大釣果日
+                        </span>
+                      )}
+                    </p>
+                    <ul className="flex flex-col gap-3">
+                      {dayRecords.map((record) => {
+                        const isRecordHighlight = highlightRecordId === record.id
+                        return (
+                          <li
+                            key={record.id}
+                            ref={isRecordHighlight ? setHighlightTarget : undefined}
+                            onClick={() => openRecord(record)}
+                            className={`cursor-pointer rounded-xl border bg-white px-4 py-3 shadow-sm transition scroll-mt-4 ${
+                              isRecordHighlight
+                                ? 'border-cyan-400 ring-2 ring-cyan-200'
+                                : 'border-sky-100 hover:border-sky-200 active:bg-sky-50'
+                            }`}
+                          >
+                            <RecordCard record={record} />
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </section>
+                )
+              })}
+            </div>
+          )}
         </>
       )}
 

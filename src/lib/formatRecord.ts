@@ -1,7 +1,7 @@
 import type { FishingRecord } from '../types/record'
 import { weatherCodeLabel } from './weatherCode'
 
-const FLAT_SLOPE_CM_PER_HOUR = 1
+export const FLAT_SLOPE_CM_PER_HOUR = 1
 
 export function formatWeatherLine(record: FishingRecord): string {
   const bits: string[] = []

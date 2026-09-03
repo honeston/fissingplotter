@@ -93,20 +93,25 @@ sequenceDiagram
 
 記録から魚種ごとの尾数・最大サイズなどを集計する。尾数は各記録の匹数（未入力は 1）の合計。一覧の先頭に魚種数と釣果数の合計を出す（魚種なしは含めない）。魚種名・別名で一覧を絞り込める（合計は変えない）。一覧カードにはその魚種の代表画像（写真付き記録のうち最大サイズ）を出す。手入力の図鑑ではない。
 
+魚種詳細では、その魚が釣れたときの時間帯・潮・場所・ルアー／エサの内訳を出す（不漁はないので確率ではない）。「よく釣れている条件」は初期は閉じており、開くと棒が出る。棒をタップすると記録一覧をその条件に絞る。
+
 ```mermaid
 flowchart TD
   list["図鑑一覧"] -->|"検索: 魚種名・別名"| list
   list -->|"ソート: 数 / 魚種 / 最大サイズ / 最大重量"| list
   list -->|"魚種カード"| detail["魚種詳細"]
   detail --> stats["集計（匹数・最大など）"]
+  detail --> pattern["よく釣れている条件"]
   detail --> days["日付ごとの記録"]
   stats -->|"最大サイズ / 最大重量"| scrollRec["該当カードへスクロール"]
   stats -->|"最大釣果日"| scrollDay["その日のセクションへ"]
+  pattern -->|"時間帯 / 潮 / 場所 / ルアー"| filter["記録を条件で絞る"]
+  filter --> days
   days --> sheet["記録詳細シート"]
   sheet -->|"編集 / 削除 / スワイプ"| sheet
 ```
 
-魚種詳細は `/mypage/encyclopedia/:species`。`?record=` と `?date=` で該当カードや日を強調する。
+魚種詳細は `/mypage/encyclopedia/:species`。`?record=` と `?date=` で該当カードや日を強調する。条件は `?slot=` `?tide=` `?cycle=` `?place=` `?lure=` `?rig=` のいずれか一つ。
 
 ```mermaid
 sequenceDiagram
@@ -126,6 +131,9 @@ sequenceDiagram
   else 最大釣果日
     U->>Sp: タップ
     Sp-->>Sp: ?date= でその日へスクロール
+  else よく釣れている条件
+    U->>Sp: 棒をタップ
+    Sp-->>Sp: 条件クエリで一覧を絞る
   end
   U->>Sp: 記録カード
   Sp-->>Sheet: 詳細
