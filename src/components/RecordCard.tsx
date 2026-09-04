@@ -10,7 +10,7 @@ import { PhotoLightbox } from './PhotoLightbox'
 import { EditedMark, RecordValueList } from './RecordValueList'
 import { ConditionRow } from './ui/ConditionRow'
 import { Icon } from './ui/Icon'
-import type { FishingRecord } from '../types/record'
+import { isBlankRecord, recordCatchLabel, type FishingRecord } from '../types/record'
 
 interface RecordCardProps {
   record: FishingRecord
@@ -49,14 +49,14 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
           <PhotoFrame
             url={photoUrl}
             loading={photoLoading}
-            alt={record.fishSpecies ?? '釣果写真'}
+            alt={recordCatchLabel(record)}
             onOpen={() => setLightboxOpen(true)}
           />
         </div>
         {lightboxOpen && photoUrl && (
           <PhotoLightbox
             src={photoUrl}
-            alt={record.fishSpecies ?? '釣果写真'}
+            alt={recordCatchLabel(record)}
             onClose={() => setLightboxOpen(false)}
           />
         )}
@@ -94,7 +94,7 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
           {photoUrl && (
             <img
               src={photoUrl}
-              alt={record.fishSpecies ?? '釣果写真'}
+              alt={recordCatchLabel(record)}
               className="h-12 w-12 shrink-0 rounded-lg border border-sky-200 object-cover"
             />
           )}
@@ -112,18 +112,18 @@ export function RecordCard({ record, onDelete, showLargePhoto }: RecordCardProps
               {hasEditedField(record, 'recordedAt') ? <EditedMark /> : null}
             </span>
             <span className="mt-0.5 block font-medium text-sky-950">
-              {record.fishSpecies ?? '（魚種なし）'}
-              {record.fishCount != null ? (
+              {recordCatchLabel(record)}
+              {!isBlankRecord(record) && record.fishCount != null ? (
                 <span className="ml-2 text-sm font-normal text-slate-600">
                   {formatFishCount(record.fishCount)}
                 </span>
               ) : null}
-              {record.fishSizeCm != null ? (
+              {!isBlankRecord(record) && record.fishSizeCm != null ? (
                 <span className="ml-2 text-sm font-normal text-slate-600">
                   {formatFishSize(record.fishSizeCm, prefs.length)}
                 </span>
               ) : null}
-              {record.fishWeightG != null ? (
+              {!isBlankRecord(record) && record.fishWeightG != null ? (
                 <span className="ml-2 text-sm font-normal text-slate-600">
                   {formatFishWeight(record.fishWeightG, prefs.weight)}
                 </span>

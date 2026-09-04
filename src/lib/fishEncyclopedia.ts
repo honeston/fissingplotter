@@ -1,7 +1,7 @@
 import { recordDateKey } from './dates'
 import { catchCountOf } from './fishCount'
 import { speciesMatchesSearch } from './fishSpecies'
-import type { FishingRecord } from '../types/record'
+import { isBlankRecord, type FishingRecord } from '../types/record'
 
 export type SpeciesStat = {
   species: string
@@ -97,6 +97,7 @@ export function buildSpeciesStats(records: FishingRecord[]): SpeciesStat[] {
   const bySpecies = new Map<string, FishingRecord[]>()
 
   for (const record of records) {
+    if (isBlankRecord(record)) continue
     const species = record.fishSpecies?.trim()
     if (!species) continue
     const list = bySpecies.get(species)

@@ -97,17 +97,21 @@ export function RecordValueList({
       {!omitCatchFields && (
         <>
           <IconRow icon={Fish} label="魚種">
-            {record.fishSpecies ?? '—'}
+            {record.kind === 'blank' ? 'ボウズ' : (record.fishSpecies ?? '—')}
           </IconRow>
-          <IconRow icon={Hash} label="匹数">
-            {formatFishCount(record.fishCount)}
-          </IconRow>
-          <IconRow icon={Ruler} label="体長">
-            {formatFishSize(record.fishSizeCm, prefs.length)}
-          </IconRow>
-          <IconRow icon={Scale} label="重さ">
-            {formatFishWeight(record.fishWeightG, prefs.weight)}
-          </IconRow>
+          {record.kind !== 'blank' && (
+            <>
+              <IconRow icon={Hash} label="匹数">
+                {formatFishCount(record.fishCount)}
+              </IconRow>
+              <IconRow icon={Ruler} label="体長">
+                {formatFishSize(record.fishSizeCm, prefs.length)}
+              </IconRow>
+              <IconRow icon={Scale} label="重さ">
+                {formatFishWeight(record.fishWeightG, prefs.weight)}
+              </IconRow>
+            </>
+          )}
           {hasTackleContent(record.tackle) && (
             <>
               {record.tackle!.name ? (

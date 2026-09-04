@@ -17,8 +17,9 @@ export function fishCountToInputString(count: number | null | undefined): string
   return count != null ? String(count) : ''
 }
 
-/** 図鑑集計用。未入力・旧記録は 1 匹 */
-export function catchCountOf(record: { fishCount?: number | null }): number {
+/** 図鑑集計用。未入力・旧記録は 1 匹。ボウズは 0 */
+export function catchCountOf(record: { fishCount?: number | null; kind?: string | null }): number {
+  if (record.kind === 'blank') return 0
   const n = record.fishCount
   if (n == null || !Number.isFinite(n) || n < 1) return 1
   return Math.trunc(n)

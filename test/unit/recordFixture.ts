@@ -27,6 +27,8 @@ export function sampleRecord(
     tackle: null,
     photoKey: null,
     editedFields: [],
+    tripId: null,
+    kind: 'catch',
     ...overrides,
   }
 }

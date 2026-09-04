@@ -5,6 +5,7 @@ import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import type { RecordResult } from '../hooks/useRecord'
 import { formatFishCount } from '../lib/fishCount'
 import { formatFishSize, formatFishWeight } from '../lib/units'
+import { isBlankRecord } from '../types/record'
 import { ConditionRow } from './ui/ConditionRow'
 import { Icon } from './ui/Icon'
 
@@ -13,12 +14,14 @@ function SavedRecordSummary({ result }: { result: RecordResult }) {
   const { url: photoUrl } = usePhotoUrl(saved)
   const { prefs } = useUnitPrefs()
 
-  const catchBits = [
-    saved.fishSpecies,
-    saved.fishCount != null ? formatFishCount(saved.fishCount) : null,
-    saved.fishSizeCm != null ? formatFishSize(saved.fishSizeCm, prefs.length) : null,
-    saved.fishWeightG != null ? formatFishWeight(saved.fishWeightG, prefs.weight) : null,
-  ].filter(Boolean)
+  const catchBits = isBlankRecord(saved)
+    ? ['ボウズ']
+    : [
+        saved.fishSpecies,
+        saved.fishCount != null ? formatFishCount(saved.fishCount) : null,
+        saved.fishSizeCm != null ? formatFishSize(saved.fishSizeCm, prefs.length) : null,
+        saved.fishWeightG != null ? formatFishWeight(saved.fishWeightG, prefs.weight) : null,
+      ].filter(Boolean)
 
   return (
     <section
@@ -28,7 +31,7 @@ function SavedRecordSummary({ result }: { result: RecordResult }) {
     >
       <p className="flex items-center gap-2 font-semibold">
         <Icon icon={CheckCircle} size="sm" className="text-cyan-700" />
-        保存しました
+        {isBlankRecord(saved) ? '釣行を終了しました' : '保存しました'}
       </p>
       <p className="mt-1 text-xs tabular-nums text-cyan-800">
         {new Date(saved.recordedAt).toLocaleString('ja-JP')}

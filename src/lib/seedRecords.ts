@@ -12,8 +12,16 @@ const nullExtras = {
 
 type SeedBase = Omit<
   FishingRecord,
-  'recordedAt' | 'dawnAt' | 'sunriseAt' | 'sunsetAt' | 'duskAt' | 'editedFields' | 'fishCount'
-> & { fishCount?: number | null }
+  | 'recordedAt'
+  | 'dawnAt'
+  | 'sunriseAt'
+  | 'sunsetAt'
+  | 'duskAt'
+  | 'editedFields'
+  | 'fishCount'
+  | 'tripId'
+  | 'kind'
+> & { fishCount?: number | null; tripId?: string | null; kind?: FishingRecord['kind'] }
 
 type SunOffset =
   | { at: 'sunrise'; minutes: number }
@@ -57,6 +65,8 @@ function stampSun(base: SeedBase, daysAgoCount: number, offset: SunOffset): Fish
     sunsetAt: stamped?.sunsetAt ?? null,
     duskAt: stamped?.duskAt ?? null,
     editedFields: [],
+    tripId: base.tripId ?? null,
+    kind: base.kind ?? 'catch',
   }
 }
 
@@ -83,9 +93,67 @@ const DEV_SEED_RECORDS: FishingRecord[] = [
       fishWeightG: 280,
       tackle: null,
       photoKey: null,
+      tripId: 'seed-trip-enoshima',
     },
     0,
     { at: 'sunrise', minutes: 40 },
+  ),
+  stampSun(
+    {
+      id: 'seed-001b',
+      latitude: 35.3167,
+      longitude: 139.4833,
+      locationName: '神奈川県藤沢市片瀬',
+      temperature: 18.2,
+      weatherCode: 1,
+      windSpeedMs: 3.2,
+      tideLevel: 142,
+      tideHarbor: '江の島',
+      tideCycle: '大潮',
+      moonPhase: '新月',
+      moonAge: 0.4,
+      tideSlopeCmPerHour: 15.2,
+      fishSpecies: 'サバ',
+      fishCount: 1,
+      fishSizeCm: 32,
+      fishWeightG: 420,
+      tackle: {
+        name: 'ショアジギ',
+        rod: '',
+        reel: '',
+        line: '',
+        lureOrBaitKind: 'lure',
+        lureOrBait: 'メタルジグ',
+        rig: '',
+      },
+      photoKey: null,
+      tripId: 'seed-trip-enoshima',
+    },
+    0,
+    { at: 'sunrise', minutes: 70 },
+  ),
+  stampSun(
+    {
+      id: 'seed-blank',
+      latitude: 35.4437,
+      longitude: 139.638,
+      locationName: '神奈川県横浜市中区',
+      temperature: 17.0,
+      weatherCode: 3,
+      windSpeedMs: 4.0,
+      tideLevel: 90,
+      tideHarbor: '横浜',
+      tideCycle: '中潮',
+      moonPhase: '三日月',
+      moonAge: 3.1,
+      tideSlopeCmPerHour: -8.0,
+      fishSpecies: null,
+      kind: 'blank',
+      tripId: 'seed-trip-blank',
+      ...nullExtras,
+    },
+    2,
+    { at: 'day' },
   ),
   stampSun(
     {

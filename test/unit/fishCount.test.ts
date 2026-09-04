@@ -18,10 +18,11 @@ describe('匹数', () => {
     expect(parseFishCount('01')).toBe('invalid')
   })
 
-  it('未入力・旧記録は 1 匹として数える', () => {
+  it('未入力・旧記録は 1 匹として数える。ボウズは 0', () => {
     expect(catchCountOf({})).toBe(1)
     expect(catchCountOf({ fishCount: null })).toBe(1)
     expect(catchCountOf({ fishCount: 3 })).toBe(3)
+    expect(catchCountOf({ kind: 'blank', fishCount: 3 })).toBe(0)
     expect(formatFishCount(null)).toBe('—')
     expect(formatFishCount(3)).toBe('3匹')
   })

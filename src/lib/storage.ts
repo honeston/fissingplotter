@@ -1,5 +1,10 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { FishingRecord, NewFishingRecord } from '../types/record'
+import {
+  isBlankRecord,
+  normalizeRecordKind,
+  type FishingRecord,
+  type NewFishingRecord,
+} from '../types/record'
 import type { MyTackle } from '../types/tackle'
 import { normalizeTackleFields } from '../types/tackle'
 import { normalizeEditedFields } from './editedFields'
@@ -95,7 +100,7 @@ function fillSunTimes(record: FishingRecord): FishingRecord {
 function normalizeRecord(record: FishingRecord): FishingRecord {
   const latitude = record.latitude ?? null
   const longitude = record.longitude ?? null
-  return fillSunTimes({
+  const normalized = fillSunTimes({
     ...record,
     latitude: Number.isFinite(latitude) ? latitude : null,
     longitude: Number.isFinite(longitude) ? longitude : null,
@@ -116,8 +121,18 @@ function normalizeRecord(record: FishingRecord): FishingRecord {
     tackle: normalizeTackleFields(record.tackle),
     photoKey: record.photoKey ?? null,
     editedFields: normalizeEditedFields(record.editedFields),
+    tripId: record.tripId?.trim() || null,
+    kind: normalizeRecordKind(record.kind),
     updatedAt: record.updatedAt ?? null,
   })
+  if (!isBlankRecord(normalized)) return normalized
+  return {
+    ...normalized,
+    fishSpecies: null,
+    fishCount: null,
+    fishSizeCm: null,
+    fishWeightG: null,
+  }
 }
 
 function buildRecord(input: NewFishingRecord): FishingRecord {
@@ -147,6 +162,8 @@ function buildRecord(input: NewFishingRecord): FishingRecord {
     tackle: normalizeTackleFields(input.tackle),
     photoKey: input.photoKey ?? null,
     editedFields: normalizeEditedFields(input.editedFields),
+    tripId: input.tripId?.trim() || null,
+    kind: normalizeRecordKind(input.kind),
     updatedAt: input.updatedAt ?? null,
   }
 }
@@ -325,6 +342,7 @@ export async function clearLocalUserData(): Promise<void> {
     'fp.unitPrefs',
     'fp.keepTackle',
     'fp.tackleDraft',
+    'fp.activeTrip',
     'fissingplotter-recent-species',
     'fissingplotter-last-sync',
   ]

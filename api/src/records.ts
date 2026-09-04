@@ -10,6 +10,8 @@ const TABLE_NAME = process.env.TABLE_NAME ?? ''
 
 const doc = createDynamoClient()
 
+export type RecordKind = 'catch' | 'blank'
+
 export interface FishingRecord {
   id: string
   recordedAt: string
@@ -36,6 +38,8 @@ export interface FishingRecord {
   tackle: TackleFields | null
   photoKey: string | null
   editedFields: EditedField[]
+  tripId: string | null
+  kind: RecordKind
   updatedAt?: string | null
 }
 
@@ -161,6 +165,17 @@ function parseTackleFields(value: unknown): TackleFields | null {
   return hasContent ? fields : null
 }
 
+function parseTripId(value: unknown): string | null {
+  if (value == null || value === '') return null
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed ? trimmed : null
+}
+
+function parseKind(value: unknown): RecordKind {
+  return value === 'blank' ? 'blank' : 'catch'
+}
+
 export function validateRecord(input: unknown): FishingRecord {
   if (!input || typeof input !== 'object') {
     throw new Error('Invalid record body')
@@ -178,6 +193,9 @@ export function validateRecord(input: unknown): FishingRecord {
   if ((latitude == null) !== (longitude == null)) {
     throw new Error('Invalid coordinates')
   }
+
+  const kind = parseKind(r.kind)
+  const isBlank = kind === 'blank'
 
   return {
     id: r.id,
@@ -198,13 +216,15 @@ export function validateRecord(input: unknown): FishingRecord {
     moonPhase: optionalString(r.moonPhase),
     moonAge: optionalNumber(r.moonAge),
     tideSlopeCmPerHour: optionalNumber(r.tideSlopeCmPerHour),
-    fishSpecies: optionalString(r.fishSpecies),
-    fishCount: parsePositiveInteger(r.fishCount, 'fishCount'),
-    fishSizeCm: parseNonNegativeNumber(r.fishSizeCm, 'fishSizeCm'),
-    fishWeightG: parseNonNegativeNumber(r.fishWeightG, 'fishWeightG'),
+    fishSpecies: isBlank ? null : optionalString(r.fishSpecies),
+    fishCount: isBlank ? null : parsePositiveInteger(r.fishCount, 'fishCount'),
+    fishSizeCm: isBlank ? null : parseNonNegativeNumber(r.fishSizeCm, 'fishSizeCm'),
+    fishWeightG: isBlank ? null : parseNonNegativeNumber(r.fishWeightG, 'fishWeightG'),
     tackle: parseTackleFields(r.tackle),
     photoKey: typeof r.photoKey === 'string' ? r.photoKey : null,
     editedFields: parseEditedFields(r.editedFields),
+    tripId: parseTripId(r.tripId),
+    kind,
   }
 }
 
@@ -317,6 +337,8 @@ export async function upsertRecord(userId: string, input: unknown): Promise<Fish
         tackle: record.tackle,
         photoKey: record.photoKey,
         editedFields: record.editedFields,
+        tripId: record.tripId,
+        kind: record.kind,
         updatedAt: now,
       },
     }),
@@ -433,6 +455,8 @@ function storedToRecord(item: Record<string, unknown>): FishingRecord {
     tackle: parseTackleFields(item.tackle),
     photoKey: item.photoKey == null ? null : String(item.photoKey),
     editedFields: parseEditedFields(item.editedFields),
+    tripId: parseTripId(item.tripId),
+    kind: parseKind(item.kind),
     updatedAt: storedString(item.updatedAt),
   }
 }

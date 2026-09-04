@@ -1,4 +1,4 @@
-import { Calendar, ChevronDown, ChevronUp, Fish, Ruler, Scale } from 'lucide-react'
+import { Calendar, ChevronDown, ChevronUp, CircleStop, Fish, Play, Ruler, Scale } from 'lucide-react'
 import { FishingRod } from '../components/icons/FishingRod'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -19,6 +19,14 @@ import { canonicalFishSpeciesName } from '../lib/fishSpecies'
 import { parseFishCount } from '../lib/fishCount'
 import { listMyTackles, saveMyTackle } from '../lib/myTackle'
 import { getAllRecords } from '../lib/sync'
+import {
+  activeTripFromRecord,
+  clearActiveTrip,
+  createActiveTrip,
+  readActiveTrip,
+  writeActiveTrip,
+  type ActiveTrip,
+} from '../lib/trips'
 import {
   clearTackleDraft,
   readKeepTackle,
@@ -46,6 +54,7 @@ import {
   type MyTackle,
   type TackleFields,
 } from '../types/tackle'
+import { isBlankRecord } from '../types/record'
 
 function tackleFieldsOrEmpty(fields: TackleFields | null | undefined): TackleFields {
   return fields ? { ...fields } : EMPTY_TACKLE_FIELDS
@@ -65,7 +74,8 @@ export function HomePage() {
   const [myTackles, setMyTackles] = useState<MyTackle[]>([])
   const [showTacklePicker, setShowTacklePicker] = useState(false)
   const [tackleMessage, setTackleMessage] = useState('')
-  const { busy, steps, errors, lastResult, record, reset } = useRecord()
+  const { busy, steps, errors, lastResult, record, captureConditions, reset } = useRecord()
+  const [activeTrip, setActiveTrip] = useState<ActiveTrip | null>(() => readActiveTrip())
   const [fatalError, setFatalError] = useState('')
   const statusRef = useRef<HTMLDivElement>(null)
   const summaryRef = useRef<HTMLDivElement>(null)
@@ -185,53 +195,101 @@ export function HomePage() {
     }
   }
 
-  async function handleRecord() {
+  async function handleStartTrip() {
+    setFatalError('')
+    reset()
+    try {
+      const captured = await captureConditions()
+      const trip = createActiveTrip(captured.conditions)
+      writeActiveTrip(trip)
+      setActiveTrip(trip)
+    } catch (err) {
+      setFatalError(err instanceof Error ? err.message : '釣行を開始できませんでした')
+    }
+  }
+
+  async function handleEndTrip() {
+    if (!activeTrip) return
+    if (activeTrip.catchCount === 0) {
+      await handleRecord('blank')
+      return
+    }
+    clearActiveTrip()
+    setActiveTrip(null)
+  }
+
+  function clearCatchFields() {
+    setFishSpecies('')
+    setFishCountInput('')
+    setFishSizeInput('')
+    setFishWeightInput('')
+    if (keepTackle) {
+      writeTackleDraft(tackle)
+    } else {
+      setTackle(EMPTY_TACKLE_FIELDS)
+      clearTackleDraft()
+    }
+    setTackleOpen(false)
+    setShowTacklePicker(false)
+    setTackleMessage('')
+    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
+    setPhotoPreviewUrl(null)
+    setPhotoBlob(null)
+  }
+
+  async function handleRecord(kind: 'catch' | 'blank') {
     setFatalError('')
     reset()
 
-    const parsedCount = parseFishCount(fishCountInput)
-    if (parsedCount === 'invalid') {
-      setFatalError('匹数は 1 以上の整数で入力してください')
-      return
-    }
+    let parsedCount: number | null = null
+    let parsedSize: number | null = null
+    let parsedWeight: number | null = null
 
-    const parsedSize = parseSizeToCm(fishSizeInput, prefs.length)
-    if (parsedSize === 'invalid') {
-      setFatalError('体長は 0 以上の数値で入力してください')
-      return
-    }
-
-    const parsedWeight = parseWeightToG(fishWeightInput, prefs.weight)
-    if (parsedWeight === 'invalid') {
-      setFatalError('重さは 0 以上の数値で入力してください')
-      return
+    if (kind === 'catch') {
+      const count = parseFishCount(fishCountInput)
+      if (count === 'invalid') {
+        setFatalError('匹数は 1 以上の整数で入力してください')
+        return
+      }
+      const size = parseSizeToCm(fishSizeInput, prefs.length)
+      if (size === 'invalid') {
+        setFatalError('体長は 0 以上の数値で入力してください')
+        return
+      }
+      const weight = parseWeightToG(fishWeightInput, prefs.weight)
+      if (weight === 'invalid') {
+        setFatalError('重さは 0 以上の数値で入力してください')
+        return
+      }
+      parsedCount = count
+      parsedSize = size
+      parsedWeight = weight
     }
 
     try {
-      await record({
-        fishSpecies: fishSpecies.trim() ? canonicalFishSpeciesName(fishSpecies.trim()) : null,
+      const result = await record({
+        fishSpecies:
+          kind === 'catch' && fishSpecies.trim()
+            ? canonicalFishSpeciesName(fishSpecies.trim())
+            : null,
         fishCount: parsedCount,
         fishSizeCm: parsedSize,
         fishWeightG: parsedWeight,
         tackle: normalizeTackleFields(tackle),
         photoBlob,
+        kind,
+        tripId: activeTrip?.tripId ?? null,
+        reuseConditions: activeTrip?.conditions ?? null,
       })
-      setFishSpecies('')
-      setFishCountInput('')
-      setFishSizeInput('')
-      setFishWeightInput('')
-      if (keepTackle) {
-        writeTackleDraft(tackle)
+      if (isBlankRecord(result.record)) {
+        clearActiveTrip()
+        setActiveTrip(null)
       } else {
-        setTackle(EMPTY_TACKLE_FIELDS)
-        clearTackleDraft()
+        const next = activeTripFromRecord(result.record, activeTrip)
+        writeActiveTrip(next)
+        setActiveTrip(next)
       }
-      setTackleOpen(false)
-      setShowTacklePicker(false)
-      setTackleMessage('')
-      if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
-      setPhotoPreviewUrl(null)
-      setPhotoBlob(null)
+      clearCatchFields()
     } catch (err) {
       setFatalError(err instanceof Error ? err.message : '記録に失敗しました')
     }
@@ -252,6 +310,31 @@ export function HomePage() {
           </Link>
         }
       />
+
+      {activeTrip && (
+        <div
+          className="mb-4 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3"
+          data-testid="trip-banner"
+          role="status"
+        >
+          <p className="min-w-0 text-sm text-cyan-950">
+            <span className="font-semibold">釣行中</span>
+            <span className="mt-0.5 block text-xs text-cyan-800">
+              {[
+                new Date(activeTrip.startedAt).toLocaleTimeString('ja-JP', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false,
+                }) + '〜',
+                activeTrip.locationName,
+                `${activeTrip.catchCount}匹`,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </span>
+          </p>
+        </div>
+      )}
 
       <PhotoInput
         previewUrl={photoPreviewUrl}
@@ -449,13 +532,42 @@ export function HomePage() {
         <IconButton
           icon={Fish}
           label="記録する"
-          onClick={() => void handleRecord()}
+          onClick={() => void handleRecord('catch')}
           disabled={busy}
           fullWidth
           testId="record-submit"
         >
-          {busy ? '記録中…' : '記録'}
+          {busy ? (activeTrip ? '記録中…' : '記録') : activeTrip ? '追加' : '記録'}
         </IconButton>
+        {activeTrip ? (
+          <div className="mt-2">
+            <IconButton
+              icon={CircleStop}
+              label="釣行を終了"
+              onClick={() => void handleEndTrip()}
+              disabled={busy}
+              fullWidth
+              variant="secondary"
+              testId="trip-end"
+            >
+              釣行を終了
+            </IconButton>
+          </div>
+        ) : (
+          <div className="mt-2">
+            <IconButton
+              icon={Play}
+              label="釣行を開始"
+              onClick={() => void handleStartTrip()}
+              disabled={busy}
+              fullWidth
+              variant="secondary"
+              testId="trip-start"
+            >
+              {busy ? '開始中…' : '釣行を開始'}
+            </IconButton>
+          </div>
+        )}
         <div ref={statusRef} tabIndex={-1} className="mt-4 scroll-mt-4 outline-none">
           <RecordProgress steps={steps} errors={errors} />
           {lastResult && (

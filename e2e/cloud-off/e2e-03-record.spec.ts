@@ -55,6 +55,37 @@ test.describe('E2E-03 記録保存', () => {
     await expect(page.getByText('まだ記録がありません')).toBeVisible()
   })
 
+  test('E2E-03g 釣行を開始して何も釣らず終了すると履歴にボウズと出る', async ({
+    freshPage: page,
+  }) => {
+    await waitForRecordHome(page)
+    await page.getByTestId('trip-start').click()
+    await expect(page.getByTestId('trip-banner')).toBeVisible({ timeout: 20_000 })
+    await page.getByTestId('trip-end').click()
+    await expect(page.getByTestId('record-saved')).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByTestId('record-saved')).toContainText('ボウズ')
+    await page.getByTestId('view-history').first().click()
+    await expect(page.getByRole('heading', { name: '履歴' })).toBeVisible()
+    await expect(page.getByText('ボウズ').first()).toBeVisible()
+    await expect(page.getByText('（魚種なし）')).toHaveCount(0)
+  })
+
+  test('E2E-03h 続けて記録すると同じ釣行にまとまる', async ({ freshPage: page }) => {
+    await waitForRecordHome(page)
+    await page.getByLabel('魚種（任意）').fill('アジ')
+    await page.keyboard.press('Escape')
+    await saveRecord(page)
+    await expect(page.getByTestId('trip-banner')).toBeVisible()
+    await page.getByTestId('record-continue').click()
+    await page.getByLabel('魚種（任意）').fill('サバ')
+    await page.keyboard.press('Escape')
+    await saveRecord(page)
+    await page.goto('/history')
+    await expect(page.getByTestId('trip-header')).toBeVisible()
+    await expect(page.getByText('アジ').first()).toBeVisible()
+    await expect(page.getByText('サバ').first()).toBeVisible()
+  })
+
   test('E2E-03d geolocation 失敗でも保存される', async ({ browser }) => {
     const context = await browser.newContext({
       viewport: { width: 390, height: 844 },

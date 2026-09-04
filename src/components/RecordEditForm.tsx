@@ -237,6 +237,8 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
     const speciesRaw = draft.fishSpecies?.trim() || ''
     const species = speciesRaw ? canonicalFishSpeciesName(speciesRaw) : null
     if (species) rememberFishSpecies(species)
+    const nextKind = original.kind === 'blank' && species ? 'catch' : original.kind
+    const blank = nextKind === 'blank'
 
     setSaving(true)
     try {
@@ -244,10 +246,11 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
         {
           ...draft,
           recordedAt,
-          fishSpecies: species,
-          fishCount: parsedCount,
-          fishSizeCm: parsedSize,
-          fishWeightG: parsedWeight,
+          kind: nextKind,
+          fishSpecies: blank ? null : species,
+          fishCount: blank ? null : parsedCount,
+          fishSizeCm: blank ? null : parsedSize,
+          fishWeightG: blank ? null : parsedWeight,
           tackle: normalizeTackleFields(tackleDraft),
           editedFields,
         },
@@ -279,6 +282,12 @@ export function RecordEditForm({ record, onCancel, onSaved }: RecordEditFormProp
         onPhotoChange={setPhotoBlob}
         disabled={saving}
       />
+
+      {record.kind === 'blank' && (
+        <p className="mb-3 text-sm text-slate-600">
+          ボウズの記録です。魚種を入れると釣果に変わります。
+        </p>
+      )}
 
       <div className="mb-4 flex items-start gap-2">
         <FishSpeciesInput

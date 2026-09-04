@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import type { DateRange } from 'react-day-picker'
 import { HistoryCalendar } from '../components/HistoryCalendar'
+import { HistoryFilterPanel } from '../components/HistoryFilterPanel'
 import { RecordCard } from '../components/RecordCard'
 import { RecordDetailSheet } from '../components/RecordDetailSheet'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -16,7 +17,15 @@ import {
   normalizeDateRange,
   recordsGroupedForDisplay,
 } from '../lib/dates'
+import {
+  applyHistoryFiltersToSearchParams,
+  filterRecordsByHistory,
+  hasActiveHistoryFilters,
+  historyFiltersFromSearchParams,
+  type HistoryFilters,
+} from '../lib/historyFilters'
 import { deleteRecord } from '../lib/sync'
+import { groupRecordsByTrip, tripHeaderLabel, tripShowsHeader } from '../lib/trips'
 import type { FishingRecord } from '../types/record'
 
 const RecordsMap = lazy(() =>
@@ -44,7 +53,7 @@ function dateRangeFromSearchParams(
 
 export function HistoryPage() {
   const { records, loading, error, reload } = useRecords()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(() =>
     dateRangeFromSearchParams(searchParams),
   )
@@ -53,6 +62,11 @@ export function HistoryPage() {
   )
   const [sheetRecords, setSheetRecords] = useState<FishingRecord[]>([])
   const [statusMessage, setStatusMessage] = useState('')
+
+  const filters = useMemo(
+    () => historyFiltersFromSearchParams(searchParams),
+    [searchParams],
+  )
 
   useEffect(() => {
     if (!statusMessage) return
@@ -65,15 +79,26 @@ export function HistoryPage() {
     [selectedRange],
   )
 
+  const filteredRecords = useMemo(
+    () => filterRecordsByHistory(records, filters),
+    [records, filters],
+  )
+
   const recordSections = useMemo(
-    () => recordsGroupedForDisplay(records, selectedRange),
-    [records, selectedRange],
+    () => recordsGroupedForDisplay(filteredRecords, selectedRange),
+    [filteredRecords, selectedRange],
   )
 
   const navigableRecords = useMemo(
     () => recordSections.flatMap((section) => section.records),
     [recordSections],
   )
+
+  function handleFiltersChange(next: HistoryFilters) {
+    setSearchParams(applyHistoryFiltersToSearchParams(searchParams, next), {
+      replace: true,
+    })
+  }
 
   function openRecord(record: FishingRecord, context: FishingRecord[]) {
     setSheetRecords(context)
@@ -113,6 +138,12 @@ export function HistoryPage() {
     await reload()
   }
 
+  const emptyMessage = (() => {
+    if (normalizedRange) return 'この期間の記録はありません'
+    if (hasActiveHistoryFilters(filters)) return '条件に合う記録はありません'
+    return 'この日の記録はありません'
+  })()
+
   return (
     <main className="flex flex-1 flex-col px-4 pb-8 pt-6">
       <PageHeader
@@ -140,11 +171,19 @@ export function HistoryPage() {
       )}
       <div className="mb-4">
         <HistoryCalendar
-          records={records}
+          records={filteredRecords}
           selectedRange={selectedRange}
           onSelectRange={setSelectedRange}
         />
       </div>
+
+      {records.length > 0 && (
+        <HistoryFilterPanel
+          records={records}
+          filters={filters}
+          onChange={handleFiltersChange}
+        />
+      )}
 
       {normalizedRange && (
         <div className="mb-3 flex items-center justify-between gap-2">
@@ -188,12 +227,7 @@ export function HistoryPage() {
         !error &&
         records.length > 0 &&
         recordSections.length === 0 && (
-          <EmptyState
-            icon={Calendar}
-            message={
-              normalizedRange ? 'この期間の記録はありません' : 'この日の記録はありません'
-            }
-          />
+          <EmptyState icon={Calendar} message={emptyMessage} />
         )}
 
       <div className="flex flex-col gap-6">
@@ -205,17 +239,31 @@ export function HistoryPage() {
                 {dayRecords.length}
               </span>
             </div>
-            <ul className="flex flex-col gap-3">
-              {dayRecords.map((record) => (
-                <li
-                  key={record.id}
-                  onClick={() => openRecord(record, navigableRecords)}
-                  className="cursor-pointer rounded-xl border border-sky-100 bg-white px-4 py-3 shadow-sm transition hover:border-sky-200 active:bg-sky-50"
-                >
-                  <RecordCard record={record} />
-                </li>
+            <div className="flex flex-col gap-4">
+              {groupRecordsByTrip(dayRecords).map((trip) => (
+                <div key={trip.key}>
+                  {tripShowsHeader(trip) && (
+                    <p
+                      className="mb-2 text-xs font-medium text-slate-500"
+                      data-testid="trip-header"
+                    >
+                      {tripHeaderLabel(trip)}
+                    </p>
+                  )}
+                  <ul className="flex flex-col gap-3">
+                    {trip.records.map((record) => (
+                      <li
+                        key={record.id}
+                        onClick={() => openRecord(record, navigableRecords)}
+                        className="cursor-pointer rounded-xl border border-sky-100 bg-white px-4 py-3 shadow-sm transition hover:border-sky-200 active:bg-sky-50"
+                      >
+                        <RecordCard record={record} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
           </section>
         ))}
       </div>

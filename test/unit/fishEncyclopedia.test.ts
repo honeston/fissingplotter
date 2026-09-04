@@ -124,4 +124,18 @@ describe('UNIT-05 魚種図鑑集計', () => {
     expect(stats[0].bestCatchDateKey).toBe(recordDateKey(many))
     expect(encyclopediaTotals(stats)).toEqual({ speciesCount: 1, catchCount: 4 })
   })
+
+  it('ボウズは図鑑に含めない', () => {
+    const stats = buildSpeciesStats([
+      sampleRecord({ id: 'a1', fishSpecies: 'アジ' }),
+      sampleRecord({
+        id: 'b1',
+        fishSpecies: 'アジ',
+        kind: 'blank',
+        fishCount: 9,
+      }),
+    ])
+    expect(stats).toHaveLength(1)
+    expect(stats[0].count).toBe(1)
+  })
 })

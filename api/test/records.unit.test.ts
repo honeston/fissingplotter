@@ -72,4 +72,27 @@ describe('UNIT-12 記録バリデーション', () => {
     )
     expect(record.tackle).toBeNull()
   })
+
+  it('kind / tripId 省略は catch と null。ボウズは魚種を捨てる', () => {
+    const plain = validateRecord(body())
+    expect(plain.kind).toBe('catch')
+    expect(plain.tripId).toBeNull()
+
+    const blank = validateRecord(
+      body({
+        kind: 'blank',
+        tripId: 'trip-1',
+        fishSpecies: 'アジ',
+        fishCount: 3,
+        fishSizeCm: 20,
+        fishWeightG: 100,
+      }),
+    )
+    expect(blank.kind).toBe('blank')
+    expect(blank.tripId).toBe('trip-1')
+    expect(blank.fishSpecies).toBeNull()
+    expect(blank.fishCount).toBeNull()
+    expect(blank.fishSizeCm).toBeNull()
+    expect(blank.fishWeightG).toBeNull()
+  })
 })
