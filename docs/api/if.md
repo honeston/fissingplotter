@@ -112,10 +112,11 @@ DynamoDB および `POST /records` 本文。クライアント生成 `id`。`upd
 | rod | string | ロッド |
 | reel | string | リール |
 | line | string | ライン |
-| lureOrBait | string | ルアー／エサ |
+| lureOrBaitKind | `"lure"` \| `"bait"` | ルアー／エサの表示モード。欠落・不正は `lure` |
+| lureOrBait | string | ルアーまたはエサの内容 |
 | rig | string | 仕掛け |
 
-文字列以外は空文字。全項目 trim 後空なら `tackle` は null。
+文字列以外は空文字。`lureOrBaitKind` 以外の全項目 trim 後空なら `tackle` は null（kind だけでは残さない）。
 
 ### 2.3 RecordDeletion
 
@@ -159,6 +160,7 @@ DynamoDB および `POST /records` 本文。クライアント生成 `id`。`upd
     "rod": "6.4ft L",
     "reel": "2000番",
     "line": "PE 0.3号",
+    "lureOrBaitKind": "lure",
     "lureOrBait": "ジグヘッド",
     "rig": "フロロ 3lb"
   },

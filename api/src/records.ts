@@ -41,11 +41,14 @@ export interface FishingRecord {
 
 type EditedField = 'recordedAt' | 'location'
 
+export type LureOrBaitKind = 'lure' | 'bait'
+
 export type TackleFields = {
   name: string
   rod: string
   reel: string
   line: string
+  lureOrBaitKind: LureOrBaitKind
   lureOrBait: string
   rig: string
 }
@@ -130,6 +133,10 @@ function parseEditedFields(value: unknown): EditedField[] {
   return [...unique]
 }
 
+function parseLureOrBaitKind(value: unknown): LureOrBaitKind {
+  return value === 'bait' ? 'bait' : 'lure'
+}
+
 function parseTackleFields(value: unknown): TackleFields | null {
   if (value == null) return null
   if (typeof value !== 'object') return null
@@ -139,6 +146,7 @@ function parseTackleFields(value: unknown): TackleFields | null {
     rod: typeof v.rod === 'string' ? v.rod.trim() : '',
     reel: typeof v.reel === 'string' ? v.reel.trim() : '',
     line: typeof v.line === 'string' ? v.line.trim() : '',
+    lureOrBaitKind: parseLureOrBaitKind(v.lureOrBaitKind),
     lureOrBait: typeof v.lureOrBait === 'string' ? v.lureOrBait.trim() : '',
     rig: typeof v.rig === 'string' ? v.rig.trim() : '',
   }

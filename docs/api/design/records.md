@@ -40,7 +40,7 @@
 | `fishSpecies` | string \| null | 魚種 |
 | `fishCount` | number \| null | 匹数。1 以上の整数 |
 | `fishSizeCm` / `fishWeightG` | number \| null | 体長 cm / 重量 g |
-| `tackle` | object \| null | `name` `rod` `reel` `line` `lureOrBait` `rig` |
+| `tackle` | object \| null | `name` `rod` `reel` `line` `lureOrBaitKind` `lureOrBait` `rig` |
 | `photoKey` | string \| null | S3 キー |
 | `editedFields` | string[] | `recordedAt` / `location` のみ |
 | `updatedAt` | string \| null | サーバ付与。POST では無視 |

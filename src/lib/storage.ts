@@ -266,6 +266,7 @@ function normalizeMyTackle(tackle: MyTackle): MyTackle {
     rod: '',
     reel: '',
     line: '',
+    lureOrBaitKind: 'lure' as const,
     lureOrBait: '',
     rig: '',
   }

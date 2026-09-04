@@ -14,7 +14,7 @@ import {
 } from '../types/tackle'
 
 function summaryLine(tackle: MyTackle): string {
-  const parts = [tackle.rod, tackle.reel, tackle.lureOrBait, tackle.rig].filter(Boolean)
+  const parts = [tackle.rod, tackle.reel, tackle.rig, tackle.lureOrBait].filter(Boolean)
   return parts.length > 0 ? parts.join(' / ') : '詳細なし'
 }
 

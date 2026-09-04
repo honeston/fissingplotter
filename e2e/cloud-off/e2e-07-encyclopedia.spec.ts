@@ -93,7 +93,7 @@ test.describe('E2E-07 魚種図鑑', () => {
     await page.getByLabel('魚種（任意）').fill('アジ')
     await page.keyboard.press('Escape')
     await page.getByRole('button', { name: 'タックル入力を開く' }).click()
-    await page.getByLabel('ルアー／エサ').fill('ミノー')
+    await page.getByLabel('ルアー').fill('ミノー')
     await saveRecord(page)
     await page.goto('/mypage/encyclopedia')
     await page.getByRole('link', { name: /アジ/ }).click()

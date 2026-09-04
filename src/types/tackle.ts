@@ -1,9 +1,13 @@
+/** ルアー／エサの入力モード（表示ラベル用。値は lureOrBait に入れる） */
+export type LureOrBaitKind = 'lure' | 'bait'
+
 /** タックル／仕掛けの入力項目（いずれも任意） */
 export type TackleFields = {
   name: string
   rod: string
   reel: string
   line: string
+  lureOrBaitKind: LureOrBaitKind
   lureOrBait: string
   rig: string
 }
@@ -19,8 +23,25 @@ export const EMPTY_TACKLE_FIELDS: TackleFields = {
   rod: '',
   reel: '',
   line: '',
+  lureOrBaitKind: 'lure',
   lureOrBait: '',
   rig: '',
+}
+
+export function parseLureOrBaitKind(value: unknown): LureOrBaitKind {
+  return value === 'bait' ? 'bait' : 'lure'
+}
+
+export function lureOrBaitFieldLabel(kind: LureOrBaitKind): string {
+  return kind === 'bait' ? 'エサ' : 'ルアー'
+}
+
+export function lureOrBaitFieldPlaceholder(kind: LureOrBaitKind): string {
+  return kind === 'bait' ? '例: アオイソメ' : '例: ミノー'
+}
+
+export function rigFieldPlaceholder(kind: LureOrBaitKind): string {
+  return kind === 'bait' ? '例: サビキ / ウキ釣り / 胴突き' : '例: フロロリーダー 8lb'
 }
 
 export function normalizeTackleFields(value: unknown): TackleFields | null {
@@ -32,6 +53,7 @@ export function normalizeTackleFields(value: unknown): TackleFields | null {
     rod: typeof v.rod === 'string' ? v.rod.trim() : '',
     reel: typeof v.reel === 'string' ? v.reel.trim() : '',
     line: typeof v.line === 'string' ? v.line.trim() : '',
+    lureOrBaitKind: parseLureOrBaitKind(v.lureOrBaitKind),
     lureOrBait: typeof v.lureOrBait === 'string' ? v.lureOrBait.trim() : '',
     rig: typeof v.rig === 'string' ? v.rig.trim() : '',
   }
@@ -56,6 +78,7 @@ export function tackleFromMyTackle(tackle: MyTackle): TackleFields {
     rod: tackle.rod,
     reel: tackle.reel,
     line: tackle.line,
+    lureOrBaitKind: tackle.lureOrBaitKind,
     lureOrBait: tackle.lureOrBait,
     rig: tackle.rig,
   }

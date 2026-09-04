@@ -23,7 +23,7 @@ import { formatFishSize, formatFishWeight } from '../lib/units'
 import { weatherCodeLabel } from '../lib/weatherCode'
 import { useUnitPrefs } from '../hooks/useUnitPrefs'
 import type { FishingRecord } from '../types/record'
-import { hasTackleContent } from '../types/tackle'
+import { hasTackleContent, lureOrBaitFieldLabel } from '../types/tackle'
 import {
   sunCompactValue,
   sunFullLine,
@@ -130,14 +130,17 @@ export function RecordValueList({
                   {record.tackle!.line}
                 </IconRow>
               ) : null}
-              {record.tackle!.lureOrBait ? (
-                <IconRow icon={Fish} label="ルアー／エサ">
-                  {record.tackle!.lureOrBait}
-                </IconRow>
-              ) : null}
               {record.tackle!.rig ? (
                 <IconRow icon={Anchor} label="仕掛け">
                   {record.tackle!.rig}
+                </IconRow>
+              ) : null}
+              {record.tackle!.lureOrBait ? (
+                <IconRow
+                  icon={Fish}
+                  label={lureOrBaitFieldLabel(record.tackle!.lureOrBaitKind)}
+                >
+                  {record.tackle!.lureOrBait}
                 </IconRow>
               ) : null}
             </>

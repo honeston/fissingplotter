@@ -59,7 +59,15 @@ describe('UNIT-12 記録バリデーション', () => {
   it('タックル全空は null（エラーにしない）', () => {
     const record = validateRecord(
       body({
-        tackle: { name: '', rod: '', reel: '', line: '', lureOrBait: '', rig: '' },
+        tackle: {
+          name: '',
+          rod: '',
+          reel: '',
+          line: '',
+          lureOrBaitKind: 'lure',
+          lureOrBait: '',
+          rig: '',
+        },
       }),
     )
     expect(record.tackle).toBeNull()
