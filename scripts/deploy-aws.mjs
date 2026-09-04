@@ -28,6 +28,7 @@ function contentType(file) {
   if (file.endsWith('.js')) return 'application/javascript; charset=utf-8'
   if (file.endsWith('.css')) return 'text/css; charset=utf-8'
   if (file.endsWith('.json')) return 'application/json; charset=utf-8'
+  if (file.endsWith('.txt')) return 'text/plain; charset=utf-8'
   if (file.endsWith('.svg')) return 'image/svg+xml'
   if (file.endsWith('.webmanifest')) return 'application/manifest+json'
   if (file.endsWith('.png')) return 'image/png'
@@ -61,7 +62,7 @@ async function uploadDir(bucket) {
   for (const file of files) {
     const key = relative(distDir, file).replace(/\\/g, '/')
     const cacheControl =
-      key === 'index.html' || key.endsWith('.html')
+      key === 'index.html' || key.endsWith('.html') || key === 'ads.txt'
         ? 'no-cache'
         : 'public, max-age=31536000, immutable'
     await s3.send(
